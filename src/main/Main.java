@@ -7,7 +7,7 @@ public class Main {
 	public static void main(String[] args) {
 		//region testing voltage drop
 		System.out.println("**************** TESTING VOLTAGE DROP METHOD ****************");
-		VDrop vd = new VDrop();
+		VDropCalculator vd = new VDropCalculator();
 		System.out.println("     Voltage (v): " + vd.getSourceVoltage());
 		System.out.println("  Conductor size: " + vd.getSize());
 		System.out.println("          Phases: " + vd.getPhases());

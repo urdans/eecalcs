@@ -2,7 +2,7 @@ package eecalcs;
 
 import org.apache.commons.math3.complex.Complex;
 
-public class VDrop {
+public class VDropCalculator {
 
 	//region private fields
 	//input
