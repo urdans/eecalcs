@@ -17,19 +17,21 @@ public class VDropCalculator {
 	private double powerFactor = 1.0;
 	private Conductor.CopperCoating copperCoating = Conductor.CopperCoating.UNCOATED;
 	private double maxVoltageDropPercent = 3; //for AC and DC
-	private Message ERROR01	= new Message("Source voltage must be greater that zero.",-1);
-	private Message ERROR02	= new Message("Number of phases must be 1 or 3.",-2);
-	private Message ERROR03	= new Message("Invalid conductor size.",-3);
-	private Message ERROR04	= new Message("Number of sets must be between 1 and 10.",-4);
-	private Message ERROR05	= new Message("One way conductor length must be greater than 0.",-5);
-	private Message ERROR06	= new Message("Load current must be greater than 0.",-6);
-	private Message ERROR07	= new Message("Power factor must be between 0.7 and 1.",-7);
-	private Message ERROR08	= new Message("Voltage drop for determining conductor sizing must be between 0.5% and 25%",-8);
-	private Message ERROR20	= new Message("Load current exceeds maximum allowed conductor set's ampacity at 90°C. NEC-310.15(B)(16)",-20);
-	private Message ERROR21	= new Message("Paralleled power conductors in sizes smaller than 1/0 AWG are not permitted. NEC-310.10(H)(1)",-21);
-	private Message ERROR30	= new Message("No length can achieve that voltage drop under the given conditions.", -30);
-	private Message ERROR31	= new Message("No building conductor can achieve that voltage drop under these conditions.", -31);
-	private Message WARNN21	= new Message(ERROR21.message,9);
+	private static Message ERROR01	= new Message("Source voltage must be greater that zero.",-1);
+	private static Message ERROR02	= new Message("Number of phases must be 1 or 3.",-2);
+	private static Message ERROR03	= new Message("Invalid conductor size.",-3);
+	private static Message ERROR04	= new Message("Number of sets must be between 1 and 10.",-4);
+	private static Message ERROR05	= new Message("One way conductor length must be greater than 0.",-5);
+	private static Message ERROR06	= new Message("Load current must be greater than 0.",-6);
+	private static Message ERROR07	= new Message("Power factor must be between 0.7 and 1.",-7);
+	private static Message ERROR08	= new Message("Voltage drop for determining conductor sizing must be between 0.5% and 25%",-8);
+	private static Message ERROR20	= new Message("Load current exceeds maximum allowed conductor set's ampacity at 90°C. NEC-310.15(B)" +
+			"(16)",-20);
+	private static Message ERROR21	= new Message("Paralleled power conductors in sizes smaller than 1/0 AWG are not permitted. NEC-310" +
+			".10(H)(1)",-21);
+	private static Message ERROR30	= new Message("No length can achieve that voltage drop under the given conditions.", -30);
+	private static Message ERROR31	= new Message("No building conductor can achieve that voltage drop under these conditions.", -31);
+	private static Message WARNN21	= new Message(ERROR21.message,21);
 	//calculated
 	private Conductor conductor = Conductor.getConductorBySize(size);
 	private double actualVoltageDropPercentageAC;

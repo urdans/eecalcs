@@ -5,6 +5,21 @@ import eecalcs.*;
 public class Main {
 
 	public static void main(String[] args) {
+		//region testing conduit sizes
+		Conduit conduit = new Conduit();
+		String tradeSize = "6";
+		String type = "PVC-80";
+		double area = conduit.getArea(type, tradeSize);
+		System.out.println("Area in inch2 of " + tradeSize + " conduit, type " + type + " is: " + area);
+		if (conduit.resultMessages.hasErrors()) {
+			System.out.println("The following errors ocurred:");
+			for (Message msg : conduit.resultMessages.getMessages())
+				System.out.println(msg.message + " : " + msg.number);
+		}
+		if (true) return;
+		//endregion
+
+
 		//region testing voltage drop
 		System.out.println("**************** TESTING VOLTAGE DROP METHOD ****************");
 		VDropCalculator vd = new VDropCalculator();
@@ -123,19 +138,10 @@ public class Main {
 		if (true) return;
 		//endregion
 
-		/*
-		Release notes.
-
-		NEC table 9 provides reactances and resistances for the following conditions: 3 phases, 60 hz, 75 deg C, 3 single conductors per
-		conduit. When using several sets, it is imperative that the sets be in separate conduits each set.
-		is this table permitted to be used for single phase system? check what IEEE says about it, because I think I read that using
-		table 9 for the 2-phase condition is ok.
-		A more advanced version of this program would be by adding calculation of AC and DC resistance per actual conditions, like
-		temperature, number of conductors in the same conduit, 2-phase scenario, and others if any.
-		*/
 
 
-		if (true) return;
+
+
 
 		//region testing conductor properties
 		String wireTest = "1250";
@@ -188,3 +194,56 @@ public class Main {
 		//endregion
 	}
 }
+/*
+Release notes.
+
+Voltage drop:
+-------------
+Method: it is assumed that the load behaves as a constant-current load.
+Given the magnitude of the current and the power factor of the load, the complex current Icx is:
+ Icx = I<-ArcCos(pf).
+Since the length, the conductor size and the conduit type are known, the impedance of one way run of the conductor Zw is:
+Zw = R + jXL
+
+Where R and XL are the AC resistance and the reactance of the wires for that length (values obtained from table 9 are per 1000 ft, so
+those values are divided by 1000 and then multiplied by the conductor length)
+
+The voltage across the wires Vw is:
+
+Vw = k x Icx x Zw, where k = 2 for 1-phase systems and square root of 3 for 3-phase systems.
+
+The voltage at the source is know, and an angle of zero is taken as reference.
+Vs = V<0
+
+The voltage at the load is calculated as follow:
+VL = Vs - Vw
+
+And the voltage drop per IEEE is:
+Vdrop = |Vs| - |VL|
+
+Vdrop% = 100 x Vdrop/|Vs|
+
+Notice that:
+NEC table 9 provides reactances and resistances for the following conditions: 3 phases, 60 hz, 75 deg C, 3 single conductors per
+conduit. When using several sets, it is imperative that each set be in a separate conduit. That is no more than three conductors per
+raceway.
+
+Is these table's values permitted to be used for single phase system? I need to check what IEEE says about it, because I think I read
+that using table 9 for the 2-phase condition is ok.
+
+A more advanced version of this program would be by adding calculation of AC and DC resistance per actual conditions, like
+temperature, number of conductors in the same conduit, 2-phase scenario, underground, duct bank, and others if any.
+
+------------------------///------------------------
+
+Raceway calculation:
+A group of N conductors will go in one raceway. The number of equal size conductors is known for each size within the raceway.
+For example:
+Qty     Size:
+1       10
+3       8
+3       1/0
+1       1
+
+Using the data provided by the Conduit class, the
+*/
