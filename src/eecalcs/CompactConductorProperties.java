@@ -3,6 +3,7 @@ package eecalcs;
 import tools.Tools;
 
 public class CompactConductorProperties {
+	//todo refactor this class to use hasmap
 	//region private static members
 	//These values correspond to the sizes in array ConductorProperties.size in the subset [3,22]-[6]-[21]
 	private static double[] bareConductorAreasIn2 = {0.0141, 0.0224, 0.0356, 0, 0.0564, 0.0702, 0.0887, 0.1110, 0.1405, 0.1772, 0.2124,
@@ -28,7 +29,8 @@ public class CompactConductorProperties {
 	private static double[] area4 = {0.0394, 0.0530, 0.0730, 0, 0.1017, 0.1352, 0.1590, 0.1885, 0.2290, 0.2733, 0.3421, 0.4015, 0.4536,
 			0.5026, 0.6082, 0.7542, 0.8659, 0.9331, 0, 1.0733, 1.1882};
 
-	private static int checkWireSize(String wireSize, String minSize, String maxSize, String insulationName){
+	/*private static int checkWireSize(String wireSize, String minSize, String maxSize, String insulationName){
+
 		String msg = "No area data for compact conductor \"" + Conductor.getSizeFullName(wireSize) +"\"";
 
 		if(!insulationName.isEmpty()) msg = msg + " with insulation type \"" + insulationName + "\"";
@@ -42,19 +44,19 @@ public class CompactConductorProperties {
 				|| wireSizeIndex == Conductor.getIndexOfSize("3")
 				|| wireSizeIndex == Conductor.getIndexOfSize("800"))
 			throw new EEToolsException(msg);
-
+//		private static Message ERROR54	= new Message("No area data for such compact conductor.", -54);
 		return wireSizeIndex;
-	}
+	}*/
 	//endregion
 
 	//region public static members
-	public static double getAreaOfBareConductor(String wireSize) {
+/*	public static double getAreaOfBareConductor(String wireSize) {
 		//valid for >=8 AWG and <=1000 except 3 AWG and 800 KCMIL
 		int wireSizeIndex = checkWireSize(wireSize, "8","1000", "");
 		return bareConductorAreasIn2[wireSizeIndex - 3];
-	}
+	}*/
 
-	public static double getConductorWireAreaIn2(String wireSize, String insulationName){
+/*	public static double getConductorWireAreaIn2(String wireSize, String insulationName){
 
 		int wireSizeIndex = checkWireSize(wireSize, "8","1000", insulationName);
 
@@ -74,6 +76,6 @@ public class CompactConductorProperties {
 
 		throw new EEToolsException("No area data for compact conductor \"" + Conductor.getSizeFullName(wireSize) + "\" with " +
 				"insulation type \"" + insulationName + "\".");
-	}
+	}*/
 	//endregion
 }

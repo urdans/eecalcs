@@ -33,13 +33,12 @@ public class Conduit {
 	private static Map<String, Map<String, Double>> dimensions = new HashMap<>();
 
 	private static Message ERROR40	= new Message("Invalid conduit type.", -40);
-	private static Message ERROR41	= new Message("Invalid conduit trade size.", -41);
+	private static Message ERROR41	= new Message("Trade size not available for this conduit type.", -41);
 	private static Message ERROR42	= new Message("Area of conduit not available.", -42);
 	//endregion
 
 	static {
 		//region EMT
-		areaEMT.put(tradeSizes[0], 0.0);
 		areaEMT.put(tradeSizes[1], 0.304);
 		areaEMT.put(tradeSizes[2], 0.533);
 		areaEMT.put(tradeSizes[3], 0.864);
@@ -50,23 +49,14 @@ public class Conduit {
 		areaEMT.put(tradeSizes[8], 8.846);
 		areaEMT.put(tradeSizes[9], 11.545);
 		areaEMT.put(tradeSizes[10], 14.753);
-		areaEMT.put(tradeSizes[11], 0.0);
-		areaEMT.put(tradeSizes[12], 0.0);
 		//endregion
 		//region ENT
-		areaENT.put(tradeSizes[0], 0.0);
 		areaENT.put(tradeSizes[1], 0.285);
 		areaENT.put(tradeSizes[2], 0.508);
 		areaENT.put(tradeSizes[3], 0.832);
 		areaENT.put(tradeSizes[4], 1.453);
 		areaENT.put(tradeSizes[5], 1.986);
 		areaENT.put(tradeSizes[6], 3.291);
-		areaENT.put(tradeSizes[7], 0.0);
-		areaENT.put(tradeSizes[8], 0.0);
-		areaENT.put(tradeSizes[9], 0.0);
-		areaENT.put(tradeSizes[10], 0.0);
-		areaENT.put(tradeSizes[11], 0.0);
-		areaENT.put(tradeSizes[12], 0.0);
 		//endregion
 		//region FMT
 		areaFMT.put(tradeSizes[0], 0.116);
@@ -80,11 +70,8 @@ public class Conduit {
 		areaFMT.put(tradeSizes[8], 7.069);
 		areaFMT.put(tradeSizes[9], 9.621);
 		areaFMT.put(tradeSizes[10], 12.566);
-		areaFMT.put(tradeSizes[11], 0.0);
-		areaFMT.put(tradeSizes[12], 0.0);
 		//endregion
 		//region IMC
-		areaIMC.put(tradeSizes[0], 0.0);
 		areaIMC.put(tradeSizes[1], 0.342);
 		areaIMC.put(tradeSizes[2], 0.586);
 		areaIMC.put(tradeSizes[3], 0.959);
@@ -95,8 +82,6 @@ public class Conduit {
 		areaIMC.put(tradeSizes[8], 7.922);
 		areaIMC.put(tradeSizes[9], 10.584);
 		areaIMC.put(tradeSizes[10], 13.631);
-		areaIMC.put(tradeSizes[11], 0.0);
-		areaIMC.put(tradeSizes[12], 0.0);
 		//endregion
 		//region LFNCA
 		areaLFNCA.put(tradeSizes[0], 0.192);
@@ -106,12 +91,6 @@ public class Conduit {
 		areaLFNCA.put(tradeSizes[4], 1.502);
 		areaLFNCA.put(tradeSizes[5], 2.018);
 		areaLFNCA.put(tradeSizes[6], 3.343);
-		areaLFNCA.put(tradeSizes[7], 0.0);
-		areaLFNCA.put(tradeSizes[8], 0.0);
-		areaLFNCA.put(tradeSizes[9], 0.0);
-		areaLFNCA.put(tradeSizes[10], 0.0);
-		areaLFNCA.put(tradeSizes[11], 0.0);
-		areaLFNCA.put(tradeSizes[12], 0.0);
 		//endregion
 		//region LFNCB
 		areaLFNCB.put(tradeSizes[0], 0.192);
@@ -121,12 +100,6 @@ public class Conduit {
 		areaLFNCB.put(tradeSizes[4], 1.528);
 		areaLFNCB.put(tradeSizes[5], 1.981);
 		areaLFNCB.put(tradeSizes[6], 3.246);
-		areaLFNCB.put(tradeSizes[7], 0.0);
-		areaLFNCB.put(tradeSizes[8], 0.0);
-		areaLFNCB.put(tradeSizes[9], 0.0);
-		areaLFNCB.put(tradeSizes[10], 0.0);
-		areaLFNCB.put(tradeSizes[11], 0.0);
-		areaLFNCB.put(tradeSizes[12], 0.0);
 		//endregion
 		//region LFMC
 		areaLFMC.put(tradeSizes[0], 0.192);
@@ -140,11 +113,8 @@ public class Conduit {
 		areaLFMC.put(tradeSizes[8], 7.475);
 		areaLFMC.put(tradeSizes[9], 9.731);
 		areaLFMC.put(tradeSizes[10], 12.692);
-		areaLFMC.put(tradeSizes[11], 0.0);
-		areaLFMC.put(tradeSizes[12], 0.0);
 		//endregion
 		//region RMC
-		areaRMC.put(tradeSizes[0], 0.0);
 		areaRMC.put(tradeSizes[1], 0.314);
 		areaRMC.put(tradeSizes[2], 0.549);
 		areaRMC.put(tradeSizes[3], 0.887);
@@ -159,7 +129,6 @@ public class Conduit {
 		areaRMC.put(tradeSizes[12], 29.158);
 		//endregion
 		//region PVC80
-		areaPVC80.put(tradeSizes[0], 0.0);
 		areaPVC80.put(tradeSizes[1], 0.217);
 		areaPVC80.put(tradeSizes[2], 0.409);
 		areaPVC80.put(tradeSizes[3], 0.688);
@@ -174,7 +143,6 @@ public class Conduit {
 		areaPVC80.put(tradeSizes[12], 25.598);
 		//endregion
 		//region PVC40
-		areaPVC40.put(tradeSizes[0], 0.0);
 		areaPVC40.put(tradeSizes[1], 0.285);
 		areaPVC40.put(tradeSizes[2], 0.508);
 		areaPVC40.put(tradeSizes[3], 0.832);
@@ -189,7 +157,6 @@ public class Conduit {
 		areaPVC40.put(tradeSizes[12], 28.567);
 		//endregion
 		//region HDPE
-		areaHDPE.put(tradeSizes[0], 0.0);
 		areaHDPE.put(tradeSizes[1], 0.285);
 		areaHDPE.put(tradeSizes[2], 0.508);
 		areaHDPE.put(tradeSizes[3], 0.832);
@@ -204,7 +171,6 @@ public class Conduit {
 		areaHDPE.put(tradeSizes[12], 28.567);
 		//endregion
 		//region PVCA
-		areaPVCA.put(tradeSizes[0], 0.0);
 		areaPVCA.put(tradeSizes[1], 0.385);
 		areaPVCA.put(tradeSizes[2], 0.65);
 		areaPVCA.put(tradeSizes[3], 1.084);
@@ -215,18 +181,9 @@ public class Conduit {
 		areaPVCA.put(tradeSizes[8], 8.194);
 		areaPVCA.put(tradeSizes[9], 10.694);
 		areaPVCA.put(tradeSizes[10], 13.723);
-		areaPVCA.put(tradeSizes[11], 0.0);
-		areaPVCA.put(tradeSizes[12], 0.0);
 		//endregion
 		//region PVCEB
-		areaPVCEB.put(tradeSizes[0], 0.0);
-		areaPVCEB.put(tradeSizes[1], 0.0);
-		areaPVCEB.put(tradeSizes[2], 0.0);
-		areaPVCEB.put(tradeSizes[3], 0.0);
-		areaPVCEB.put(tradeSizes[4], 0.0);
-		areaPVCEB.put(tradeSizes[5], 0.0);
 		areaPVCEB.put(tradeSizes[6], 3.874);
-		areaPVCEB.put(tradeSizes[7], 0.0);
 		areaPVCEB.put(tradeSizes[8], 8.709);
 		areaPVCEB.put(tradeSizes[9], 11.365);
 		areaPVCEB.put(tradeSizes[10], 14.448);
@@ -272,22 +229,15 @@ public class Conduit {
 	}
 
 	public double getArea(String conduitType, String tradeSize){
-		int conduitIndex = getArrayIndexOf(types, conduitType);
-		int typeIndex = getArrayIndexOf(tradeSizes, tradeSize);
-
-		if(conduitIndex < 0 ){
+		if(!dimensions.containsKey(conduitType)){
 			resultMessages.add(ERROR40);
 			return 0;
 		}
-
-		if(typeIndex < 0){
+		if(!dimensions.get(conduitType).containsKey(tradeSize)){
 			resultMessages.add(ERROR41);
 			return 0;
 		}
-
-		double dimension = dimensions.get(conduitType).get(tradeSize);
-		if(dimension == 0) resultMessages.add(ERROR42);
-		return dimension;
+		return dimensions.get(conduitType).get(tradeSize);
 	}
 	//endregion
 }

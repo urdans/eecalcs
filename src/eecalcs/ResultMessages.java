@@ -1,5 +1,6 @@
 package eecalcs;
 
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +20,13 @@ public class ResultMessages {
 	}
 
 	public void add(Message msg){
+		if(messages.contains(msg)) return;
+		messages.add(msg);
+	}
+
+	public void add(String subject, Message msg){
+		if(messages.contains(msg)) return;
+		msg.message = String.format(msg.message,subject);
 		messages.add(msg);
 	}
 

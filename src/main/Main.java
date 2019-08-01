@@ -5,10 +5,11 @@ import eecalcs.*;
 public class Main {
 
 	public static void main(String[] args) {
+/*
 		//region testing conduit sizes
 		Conduit conduit = new Conduit();
-		String tradeSize = "6";
-		String type = "PVC-80";
+		String tradeSize = "2-1/2";
+		String type = "PVC-EB";
 		double area = conduit.getArea(type, tradeSize);
 		System.out.println("Area in inch2 of " + tradeSize + " conduit, type " + type + " is: " + area);
 		if (conduit.resultMessages.hasErrors()) {
@@ -18,7 +19,6 @@ public class Main {
 		}
 		if (true) return;
 		//endregion
-
 
 		//region testing voltage drop
 		System.out.println("**************** TESTING VOLTAGE DROP METHOD ****************");
@@ -138,11 +138,6 @@ public class Main {
 		if (true) return;
 		//endregion
 
-
-
-
-
-
 		//region testing conductor properties
 		String wireTest = "1250";
 		Conductor conductor = Conductor.getConductorBySize(wireTest);
@@ -172,25 +167,37 @@ public class Main {
 				"                 dc: " + conductor.aluminum.resistance.dc + "\n" +
 				"Area in circular mils: " + conductor.areaCM + "\n");
 		//endregion
-
+*/
 		//region testing tables
+		Conductor cond = new Conductor();
 		System.out.println("\n**************** TESTING TABLES ****************");
-		String insulation = "XHHW-2";
-		System.out.println("Temperature of " + insulation + " is: " + Conductor.getInsulationTemperatureCelsius(insulation));
+		String insulation = "ZW";
+		System.out.println("Temperature of " + insulation + " is: " + cond.getInsulationTemperatureCelsius(insulation));
+		if (cond.resultMessages.hasErrors()) {
+			System.out.println("The following errors ocurred:");
+			for (Message msg : cond.resultMessages.getMessages())
+				System.out.println(msg.message + " : " + msg.number);
+		}
 
-		String wire = "1500";
+		String wire = "2";
 		//insulation = "FEP";
-		System.out.println("Area of conductor size '" + Conductor.getSizeFullName(wire) + "' and insulation '" + insulation + "' is: " +
-				Conductor.getAreaIn2(wire, insulation) + "\n");
+		System.out.println("\nArea of conductor size '" + cond.getSizeFullName(wire) + "' and insulation '" + insulation + "' is: " +
+				cond.getAreaIn2(wire, insulation) + "\n");
 
-		wire = "1000";
+		if (cond.resultMessages.hasErrors()) {
+			System.out.println("The following errors ocurred:");
+			for (Message msg : cond.resultMessages.getMessages())
+				System.out.println(msg.message + " : " + msg.number);
+		}
+//todo test this code below
+/*		wire = "10";
 		insulation = "XHHW";
 		System.out.println("Area of bare compact conductor size \"" + Conductor.getSizeFullName(wire) + "\" is: " +
 				CompactConductorProperties.getAreaOfBareConductor(wire));
 
 		System.out.println("Area of compact conductor size \"" + Conductor.getSizeFullName(wire) + "\" and " +
 				"insulation \"" + insulation + "\" is: " +
-				CompactConductorProperties.getConductorWireAreaIn2(wire, insulation));
+				CompactConductorProperties.getConductorWireAreaIn2(wire, insulation));*/
 		//endregion
 	}
 }
