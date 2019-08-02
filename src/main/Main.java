@@ -5,19 +5,14 @@ import eecalcs.*;
 public class Main {
 
 	public static void main(String[] args) {
-/*
+		/*
 		//region testing conduit sizes
-		Conduit conduit = new Conduit();
-		String tradeSize = "2-1/2";
+		String tradeSize = "3";
 		String type = "PVC-EB";
-		double area = conduit.getArea(type, tradeSize);
-		System.out.println("Area in inch2 of " + tradeSize + " conduit, type " + type + " is: " + area);
-		if (conduit.resultMessages.hasErrors()) {
-			System.out.println("The following errors ocurred:");
-			for (Message msg : conduit.resultMessages.getMessages())
-				System.out.println(msg.message + " : " + msg.number);
-		}
-		if (true) return;
+		System.out.println("Area in inch2 of " + tradeSize + " conduit, type " + type + " is: " + Conduit.getArea(type, tradeSize));
+		System.out.println("isValidType: " + Conduit.isValidType(type));
+		System.out.println("hasArea: " + Conduit.hasArea(type,tradeSize));
+//		if (true) return;
 		//endregion
 
 		//region testing voltage drop
@@ -135,14 +130,14 @@ public class Main {
 				System.out.println(msg.message + " : " + msg.number);
 			}
 		}
-		if (true) return;
+//		if (true) return;
 		//endregion
-
+*/
 		//region testing conductor properties
 		String wireTest = "1250";
 		Conductor conductor = Conductor.getConductorBySize(wireTest);
 		System.out.println("**************** TESTING CONDUCTOR PROPERTIES ****************");
-		System.out.println("Properties of conductor " + Conductor.getSizeFullName(wireTest) + ":\n\n" +
+		System.out.println("Properties of conductor " + conductor.getSizeFullName(wireTest) + ":\n\n" +
 				"ampacity of copper wires (Amps):\n" +
 				"    at 60°C: " + conductor.copper.ampacity.t60 + "\n" +
 				"    at 75°C: " + conductor.copper.ampacity.t75 + "\n" +
@@ -166,30 +161,29 @@ public class Main {
 				"   in steel conduit: " + conductor.aluminum.resistance.ac.inSteelCond + "\n" +
 				"                 dc: " + conductor.aluminum.resistance.dc + "\n" +
 				"Area in circular mils: " + conductor.areaCM + "\n");
+		System.out.println("isValidSize: " + conductor.isValidSize());
+		System.out.println("isInvalid: " + conductor.isInvalid());
+
+		//if (true) return;
 		//endregion
-*/
+
 		//region testing tables
-		Conductor cond = new Conductor();
 		System.out.println("\n**************** TESTING TABLES ****************");
 		String insulation = "ZW";
-		System.out.println("Temperature of " + insulation + " is: " + cond.getInsulationTemperatureCelsius(insulation));
-		if (cond.resultMessages.hasErrors()) {
-			System.out.println("The following errors ocurred:");
-			for (Message msg : cond.resultMessages.getMessages())
-				System.out.println(msg.message + " : " + msg.number);
-		}
+		System.out.println("Temperature of " + insulation + " is: " + Conductor.getInsulationTemperatureCelsius(insulation));
+		System.out.println("isValidInsulationName: " + Conductor.isValidInsulationName(insulation));
 
-		String wire = "2";
+		String wire = "1";
 		//insulation = "FEP";
-		System.out.println("\nArea of conductor size '" + cond.getSizeFullName(wire) + "' and insulation '" + insulation + "' is: " +
-				cond.getAreaIn2(wire, insulation) + "\n");
+		System.out.println("\nArea of conductor size '" + Conductor.getSizeFullName(wire) + "' and insulation '" + insulation + "' is: " +
+				Conductor.getInsulatedAreaIn2(wire, insulation) + "\n");
+		System.out.println("isValidSize: " + Conductor.isValidSize(wire));
+		System.out.println("isValidInsulationName: " + Conductor.isValidInsulationName(insulation));
+		System.out.println("hasInsulatedArea: " + Conductor.hasInsulatedArea(wire, insulation));
 
-		if (cond.resultMessages.hasErrors()) {
-			System.out.println("The following errors ocurred:");
-			for (Message msg : cond.resultMessages.getMessages())
-				System.out.println(msg.message + " : " + msg.number);
-		}
+		if (true) return;
 //todo test this code below
+//todo refacto the COmpactCOndutorProperties. Should nt it be part of class Conductor?
 /*		wire = "10";
 		insulation = "XHHW";
 		System.out.println("Area of bare compact conductor size \"" + Conductor.getSizeFullName(wire) + "\" is: " +

@@ -4,8 +4,8 @@ package eecalcs;
 import java.util.ArrayList;
 import java.util.List;
 
-/*This class will manage messages that results from any calculation done by this package tool.
-Negative message number are considered errors that impeach proper calculation.
+/*This class will manage messages that results from any calculations performed by this package tool.
+Negative message number are considered errors that impeached proper calculation.
 Positive messages are warnings that doesn't affect the calculation result*/
 
 public class ResultMessages {
