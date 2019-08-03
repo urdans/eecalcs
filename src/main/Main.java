@@ -181,17 +181,20 @@ public class Main {
 		System.out.println("isValidInsulationName: " + Conductor.isValidInsulationName(insulation));
 		System.out.println("hasInsulatedArea: " + Conductor.hasInsulatedArea(wire, insulation));
 
-		if (true) return;
-//todo test this code below
-//todo refacto the COmpactCOndutorProperties. Should nt it be part of class Conductor?
-/*		wire = "10";
-		insulation = "XHHW";
-		System.out.println("Area of bare compact conductor size \"" + Conductor.getSizeFullName(wire) + "\" is: " +
-				CompactConductorProperties.getAreaOfBareConductor(wire));
+		//if (true) return;
+		wire = "8";
+		conductor = Conductor.getConductorBySize("3");
+		System.out.println("\n\nArea of bare compact conductor size \"" + Conductor.getSizeFullName(wire) + "\" is: " +
+				Conductor.getCompactBareAreaIn2(wire));
 
+		System.out.println("Now, area of bare compact conductor size \"" + conductor.getSizeFullName() + "\" is: " +
+				conductor.getCompactBareAreaIn2());
+
+		wire = "1000";
+		insulation = "RHH";
 		System.out.println("Area of compact conductor size \"" + Conductor.getSizeFullName(wire) + "\" and " +
 				"insulation \"" + insulation + "\" is: " +
-				CompactConductorProperties.getConductorWireAreaIn2(wire, insulation));*/
+				Conductor.getCompactAreaIn2(wire, insulation));
 		//endregion
 	}
 }

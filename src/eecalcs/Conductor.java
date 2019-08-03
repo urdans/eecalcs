@@ -8,8 +8,8 @@ import static tools.Tools.stringArrayContains;
 
 public class Conductor {
 	//region static members
-	public static enum Metal { COPPER, ALUMINUM }
-	public static enum CopperCoating { COATED, UNCOATED	}
+	public enum Metal { COPPER, ALUMINUM }
+	public enum CopperCoating { COATED, UNCOATED	}
 	public static String[] sizes;
 	public static String[] sizeFullName;
 	private static Conductor[] table;
@@ -34,18 +34,50 @@ public class Conductor {
 	private static Map<String, Double> XHHW; //20
 	private static Map<String, Double> XHHW2;//21
 	private static Map<String, Double> EMPTY;//4, 6, 7, 8, 11, 18, 22
-	private static Map<String, Map<String, Double>> dimensions;// = new HashMap<>();
+	private static Map<String, Map<String, Double>> insulatedDimensions;//dimension of insulated building conductors, Table 5
+	private static Map<String, Double> compactRHH; //12
+	private static Map<String, Double> compactRHW; //1
+	private static Map<String, Double> compactUSE; //4
+	private static Map<String, Double> compactTHW; //2
+	private static Map<String, Double> compactTHHW;//15
+	private static Map<String, Double> compactTHHN;//14
+	private static Map<String, Double> compactXHHW;//20
+	private static Map<String, Double> compactBareDimensions;
+	private static Map<String, Map<String, Double>> compactDimensions;//dimension of insulated compact building conductors, Table 5A
 	private static String[] insulations;
 
 	public static double getInsulatedAreaIn2(String conductorSize, String insulationName){
 		if(hasInsulatedArea(conductorSize, insulationName))
-			return dimensions.get(insulationName).get(conductorSize);
+			return insulatedDimensions.get(insulationName).get(conductorSize);
+		else
+			return 0;
+	}
+
+	public static double getCompactAreaIn2(String conductorSize, String insulationName){
+		if(hasCompactArea(conductorSize, insulationName))
+			return compactDimensions.get(insulationName).get(conductorSize);
+		else
+			return 0;
+	}
+
+	public static double getCompactBareAreaIn2(String conductorSize){
+		if(hasCompactBareArea(conductorSize))
+			return compactBareDimensions.get(conductorSize);
 		else
 			return 0;
 	}
 
 	public static boolean hasInsulatedArea(String conductorSize, String insulationName){
-		return isValidSize(conductorSize) && isValidInsulationName(insulationName) && dimensions.get(insulationName).containsKey(conductorSize);
+		return isValidSize(conductorSize) && isValidInsulationName(insulationName) && insulatedDimensions.get(insulationName).containsKey(conductorSize);
+	}
+
+	public static boolean hasCompactArea(String conductorSize, String insulationName){
+		return isValidSize(conductorSize) && isValidInsulationName(insulationName) && compactDimensions.containsKey(insulationName)
+				&& compactDimensions.get(insulationName).containsKey(conductorSize);
+	}
+
+	public static boolean hasCompactBareArea(String conductorSize){
+		return isValidSize(conductorSize) && compactBareDimensions.containsKey(conductorSize);
 	}
 
 	public static boolean insulationIs60Celsius(String insulationName){
@@ -343,31 +375,159 @@ public class Conductor {
 		//region areaEMPTY for insulations TBS, SA, SIS, MI, USE, USE-2 and ZW-2
 		EMPTY = new HashMap<>();
 		//endregion
-		//region dimensions
-		dimensions = new HashMap<>();
-		dimensions.put(insulations[0], TW);
-		dimensions.put(insulations[1], RHW);
-		dimensions.put(insulations[2], THW);
-		dimensions.put(insulations[3], THWN);
-		dimensions.put(insulations[4], EMPTY);  //USE
-		dimensions.put(insulations[5], ZW);
-		dimensions.put(insulations[6], EMPTY);  //TBS
-		dimensions.put(insulations[7], EMPTY);  //SA
-		dimensions.put(insulations[8], EMPTY);  //SIS
-		dimensions.put(insulations[9], FEP);
-		dimensions.put(insulations[10], FEPB);
-		dimensions.put(insulations[11], EMPTY); //MI
-		dimensions.put(insulations[12], RHH);
-		dimensions.put(insulations[13], RHW2);
-		dimensions.put(insulations[14], THHN);
-		dimensions.put(insulations[15], THHW);
-		dimensions.put(insulations[16], THW2);
-		dimensions.put(insulations[17], THWN2);
-		dimensions.put(insulations[18], EMPTY); //USE-2
-		dimensions.put(insulations[19], XHH);
-		dimensions.put(insulations[20], XHHW);
-		dimensions.put(insulations[21], XHHW2);
-		dimensions.put(insulations[22], EMPTY); //ZW-2
+		//region dimensions of insulated conductors
+		insulatedDimensions = new HashMap<>();
+		insulatedDimensions.put(insulations[0], TW);
+		insulatedDimensions.put(insulations[1], RHW);
+		insulatedDimensions.put(insulations[2], THW);
+		insulatedDimensions.put(insulations[3], THWN);
+		insulatedDimensions.put(insulations[4], EMPTY);  //USE
+		insulatedDimensions.put(insulations[5], ZW);
+		insulatedDimensions.put(insulations[6], EMPTY);  //TBS
+		insulatedDimensions.put(insulations[7], EMPTY);  //SA
+		insulatedDimensions.put(insulations[8], EMPTY);  //SIS
+		insulatedDimensions.put(insulations[9], FEP);
+		insulatedDimensions.put(insulations[10], FEPB);
+		insulatedDimensions.put(insulations[11], EMPTY); //MI
+		insulatedDimensions.put(insulations[12], RHH);
+		insulatedDimensions.put(insulations[13], RHW2);
+		insulatedDimensions.put(insulations[14], THHN);
+		insulatedDimensions.put(insulations[15], THHW);
+		insulatedDimensions.put(insulations[16], THW2);
+		insulatedDimensions.put(insulations[17], THWN2);
+		insulatedDimensions.put(insulations[18], EMPTY); //USE-2
+		insulatedDimensions.put(insulations[19], XHH);
+		insulatedDimensions.put(insulations[20], XHHW);
+		insulatedDimensions.put(insulations[21], XHHW2);
+		insulatedDimensions.put(insulations[22], EMPTY); //ZW-2
+		//endregion
+		//region compactRHH
+		compactRHH = new HashMap<>();     //conductor size
+		compactRHH.put(sizes[3], 0.0531); //8
+		compactRHH.put(sizes[4], 0.0683); //6
+		compactRHH.put(sizes[5], 0.0881); //4
+		compactRHH.put(sizes[7], 0.1194); //2
+		compactRHH.put(sizes[8], 0.1698); //1
+		compactRHH.put(sizes[9], 0.1963); //1/0
+		compactRHH.put(sizes[10], 0.229); //2/0
+		compactRHH.put(sizes[11], 0.2733); //3/0
+		compactRHH.put(sizes[12], 0.3217); //4/0
+		compactRHH.put(sizes[13], 0.4015); //250
+		compactRHH.put(sizes[14], 0.4596); //300
+		compactRHH.put(sizes[15], 0.5153); //350
+		compactRHH.put(sizes[16], 0.5741); //400
+		compactRHH.put(sizes[17], 0.6793); //500
+		compactRHH.put(sizes[18], 0.8413); //600
+		compactRHH.put(sizes[19], 0.9503); //700
+		compactRHH.put(sizes[20], 1.0118); //750
+		compactRHH.put(sizes[22], 1.2076); //900
+		compactRHH.put(sizes[23], 1.2968); //1000
+		//endregion
+		//region compactRHW
+		compactRHW = compactRHH;
+		//endregion
+		//region compactUSE
+		compactUSE = compactRHH;
+		//endregion
+		//region compactTHW
+		compactTHW = new HashMap<>();    //conductor size
+		compactTHW.put(sizes[3], 0.051); //8
+		compactTHW.put(sizes[4], 0.066); //6
+		compactTHW.put(sizes[5], 0.0881); //4
+		compactTHW.put(sizes[7], 0.1194); //2
+		compactTHW.put(sizes[8], 0.1698); //1
+		compactTHW.put(sizes[9], 0.1963); //1/0
+		compactTHW.put(sizes[10], 0.2332); //2/0
+		compactTHW.put(sizes[11], 0.2733); //3/0
+		compactTHW.put(sizes[12], 0.3267); //4/0
+		compactTHW.put(sizes[13], 0.4128); //250
+		compactTHW.put(sizes[14], 0.4717); //300
+		compactTHW.put(sizes[15], 0.5281); //350
+		compactTHW.put(sizes[16], 0.5876); //400
+		compactTHW.put(sizes[17], 0.6939); //500
+		compactTHW.put(sizes[18], 0.8659); //600
+		compactTHW.put(sizes[19], 0.9676); //700
+		compactTHW.put(sizes[20], 1.0386); //750
+		compactTHW.put(sizes[22], 1.1766); //900
+		compactTHW.put(sizes[23], 1.2968); //1000
+		//endregion
+		//region compactTHHW
+		compactTHHW = compactTHW;
+		//endregion
+		//region compactTHHN
+		compactTHHN = new HashMap<>();     //conductor size
+		compactTHHN.put(sizes[4], 0.0452); //6
+		compactTHHN.put(sizes[5], 0.073);  //4
+		compactTHHN.put(sizes[7], 0.1017); //2
+		compactTHHN.put(sizes[8], 0.1352); //1
+		compactTHHN.put(sizes[9], 0.159);  //1/0
+		compactTHHN.put(sizes[10], 0.1924);//2/0
+		compactTHHN.put(sizes[11], 0.229); //3/0
+		compactTHHN.put(sizes[12], 0.278); //4/0
+		compactTHHN.put(sizes[13], 0.3525);//250
+		compactTHHN.put(sizes[14], 0.4071);//300
+		compactTHHN.put(sizes[15], 0.4656);//350
+		compactTHHN.put(sizes[16], 0.5216);//400
+		compactTHHN.put(sizes[17], 0.6151);//500
+		compactTHHN.put(sizes[18], 0.762); //600
+		compactTHHN.put(sizes[19], 0.8659);//700
+		compactTHHN.put(sizes[20], 0.9076);//750
+		compactTHHN.put(sizes[22], 1.1196);//900
+		compactTHHN.put(sizes[23], 1.237); //1000
+		//endregion
+		//region compactXHHW
+		compactXHHW = new HashMap<>();      //conductor size
+		compactXHHW.put(sizes[3], 0.0394);  //8
+		compactXHHW.put(sizes[4], 0.053);   //6
+		compactXHHW.put(sizes[5], 0.073);   //4
+		compactXHHW.put(sizes[7], 0.1017);  //2
+		compactXHHW.put(sizes[8], 0.1352);  //1
+		compactXHHW.put(sizes[9], 0.159);   //1/0
+		compactXHHW.put(sizes[10], 0.1885); //2/0
+		compactXHHW.put(sizes[11], 0.229);  //3/0
+		compactXHHW.put(sizes[12], 0.2733); //4/0
+		compactXHHW.put(sizes[13], 0.3421); //250
+		compactXHHW.put(sizes[14], 0.4015); //300
+		compactXHHW.put(sizes[15], 0.4536); //350
+		compactXHHW.put(sizes[16], 0.5026); //400
+		compactXHHW.put(sizes[17], 0.6082); //500
+		compactXHHW.put(sizes[18], 0.7542); //600
+		compactXHHW.put(sizes[19], 0.8659); //700
+		compactXHHW.put(sizes[20], 0.9331); //750
+		compactXHHW.put(sizes[22], 1.0733); //900
+		compactXHHW.put(sizes[23], 1.1882); //1000
+		//endregion
+		//region dimension of compact conductors
+		compactDimensions = new HashMap<>();
+		compactDimensions.put(insulations[12], compactRHH);
+		compactDimensions.put(insulations[ 1], compactRHW);
+		compactDimensions.put(insulations[ 4], compactUSE);
+		compactDimensions.put(insulations[ 2], compactTHW);
+		compactDimensions.put(insulations[15], compactTHHW);
+		compactDimensions.put(insulations[14], compactTHHN);
+		compactDimensions.put(insulations[20], compactXHHW);
+		//endregion
+		//region dimension of compact bare conductors
+		compactBareDimensions = new HashMap<>();      //conductor size
+		compactBareDimensions.put(sizes[3], 0.0141);  //8
+		compactBareDimensions.put(sizes[4], 0.0224);  //6
+		compactBareDimensions.put(sizes[5], 0.0356);  //4
+		compactBareDimensions.put(sizes[7], 0.0564);  //2
+		compactBareDimensions.put(sizes[8], 0.0702);  //1
+		compactBareDimensions.put(sizes[9], 0.0887);  //1/0
+		compactBareDimensions.put(sizes[10], 0.111);  //2/0
+		compactBareDimensions.put(sizes[11], 0.1405); //3/0
+		compactBareDimensions.put(sizes[12], 0.1772); //4/0
+		compactBareDimensions.put(sizes[13], 0.2124); //250
+		compactBareDimensions.put(sizes[14], 0.2552); //300
+		compactBareDimensions.put(sizes[15], 0.298);  //350
+		compactBareDimensions.put(sizes[16], 0.3411); //400
+		compactBareDimensions.put(sizes[17], 0.4254); //500
+		compactBareDimensions.put(sizes[18], 0.5191); //600
+		compactBareDimensions.put(sizes[19], 0.6041); //700
+		compactBareDimensions.put(sizes[20], 0.6475); //750
+		compactBareDimensions.put(sizes[22], 0.7838); //900
+		compactBareDimensions.put(sizes[23], 0.8825); //1000
 		//endregion
 	}
 	//endregion
@@ -407,8 +567,27 @@ public class Conductor {
 		return getInsulatedAreaIn2(this.Size, insulationName);
 	}
 
+	public double getCompactAreaIn2(String insulationName){
+		return getCompactAreaIn2(this.Size, insulationName);
+	}
+
+	public double getCompactBareAreaIn2(){
+		if(hasCompactBareArea())
+			return compactBareDimensions.get(this.Size);
+		else
+			return 0;
+	}
+
 	public boolean hasInsulatedArea(String insulationName){
 		return hasInsulatedArea(this.Size, insulationName);
+	}
+
+	public boolean hasCompactArea(String insulationName){
+		return hasCompactArea(this.Size, insulationName);
+	}
+
+	public boolean hasCompactBareArea(){
+		return isValidSize(this.Size) && compactBareDimensions.containsKey(this.Size);
 	}
 
 	public boolean isValidSize() {
