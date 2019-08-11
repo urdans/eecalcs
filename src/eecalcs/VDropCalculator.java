@@ -258,7 +258,8 @@ public class VDropCalculator {
 
 	private double computeVoltageAtLoadAC(Conductor aConductor){
 		double k = getK();
-		double oneWayACResistance = getOneWayACConductorResistance(aConductor);
+		double oneWayACResistance = aConductor.getACConductorResistance(conductorMetal, conduitMaterial, oneWayLength, numberOfSets);
+		//getOneWayACConductorResistance(aConductor);
 		double oneWayConductorReactance = getOneWayConductorReactance(aConductor);
 		Complex totalConductorImpedanceComplex = new Complex(k * oneWayACResistance, k * oneWayConductorReactance);
 		Complex sourceVoltageComplex = new Complex(sourceVoltage, 0);
@@ -268,7 +269,7 @@ public class VDropCalculator {
 		return voltageAtLoadComplex.abs();
 	}
 
-	private double getOneWayACConductorResistance(Conductor aConductor){
+/*	private double getOneWayACConductorResistance(Conductor aConductor){
 		//region compute total conductor resistance
 		double resistance;
 		if(conductorMetal == Conductor.Metal.COPPER){
@@ -290,7 +291,7 @@ public class VDropCalculator {
 		}
 		resistance = resistance * oneWayLength * 0.001 / numberOfSets;
 		return resistance;
-	}
+	}*/
 
 	private double getOneWayConductorReactance(Conductor aConductor){
 		double reactance;
@@ -335,10 +336,11 @@ public class VDropCalculator {
 	}
 
 	private double computeVoltageAtLoadDC(Conductor aConductor){
-		return sourceVoltage - 2 * getOneWayDCConductorResistance(aConductor) * loadCurrent;
+//		return sourceVoltage - 2 * getOneWayDCConductorResistance(aConductor) * loadCurrent;
+		return sourceVoltage - 2 * aConductor.getDCConductorResistance(conductorMetal, copperCoating, oneWayLength, numberOfSets) * loadCurrent;
 	}
 
-	private double getOneWayDCConductorResistance(Conductor aConductor){
+/*	private double getOneWayDCConductorResistance(Conductor aConductor){
 		double resistance;
 
 		if(conductorMetal == Conductor.Metal.COPPER){
@@ -351,7 +353,7 @@ public class VDropCalculator {
 
 		resistance = resistance * oneWayLength * 0.001 / numberOfSets;
 		return resistance;
-	}
+	}*/
 	//endregion
 
 	//region CS per ACVD
@@ -386,7 +388,8 @@ public class VDropCalculator {
 	}
 
 	private double computeMaxLengthAC(Conductor _conductor){
-		double conductorR = (getOneWayACConductorResistance(_conductor) / oneWayLength);
+		double conductorR = _conductor.getACConductorResistance(conductorMetal, conduitMaterial, oneWayLength, numberOfSets) / oneWayLength;
+		//double conductorR = (getOneWayACConductorResistance(_conductor) / oneWayLength);
 		double conductorX = (getOneWayConductorReactance(_conductor) / oneWayLength);
 		double theta = Math.acos(powerFactor);
 		double Vs2 = Math.pow(sourceVoltage, 2);
@@ -434,7 +437,9 @@ public class VDropCalculator {
 	}
 
 	private double computeMaxLengthDC(Conductor _conductor){
-		return sourceVoltage * maxVoltageDropPercent * oneWayLength / (200 * loadCurrent * getOneWayDCConductorResistance(_conductor));
+//		return sourceVoltage * maxVoltageDropPercent * oneWayLength / (200 * loadCurrent * getOneWayDCConductorResistance(_conductor));
+		return sourceVoltage * maxVoltageDropPercent * oneWayLength / (200 * loadCurrent * _conductor.getDCConductorResistance(conductorMetal, copperCoating, oneWayLength, numberOfSets));
+
 	}
 	//endregion
 	//endregion

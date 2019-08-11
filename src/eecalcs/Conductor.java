@@ -562,7 +562,65 @@ public class Conductor {
 		aluminum.resistance.ac.inSteelCond = ALResInSteelCond;
 		aluminum.resistance.dc = ALResDC;
 	}
+/*
+The actual class should have a different name, like ConductorProperties.
 
+This class groups all the properties related to a conductor of a defined size. The class is able to build and return any conductor with
+all these properties (as defined in NEC2014) and also build a conductor object (as defined below) that encapsulates only the
+properties that pertain to a particular set of conditions.
+
+A conductor is an entity that encapsulates all the properties of a single conductor, when it is isolated, that is, the
+represented characteristics don't depend upon other conditions, like ambient temperature, number of conductor per raceway, type of
+raceway, voltage type (AC or DC), number of phases, special locations, load types, etc.
+
+Class Conductor:
+----------------
+The independent properties of a conductor are:
+-size
+-metal (CU or AL)
+-insulation (if any)
+-length (one way length)
+
+Class CircuitConductor:
+-----------------------
+The resistance and reactance of the conductor will depend on the raceway type and arrangement:
+-If conductors are in free air or tray
+-If they are inside a conduit and then, the metal of the conduit
+-The number of conductors inside the raceway that are not in parallel (this should affect the resistance and the reactance of the
+conductor but I haven't found a formulae or method that correlates these characteristics)
+-The number of conductors inside the conduit that are in parallel (same note as before; table 9 is based on the assumption the system
+voltage is three phase, 75°C, 60Hz, three single conductors in conduit; so, unless more information is found, I will always use the
+values of table 9 but will leave room for improvement once the method that considers different scenarios is found).
+
+-The ampacity of the conductor will depend mainly on all the above listed variables but also on the location of the conductor, like when
+it is in the rooftop (and the distance from the floor)
+
+Class Feeder, Service, Branch and Tap:
+--------------------------------------
+-These classes are similar. They differ in the fact that the branch circuit directly feeds a load, while a feeder has a OCPD on each end.
+A special Feeder is the Service class.
+SOme of the properties of these classes are:
+-Voltage
+-Phases,
+-Frequency
+
+The user must put the class CircuitConductor in the context of any of the classes Feeder, Service or Branch.
+
+For instance, the Branch class has a load object. The Feeder has a load intent. One or more branch circuits will always be connected to a
+feeder through an OCPD.
+
+Branch circuits can be multiwire
+Loads can be continuous or non continuous.
+
+Other classes must be designed, like for fuses, breakers, loads, motors, appliances, whatever, lights, AC equipment, panel, switchboard,
+etc, etc.
+
+
+
+
+
+
+ */
 	public double getInsulatedAreaIn2(String insulationName){
 		return getInsulatedAreaIn2(this.Size, insulationName);
 	}
@@ -644,6 +702,45 @@ public class Conductor {
 	public class DC {
 		public double coated;
 		public double uncoated;
+	}
+
+	public double getACConductorResistance(Conductor.Metal conductorMetal, Conduit.Material conduitMaterial,
+	                                       double length, int numberOfSets){
+		//region compute total conductor resistance
+		double resistance;
+		if(conductorMetal == Conductor.Metal.COPPER){
+			if (conduitMaterial == Conduit.Material.PVC) {
+				resistance = this.copper.resistance.ac.inPVCCond;
+			} else if (conduitMaterial == Conduit.Material.ALUMINUM) {
+				resistance = this.copper.resistance.ac.inALCond;
+			} else {
+				resistance = this.copper.resistance.ac.inSteelCond;
+			}
+		}else{ //conductor is aluminum
+			if (conduitMaterial == Conduit.Material.PVC) {
+				resistance = this.aluminum.resistance.ac.inPVCCond;
+			} else if (conduitMaterial == Conduit.Material.ALUMINUM) {
+				resistance = this.aluminum.resistance.ac.inALCond;
+			} else {
+				resistance = this.aluminum.resistance.ac.inSteelCond;
+			}
+		}
+		resistance = resistance * length * 0.001 / numberOfSets;
+		return resistance;
+	}
+
+	public double getDCConductorResistance(Conductor.Metal conductorMetal, Conductor.CopperCoating copperCoating,
+	                                       double length, int numberOfSets){
+		double resistance;
+		if(conductorMetal == Conductor.Metal.COPPER){
+			if (copperCoating == Conductor.CopperCoating.COATED)
+				resistance = this.copper.resistance.dc.coated;
+			else
+				resistance = this.copper.resistance.dc.uncoated;
+		}else
+			resistance = this.aluminum.resistance.dc;
+		resistance = resistance * length * 0.001 / numberOfSets;
+		return resistance;
 	}
 	//endregion
 }

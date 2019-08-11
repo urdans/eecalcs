@@ -13,7 +13,7 @@ public class Main {
 		System.out.println("isValidType: " + Conduit.isValidType(type));
 		System.out.println("hasArea: " + Conduit.hasArea(type,tradeSize));
 //		if (true) return;
-		//endregion
+		//endregion*/
 
 		//region testing voltage drop
 		System.out.println("**************** TESTING VOLTAGE DROP METHOD ****************");
@@ -130,9 +130,9 @@ public class Main {
 				System.out.println(msg.message + " : " + msg.number);
 			}
 		}
-//		if (true) return;
+		if (true) return;
 		//endregion
-*/
+
 		//region testing conductor properties
 		String wireTest = "1250";
 		Conductor conductor = Conductor.getConductorBySize(wireTest);
@@ -183,7 +183,7 @@ public class Main {
 
 		//if (true) return;
 		wire = "8";
-		conductor = Conductor.getConductorBySize("3");
+		conductor = Conductor.getConductorBySize("300");
 		System.out.println("\n\nArea of bare compact conductor size \"" + Conductor.getSizeFullName(wire) + "\" is: " +
 				Conductor.getCompactBareAreaIn2(wire));
 
