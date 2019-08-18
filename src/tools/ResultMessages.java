@@ -1,5 +1,7 @@
-package eecalcs;
+package tools;
 
+
+import tools.Message;
 
 import java.util.ArrayList;
 import java.util.List;

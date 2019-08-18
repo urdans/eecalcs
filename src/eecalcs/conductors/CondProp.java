@@ -1,4 +1,5 @@
-package eecalcs;
+/*This class encapsulates conductor properties defined in tables 310.15(B)(16), 8, 9, 5 & 5A*/
+package eecalcs.conductors;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -6,14 +7,101 @@ import java.util.Map;
 import static tools.Tools.getArrayIndexOf;
 import static tools.Tools.stringArrayContains;
 
-public class Conductor {
+public class CondProp {
+/*
+The class encapsulates only static data and static methods. This class is to be used in composition by the
+class Conductor.
+Class Circuit should inherit from Conductor
+Class Feeder, Branch and Service should inherit from class Circuit
+Class Load is for generic loads. Other load types should inherit from class Load and get specialized.
+
+I want to use this class this way:
+class CondProp:
+	PropertySet bySize(String size)
+	PropertySet:
+		double getReactance(boolean magneticConduit)
+		double getArea()
+		CopperCond forCopper():
+		    double getAmpacity(int temperature);
+		    double getACResistance(ConduitMaterial PVC|AL|STEEL)
+		    double getDCResistance(DCConductor CUCOATED|CUUNCOATED|AL)
+		double getDimension(String insulation TW|THHW...)
+		double getCompactDimension(String insulation TW|THHW...)
+		double getCompactBare()
+	int getInsulationTemperature(String insulation TW|THHW...)
+new Size("14", area, new(COPPER, amp60, amp75, amp90, ),
+
+	.Metal(Metal.COPPER)
+
+(Conductors.sizes[4],   55,  65,  75,  40,  50,  55, 0.051000, 0.064000, 0.490000, 0.490000,	0.490000, 0.810000,0.810000, 0.810000,   26240, 0.491000, 0.510000, 0.808000),
+
+I can create a conductor the way is defined below.
+The class conductor will offer properties for conductors.
+Conductor.Property.BySize("12").
+
+The actual class should have a different name, like ConductorProperties.
+
+This class groups all the properties related to a conductor of a defined size. The class is able to build and return any conductor with
+all these properties (as defined in NEC2014) and also build a conductor object (as defined below) that encapsulates only the
+properties that pertain to a particular set of conditions.
+
+Other classes should be defined separately; Composition will be preferred above inheritance, unless abstraction is necessary (which will
+probably be the case for the class load and its descendant)
+
+A conductor is an entity that encapsulates all the properties of a single conductor, when it is isolated, that is, the
+represented characteristics don't depend upon other conditions, like ambient temperature, number of conductor per raceway, type of
+raceway, voltage type (AC or DC), number of phases, special locations, load types, etc.
+
+Class Conductor:
+----------------
+The independent properties of a conductor are:
+-size
+-metal (CU or AL)
+-insulation (if any)
+-length (one way length)
+
+Class Circuit:
+-----------------------
+The resistance and reactance of the conductor will depend on the raceway type and arrangement:
+-If conductors are in free air or tray
+-If they are inside a conduit and then, the metal of the conduit
+-The number of conductors inside the raceway that are not in parallel (this should affect the resistance and the reactance of the
+conductor but I haven't found a formulae or method that correlates these characteristics)
+-The number of conductors inside the conduit that are in parallel (same note as before; table 9 is based on the assumption the system
+voltage is three phase, 75°C, 60Hz, three single conductors in conduit; so, unless more information is found, I will always use the
+values of table 9 but will leave room for improvement once the method that considers different scenarios is found).
+
+-The ampacity of the conductor will depend mainly on all the above listed variables but also on the location of the conductor, like when
+it is in the rooftop (and the distance from the floor)
+
+
+Class Feeder, Service, Branch and Tap:
+--------------------------------------
+-These classes are similar. They differ in the fact that the branch circuit directly feeds a load, while a feeder has a OCPD on each end.
+A special Feeder is the Service class.
+SOme of the properties of these classes are:
+-Voltage
+-Phases,
+-Frequency
+
+The user must put the class CircuitConductor in the context of any of the classes Feeder, Service or Branch.
+
+For instance, the Branch class has a load object. The Feeder has a load intent. One or more branch circuits will always be connected to a
+feeder through an OCPD.
+
+Branch circuits can be multiwire
+Loads can be continuous or non continuous.
+
+Other classes must be designed, like for fuses, breakers, loads, motors, appliances, whatever, lights, AC equipment, panel, switchboard,
+etc, etc.
+
+*/
 	//region static members
-	public enum Metal { COPPER, ALUMINUM }
-	public enum CopperCoating { COATED, UNCOATED	}
-	public static String[] sizes;
-	public static String[] sizeFullName;
-	private static Conductor[] table;
-	private static Conductor invalidConductor;
+	private static String[] sizes;
+	private static String[] sizeFullName;
+	private static PropertySet[] table;
+	private static PropertySet invalidPropertySet;
+	//region insulation
 	private static String[] insulation60Celsius;
 	private static String[] insulation75Celsius;
 	private static String[] insulation90Celsius;
@@ -45,38 +133,42 @@ public class Conductor {
 	private static Map<String, Double> compactBareDimensions;
 	private static Map<String, Map<String, Double>> compactDimensions;//dimension of insulated compact building conductors, Table 5A
 	private static String[] insulations;
+	//endregion
 
-	public static double getInsulatedAreaIn2(String conductorSize, String insulationName){
+	public static PropertySet bySize(String size){
+		for (int i = 0; i < table.length; i++)
+			if (table[i].getSize().equals(size)) return table[i];
+		return invalidPropertySet;
+	}
+
+	protected static double getInsulatedAreaIn2(String conductorSize, String insulationName){
 		if(hasInsulatedArea(conductorSize, insulationName))
 			return insulatedDimensions.get(insulationName).get(conductorSize);
-		else
-			return 0;
+		return 0;
 	}
 
-	public static double getCompactAreaIn2(String conductorSize, String insulationName){
+	protected static double getCompactAreaIn2(String conductorSize, String insulationName){
 		if(hasCompactArea(conductorSize, insulationName))
 			return compactDimensions.get(insulationName).get(conductorSize);
-		else
-			return 0;
+		return 0;
 	}
 
-	public static double getCompactBareAreaIn2(String conductorSize){
+	protected static double getCompactBareAreaIn2(String conductorSize){
 		if(hasCompactBareArea(conductorSize))
 			return compactBareDimensions.get(conductorSize);
-		else
-			return 0;
+		return 0;
 	}
 
-	public static boolean hasInsulatedArea(String conductorSize, String insulationName){
+	protected static boolean hasInsulatedArea(String conductorSize, String insulationName){
 		return isValidSize(conductorSize) && isValidInsulationName(insulationName) && insulatedDimensions.get(insulationName).containsKey(conductorSize);
 	}
 
-	public static boolean hasCompactArea(String conductorSize, String insulationName){
+	protected static boolean hasCompactArea(String conductorSize, String insulationName){
 		return isValidSize(conductorSize) && isValidInsulationName(insulationName) && compactDimensions.containsKey(insulationName)
 				&& compactDimensions.get(insulationName).containsKey(conductorSize);
 	}
 
-	public static boolean hasCompactBareArea(String conductorSize){
+	protected static boolean hasCompactBareArea(String conductorSize){
 		return isValidSize(conductorSize) && compactBareDimensions.containsKey(conductorSize);
 	}
 
@@ -100,14 +192,13 @@ public class Conductor {
 	}
 
 	private static int getIndexOfSize(String size) {
-		return getArrayIndexOf(Conductor.sizes, size);
+		return getArrayIndexOf(sizes, size);
 	}
 
 	public static Metal getMetalPerIndex(int conductorTypeIndex){
 		if(conductorTypeIndex == 0)
 			return Metal.COPPER;
-		else
-			return Metal.ALUMINUM;
+		return Metal.ALUMINUM;
 	}
 
 	public static boolean isValidSize(String size) {
@@ -126,25 +217,18 @@ public class Conductor {
 		return Integer.compare(left, right);
 	}
 
-	public static Conductor getConductorBySize(String size) {
-		for (int i = 0; i < table.length; i++)
-			if (table[i].Size.equals(size)) return table[i];
-		return invalidConductor;
+	public static String[] getSizes() {
+		return sizes;
 	}
 
-	public static String getSizeFullName(String size) {
+	protected static String getFullSizeName(String size) {
 		if(isValidSize(size))
-			return sizeFullName[getArrayIndexOf(Conductor.sizes, size)];
-		else
-			return "";
+			return sizeFullName[getArrayIndexOf(sizes, size)];
+		return "";
 	}
 
-	public static Conductor[] getTable() {
-		return table;
-	}
-
-	public static Conductor getInvalidConductor(){
-		return invalidConductor;
+	public static PropertySet getInvalidPropertySet() {
+		return invalidPropertySet;
 	}
 
 	static {
@@ -156,37 +240,37 @@ public class Conductor {
 				"700 KCMIL", "750 KCMIL", "800 KCMIL", "900 KCMIL", "1000 KCMIL", "1250 KCMIL", "1500 KCMIL", "1750 KCMIL", "2000 KCMIL"};
 		//endregion
 		//region table of conductors' properties
-		table = new Conductor[]{
-				new Conductor(Conductor.sizes[0],   15,  20,  25,   0,   0,   0, 0.058000, 0.073000, 3.100000, 3.100000,	3.100000, 4.130600,4.130600, 4.130600,    4110, 3.070000, 3.190000, 5.060000),
-				new Conductor(Conductor.sizes[1],   20,  25,  30,  15,  20,  25, 0.054000, 0.068000, 2.000000, 2.000000,	2.000000, 3.200000,3.200000, 3.200000,    6530, 1.930000, 2.010000, 3.180000),
-				new Conductor(Conductor.sizes[2],   30,  35,  40,  25,  30,  35, 0.054000, 0.068000, 1.200000, 1.200000,	1.200000, 2.000000,2.000000, 2.000000,   10380, 1.210000, 1.260000, 2.000000),
-				new Conductor(Conductor.sizes[3],   40,  50,  55,  35,  40,  45, 0.050000, 0.063000, 0.780000, 0.780000,	0.780000, 1.300000,1.300000, 1.300000,   16510, 0.764000, 0.786000, 1.260000),
-				new Conductor(Conductor.sizes[4],   55,  65,  75,  40,  50,  55, 0.051000, 0.064000, 0.490000, 0.490000,	0.490000, 0.810000,0.810000, 0.810000,   26240, 0.491000, 0.510000, 0.808000),
-				new Conductor(Conductor.sizes[5],   70,  85,  95,  55,  65,  75, 0.048000, 0.060000, 0.310000, 0.310000,	0.310000, 0.510000,0.510000, 0.510000,   41740, 0.308000, 0.321000, 0.508000),
-				new Conductor(Conductor.sizes[6],   85, 100, 115,  65,  75,  85, 0.047000, 0.059000, 0.250000, 0.250000,	0.250000, 0.400000,0.410000, 0.400000,   52620, 0.245000, 0.254000, 0.403000),
-				new Conductor(Conductor.sizes[7],   95, 115, 130,  75,  90, 100, 0.045000, 0.057000, 0.190000, 0.200000,	0.200000, 0.320000,0.320000, 0.320000,   66360, 0.194000, 0.201000, 0.319000),
-				new Conductor(Conductor.sizes[8],  110, 130, 145,  85, 100, 115, 0.046000, 0.057000, 0.150000, 0.160000,	0.160000, 0.250000,0.260000, 0.250000,   83690, 0.154000, 0.160000, 0.253000),
-				new Conductor(Conductor.sizes[9],  125, 150, 170, 100, 120, 135, 0.044000, 0.055000, 0.120000, 0.130000,	0.120000, 0.200000,0.210000, 0.200000,  105600, 0.122000, 0.127000, 0.201000),
-				new Conductor(Conductor.sizes[10], 145, 175, 195, 115, 135, 150, 0.043000, 0.054000, 0.100000, 0.100000,	0.100000, 0.160000,0.160000, 0.160000,  133100, 0.096700, 0.101000, 0.159000),
-				new Conductor(Conductor.sizes[11], 165, 200, 225, 130, 155, 175, 0.042000, 0.052000, 0.077000, 0.082000,	0.079000, 0.130000,0.130000, 0.130000,  167800, 0.076600, 0.079700, 0.126000),
-				new Conductor(Conductor.sizes[12], 195, 230, 260, 150, 180, 205, 0.041000, 0.051000, 0.062000, 0.067000,	0.063000, 0.100000,0.110000, 0.100000,  211600, 0.060800, 0.062600, 0.100000),
-				new Conductor(Conductor.sizes[13], 215, 255, 290, 170, 205, 230, 0.041000, 0.052000, 0.052000, 0.057000,	0.054000, 0.085000,0.090000, 0.086000,  250000, 0.051500, 0.053500, 0.084700),
-				new Conductor(Conductor.sizes[14], 240, 285, 320, 195, 230, 260, 0.041000, 0.051000, 0.044000, 0.049000,	0.045000, 0.071000,0.076000, 0.072000,  300000, 0.042900, 0.044600, 0.070700),
-				new Conductor(Conductor.sizes[15], 260, 310, 350, 210, 250, 280, 0.040000, 0.050000, 0.038000, 0.043000,	0.039000, 0.061000,0.066000, 0.063000,  350000, 0.036700, 0.038200, 0.060500),
-				new Conductor(Conductor.sizes[16], 280, 335, 380, 225, 270, 305, 0.040000, 0.049000, 0.033000, 0.038000,	0.035000, 0.054000,0.059000, 0.055000,  400000, 0.032100, 0.033100, 0.052900),
-				new Conductor(Conductor.sizes[17], 320, 380, 430, 260, 310, 350, 0.039000, 0.048000, 0.027000, 0.032000,	0.029000, 0.043000,0.048000, 0.045000,  500000, 0.025800, 0.026500, 0.042400),
-				new Conductor(Conductor.sizes[18], 350, 420, 475, 285, 340, 385, 0.039000, 0.048000, 0.023000, 0.028000,	0.025000, 0.036000,0.041000, 0.038000,  600000, 0.021400, 0.022300, 0.035300),
-				new Conductor(Conductor.sizes[19], 385, 460, 520, 315, 375, 425, 0.038500, 0.048000, 0.021000, 0.026000,	0.021900, 0.032500,0.038000, 0.033700,  700000, 0.018400, 0.018900, 0.030300),
-				new Conductor(Conductor.sizes[20], 400, 475, 535, 320, 385, 435, 0.038000, 0.048000, 0.019000, 0.024000,	0.021000, 0.029000,0.034000, 0.031000,  750000, 0.017100, 0.017600, 0.028200),
-				new Conductor(Conductor.sizes[21], 410, 490, 555, 330, 395, 445, 0.037800, 0.047600, 0.018200, 0.023000,	0.020400, 0.027800,0.032600, 0.029800,  800000, 0.016100, 0.016600, 0.026500),
-				new Conductor(Conductor.sizes[22], 435, 520, 585, 355, 425, 480, 0.037400, 0.046800, 0.016600, 0.021000,	0.019200, 0.025400,0.029800, 0.027400,  900000, 0.014300, 0.014700, 0.023500),
-				new Conductor(Conductor.sizes[23], 455, 545, 615, 375, 445, 500, 0.037000, 0.046000, 0.015000, 0.019000,	0.018000, 0.023000,0.027000, 0.025000, 1000000, 0.012900, 0.013200, 0.021200),
-				new Conductor(Conductor.sizes[24], 495, 590, 665, 405, 485, 545, 0.036000, 0.046000, 0.011351, 0.014523,	0.014523, 0.017700,0.023436, 0.021600, 1250000, 0.010300, 0.010600, 0.016900),
-				new Conductor(Conductor.sizes[25], 525, 625, 705, 435, 520, 585, 0.035000, 0.045000, 0.009798, 0.013127,	0.013127, 0.015000,0.020941, 0.019300, 1500000, 0.008580, 0.008830, 0.014100),
-				new Conductor(Conductor.sizes[26], 545, 650, 735, 455, 545, 615, 0.034000, 0.045000, 0.008710, 0.012275,	0.012275, 0.013100,0.019205, 0.017700, 1750000, 0.007350, 0.007560, 0.012100),
-				new Conductor(Conductor.sizes[27], 555, 665, 750, 470, 560, 630, 0.034000, 0.044000, 0.007928, 0.011703,	0.011703, 0.011700,0.018011, 0.016600, 2000000, 0.006430, 0.006620, 0.010600),
+		table = new PropertySet[]{
+				new PropertySet(sizes[0],   15,  20,  25,   0,   0,   0, 0.058000, 0.073000, 3.100000, 3.100000,	3.100000, 4.130600,4.130600, 4.130600,    4110, 3.070000, 3.190000, 5.060000),
+				new PropertySet(sizes[1],   20,  25,  30,  15,  20,  25, 0.054000, 0.068000, 2.000000, 2.000000,	2.000000, 3.200000,3.200000, 3.200000,    6530, 1.930000, 2.010000, 3.180000),
+				new PropertySet(sizes[2],   30,  35,  40,  25,  30,  35, 0.054000, 0.068000, 1.200000, 1.200000,	1.200000, 2.000000,2.000000, 2.000000,   10380, 1.210000, 1.260000, 2.000000),
+				new PropertySet(sizes[3],   40,  50,  55,  35,  40,  45, 0.050000, 0.063000, 0.780000, 0.780000,	0.780000, 1.300000,1.300000, 1.300000,   16510, 0.764000, 0.786000, 1.260000),
+				new PropertySet(sizes[4],   55,  65,  75,  40,  50,  55, 0.051000, 0.064000, 0.490000, 0.490000,	0.490000, 0.810000,0.810000, 0.810000,   26240, 0.491000, 0.510000, 0.808000),
+				new PropertySet(sizes[5],   70,  85,  95,  55,  65,  75, 0.048000, 0.060000, 0.310000, 0.310000,	0.310000, 0.510000,0.510000, 0.510000,   41740, 0.308000, 0.321000, 0.508000),
+				new PropertySet(sizes[6],   85, 100, 115,  65,  75,  85, 0.047000, 0.059000, 0.250000, 0.250000,	0.250000, 0.400000,0.410000, 0.400000,   52620, 0.245000, 0.254000, 0.403000),
+				new PropertySet(sizes[7],   95, 115, 130,  75,  90, 100, 0.045000, 0.057000, 0.190000, 0.200000,	0.200000, 0.320000,0.320000, 0.320000,   66360, 0.194000, 0.201000, 0.319000),
+				new PropertySet(sizes[8],  110, 130, 145,  85, 100, 115, 0.046000, 0.057000, 0.150000, 0.160000,	0.160000, 0.250000,0.260000, 0.250000,   83690, 0.154000, 0.160000, 0.253000),
+				new PropertySet(sizes[9],  125, 150, 170, 100, 120, 135, 0.044000, 0.055000, 0.120000, 0.130000,	0.120000, 0.200000,0.210000, 0.200000,  105600, 0.122000, 0.127000, 0.201000),
+				new PropertySet(sizes[10], 145, 175, 195, 115, 135, 150, 0.043000, 0.054000, 0.100000, 0.100000,	0.100000, 0.160000,0.160000, 0.160000,  133100, 0.096700, 0.101000, 0.159000),
+				new PropertySet(sizes[11], 165, 200, 225, 130, 155, 175, 0.042000, 0.052000, 0.077000, 0.082000,	0.079000, 0.130000,0.130000, 0.130000,  167800, 0.076600, 0.079700, 0.126000),
+				new PropertySet(sizes[12], 195, 230, 260, 150, 180, 205, 0.041000, 0.051000, 0.062000, 0.067000,	0.063000, 0.100000,0.110000, 0.100000,  211600, 0.060800, 0.062600, 0.100000),
+				new PropertySet(sizes[13], 215, 255, 290, 170, 205, 230, 0.041000, 0.052000, 0.052000, 0.057000,	0.054000, 0.085000,0.090000, 0.086000,  250000, 0.051500, 0.053500, 0.084700),
+				new PropertySet(sizes[14], 240, 285, 320, 195, 230, 260, 0.041000, 0.051000, 0.044000, 0.049000,	0.045000, 0.071000,0.076000, 0.072000,  300000, 0.042900, 0.044600, 0.070700),
+				new PropertySet(sizes[15], 260, 310, 350, 210, 250, 280, 0.040000, 0.050000, 0.038000, 0.043000,	0.039000, 0.061000,0.066000, 0.063000,  350000, 0.036700, 0.038200, 0.060500),
+				new PropertySet(sizes[16], 280, 335, 380, 225, 270, 305, 0.040000, 0.049000, 0.033000, 0.038000,	0.035000, 0.054000,0.059000, 0.055000,  400000, 0.032100, 0.033100, 0.052900),
+				new PropertySet(sizes[17], 320, 380, 430, 260, 310, 350, 0.039000, 0.048000, 0.027000, 0.032000,	0.029000, 0.043000,0.048000, 0.045000,  500000, 0.025800, 0.026500, 0.042400),
+				new PropertySet(sizes[18], 350, 420, 475, 285, 340, 385, 0.039000, 0.048000, 0.023000, 0.028000,	0.025000, 0.036000,0.041000, 0.038000,  600000, 0.021400, 0.022300, 0.035300),
+				new PropertySet(sizes[19], 385, 460, 520, 315, 375, 425, 0.038500, 0.048000, 0.021000, 0.026000,	0.021900, 0.032500,0.038000, 0.033700,  700000, 0.018400, 0.018900, 0.030300),
+				new PropertySet(sizes[20], 400, 475, 535, 320, 385, 435, 0.038000, 0.048000, 0.019000, 0.024000,	0.021000, 0.029000,0.034000, 0.031000,  750000, 0.017100, 0.017600, 0.028200),
+				new PropertySet(sizes[21], 410, 490, 555, 330, 395, 445, 0.037800, 0.047600, 0.018200, 0.023000,	0.020400, 0.027800,0.032600, 0.029800,  800000, 0.016100, 0.016600, 0.026500),
+				new PropertySet(sizes[22], 435, 520, 585, 355, 425, 480, 0.037400, 0.046800, 0.016600, 0.021000,	0.019200, 0.025400,0.029800, 0.027400,  900000, 0.014300, 0.014700, 0.023500),
+				new PropertySet(sizes[23], 455, 545, 615, 375, 445, 500, 0.037000, 0.046000, 0.015000, 0.019000,	0.018000, 0.023000,0.027000, 0.025000, 1000000, 0.012900, 0.013200, 0.021200),
+				new PropertySet(sizes[24], 495, 590, 665, 405, 485, 545, 0.036000, 0.046000, 0.011351, 0.014523,	0.014523, 0.017700,0.023436, 0.021600, 1250000, 0.010300, 0.010600, 0.016900),
+				new PropertySet(sizes[25], 525, 625, 705, 435, 520, 585, 0.035000, 0.045000, 0.009798, 0.013127,	0.013127, 0.015000,0.020941, 0.019300, 1500000, 0.008580, 0.008830, 0.014100),
+				new PropertySet(sizes[26], 545, 650, 735, 455, 545, 615, 0.034000, 0.045000, 0.008710, 0.012275,	0.012275, 0.013100,0.019205, 0.017700, 1750000, 0.007350, 0.007560, 0.012100),
+				new PropertySet(sizes[27], 555, 665, 750, 470, 560, 630, 0.034000, 0.044000, 0.007928, 0.011703,	0.011703, 0.011700,0.018011, 0.016600, 2000000, 0.006430, 0.006620, 0.010600),
 		};
-		invalidConductor = new Conductor("Not assigned!", 0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0);
+		invalidPropertySet = new PropertySet("Not assigned!", 0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0);
 		//endregion
 		//region temperature of insulators
 		// XHHW & THHW are duplicated in 75 and 90 degrees columns. It is assumed both are 90 by definition of their double Hs
@@ -531,222 +615,13 @@ public class Conductor {
 		//endregion
 	}
 	//endregion
-	//region instance members
-	public String Size;
-	public int areaCM;
-	public Copper copper = new Copper();
-	public Aluminum aluminum = new Aluminum();
-	public Reactance reactance = new Reactance();
-
-	private Conductor(String size, int CuAmp60, int CuAmp75, int CuAmp90, int AlAmp60, int AlAmp75, int AlAmp90, double nonMagXL,
-	                  double magXL, double CuResInPVCCond, double CuResInALCond, double CuResInSteelCond, double ALResInPVCCond,
-	                  double ALResInALCond, double ALResInSteelCond, int areaCM, double CuResDCUncoated, double CuResDCCoated,
-	                  double ALResDC) {
-		Size = size;
-		this.areaCM = areaCM;
-		copper.ampacity.t60 = CuAmp60;
-		copper.ampacity.t75 = CuAmp75;
-		copper.ampacity.t90 = CuAmp90;
-		aluminum.ampacity.t60 = AlAmp60;
-		aluminum.ampacity.t75 = AlAmp75;
-		aluminum.ampacity.t90 = AlAmp90;
-		reactance.inNonMagCond = nonMagXL;
-		reactance.inMagCond = magXL;
-		copper.resistance.ac.inPVCCond = CuResInPVCCond;
-		copper.resistance.ac.inALCond = CuResInALCond;
-		copper.resistance.ac.inSteelCond = CuResInSteelCond;
-		copper.resistance.dc.uncoated = CuResDCUncoated;
-		copper.resistance.dc.coated = CuResDCCoated;
-		aluminum.resistance.ac.inPVCCond = ALResInPVCCond;
-		aluminum.resistance.ac.inALCond = ALResInALCond;
-		aluminum.resistance.ac.inSteelCond = ALResInSteelCond;
-		aluminum.resistance.dc = ALResDC;
-	}
-/*
-The actual class should have a different name, like ConductorProperties.
-
-This class groups all the properties related to a conductor of a defined size. The class is able to build and return any conductor with
-all these properties (as defined in NEC2014) and also build a conductor object (as defined below) that encapsulates only the
-properties that pertain to a particular set of conditions.
-
-A conductor is an entity that encapsulates all the properties of a single conductor, when it is isolated, that is, the
-represented characteristics don't depend upon other conditions, like ambient temperature, number of conductor per raceway, type of
-raceway, voltage type (AC or DC), number of phases, special locations, load types, etc.
-
-Class Conductor:
-----------------
-The independent properties of a conductor are:
--size
--metal (CU or AL)
--insulation (if any)
--length (one way length)
-
-Class CircuitConductor:
------------------------
-The resistance and reactance of the conductor will depend on the raceway type and arrangement:
--If conductors are in free air or tray
--If they are inside a conduit and then, the metal of the conduit
--The number of conductors inside the raceway that are not in parallel (this should affect the resistance and the reactance of the
-conductor but I haven't found a formulae or method that correlates these characteristics)
--The number of conductors inside the conduit that are in parallel (same note as before; table 9 is based on the assumption the system
-voltage is three phase, 75°C, 60Hz, three single conductors in conduit; so, unless more information is found, I will always use the
-values of table 9 but will leave room for improvement once the method that considers different scenarios is found).
-
--The ampacity of the conductor will depend mainly on all the above listed variables but also on the location of the conductor, like when
-it is in the rooftop (and the distance from the floor)
-
-Class Feeder, Service, Branch and Tap:
---------------------------------------
--These classes are similar. They differ in the fact that the branch circuit directly feeds a load, while a feeder has a OCPD on each end.
-A special Feeder is the Service class.
-SOme of the properties of these classes are:
--Voltage
--Phases,
--Frequency
-
-The user must put the class CircuitConductor in the context of any of the classes Feeder, Service or Branch.
-
-For instance, the Branch class has a load object. The Feeder has a load intent. One or more branch circuits will always be connected to a
-feeder through an OCPD.
-
-Branch circuits can be multiwire
-Loads can be continuous or non continuous.
-
-Other classes must be designed, like for fuses, breakers, loads, motors, appliances, whatever, lights, AC equipment, panel, switchboard,
-etc, etc.
 
 
-
-
-
-
- */
-	public double getInsulatedAreaIn2(String insulationName){
-		return getInsulatedAreaIn2(this.Size, insulationName);
-	}
-
-	public double getCompactAreaIn2(String insulationName){
-		return getCompactAreaIn2(this.Size, insulationName);
-	}
-
-	public double getCompactBareAreaIn2(){
-		if(hasCompactBareArea())
-			return compactBareDimensions.get(this.Size);
-		else
-			return 0;
-	}
-
-	public boolean hasInsulatedArea(String insulationName){
-		return hasInsulatedArea(this.Size, insulationName);
-	}
-
-	public boolean hasCompactArea(String insulationName){
-		return hasCompactArea(this.Size, insulationName);
-	}
-
-	public boolean hasCompactBareArea(){
-		return isValidSize(this.Size) && compactBareDimensions.containsKey(this.Size);
-	}
-
-	public boolean isValidSize() {
-		return isValidSize(this.Size);
-	}
-
-	public boolean isInvalid(){
-		return this == invalidConductor;
-	}
-
-	public String getSizeFullName() {
-		if(this == invalidConductor)
-			return Size;
-		return getSizeFullName(Size);
-	}
-
-	public class Copper {
-		public CuResistance resistance = new CuResistance();
-		public Ampacity ampacity = new Ampacity();
-	}
-
-	public class Aluminum {
-		public AlResistance resistance = new AlResistance();
-		public Ampacity ampacity = new Ampacity();
-	}
-
-	public class Ampacity {
-		public int t60;
-		public int t75;
-		public int t90;
-	}
-
-	public class CuResistance {
-		public AC ac = new AC();
-		public DC dc = new DC();
-	}
-
-	public class AlResistance {
-		public AC ac = new AC();
-		public double dc;
-	}
-
-	public class Reactance {
-		public double inNonMagCond;
-		public double inMagCond;
-	}
-
-	public class AC {
-		public double inPVCCond;
-		public double inALCond;
-		public double inSteelCond;
-	}
-
-	public class DC {
-		public double coated;
-		public double uncoated;
-	}
-
-	public double getACConductorResistance(Conductor.Metal conductorMetal, Conduit.Material conduitMaterial,
-	                                       double length, int numberOfSets){
-		//region compute total conductor resistance
-		double resistance;
-		if(conductorMetal == Conductor.Metal.COPPER){
-			if (conduitMaterial == Conduit.Material.PVC) {
-				resistance = this.copper.resistance.ac.inPVCCond;
-			} else if (conduitMaterial == Conduit.Material.ALUMINUM) {
-				resistance = this.copper.resistance.ac.inALCond;
-			} else {
-				resistance = this.copper.resistance.ac.inSteelCond;
-			}
-		}else{ //conductor is aluminum
-			if (conduitMaterial == Conduit.Material.PVC) {
-				resistance = this.aluminum.resistance.ac.inPVCCond;
-			} else if (conduitMaterial == Conduit.Material.ALUMINUM) {
-				resistance = this.aluminum.resistance.ac.inALCond;
-			} else {
-				resistance = this.aluminum.resistance.ac.inSteelCond;
-			}
-		}
-		resistance = resistance * length * 0.001 / numberOfSets;
-		return resistance;
-	}
-
-	public double getDCConductorResistance(Conductor.Metal conductorMetal, Conductor.CopperCoating copperCoating,
-	                                       double length, int numberOfSets){
-		double resistance;
-		if(conductorMetal == Conductor.Metal.COPPER){
-			if (copperCoating == Conductor.CopperCoating.COATED)
-				resistance = this.copper.resistance.dc.coated;
-			else
-				resistance = this.copper.resistance.dc.uncoated;
-		}else
-			resistance = this.aluminum.resistance.dc;
-		resistance = resistance * length * 0.001 / numberOfSets;
-		return resistance;
-	}
-	//endregion
 }
 /*RELEASE NOTES
 As a general rule, when a class computes things whose results are predictable, the class should not raise any exceptions nor manage
 any error messages. Simply, it must return empty string values, or singular int or double numbers, or null, but also should provide the
 caller with helper methods for validation of the input data, like validating that a conductor size is correct before calling any function
-that uses size as parameter.
+that uses size as parameter. However, the validating helper methods are not necessary since the computed return value of the methods can
+indicated that some input was wrong or simply the value is not listed for the input variables.
 */

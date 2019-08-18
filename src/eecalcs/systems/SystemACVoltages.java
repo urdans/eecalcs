@@ -1,4 +1,4 @@
-package eecalcs;
+package eecalcs.systems;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,9 +29,7 @@ public class SystemACVoltages {
 		}
 	}
 
-	private SystemACVoltages() {
-
-	}
+	private SystemACVoltages() {}
 
 	public static List<VoltageData> getVoltages() {
 		return voltages;

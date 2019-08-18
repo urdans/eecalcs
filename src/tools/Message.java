@@ -1,4 +1,4 @@
-package eecalcs;
+package tools;
 
 public class Message {
 	public String message;

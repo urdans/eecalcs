@@ -1,10 +1,12 @@
-package eecalcs;
+package eecalcs.conduits;
+
+import tools.Message;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class Conduit {
-	public static enum Material { PVC, ALUMINUM, STEEL }
+	//public static enum Material { PVC, ALUMINUM, STEEL }
 	private static String[] tradeSizes;
 	private static String[] types;
 	private static Map<String, Double> areaEMT;
@@ -28,10 +30,9 @@ public class Conduit {
 	public static Material getConduitMaterialPerIndex(int conduitTypeIndex){
 		if(conduitTypeIndex == 0)
 			return Material.PVC;
-		else if(conduitTypeIndex == 1)
+		if(conduitTypeIndex == 1)
 			return Material.ALUMINUM;
-		else
-			return Material.STEEL;
+		return Material.STEEL;
 	}
 
 	public static String[] getTradeSizes() {

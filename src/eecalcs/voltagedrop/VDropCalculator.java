@@ -1,5 +1,12 @@
-package eecalcs;
+package eecalcs.voltagedrop;
 
+import eecalcs.conductors.Coating;
+import eecalcs.conductors.Metal;
+import eecalcs.conduits.Material;
+import eecalcs.unused.ConductorProperties;
+import eecalcs.conduits.Conduit;
+import tools.Message;
+import tools.ResultMessages;
 import org.apache.commons.math3.complex.Complex;
 
 public class VDropCalculator {
@@ -9,13 +16,13 @@ public class VDropCalculator {
 	private double sourceVoltage = 120;
 	private String size = "12";
 	private int phases = 1;
-	private Conduit.Material conduitMaterial = Conduit.Material.PVC;
-	private Conductor.Metal conductorMetal = Conductor.Metal.COPPER;
+	private Material conduitMaterial = Material.PVC;
+	private Metal conductorMetal = Metal.COPPER;
 	private int numberOfSets = 1;
 	private double oneWayLength = 100;
 	private double loadCurrent = 10;
 	private double powerFactor = 1.0;
-	private Conductor.CopperCoating copperCoating = Conductor.CopperCoating.UNCOATED;
+	private boolean copperCoating = Coating.UNCOATED;
 	private double maxVoltageDropPercent = 3; //for AC and DC
 	private static Message ERROR01	= new Message("Source voltage must be greater that zero.",-1);
 	private static Message ERROR02	= new Message("Number of phases must be 1 or 3.",-2);
@@ -33,7 +40,7 @@ public class VDropCalculator {
 	private static Message ERROR31	= new Message("No building conductor can achieve that voltage drop under these conditions.", -31);
 	private static Message WARNN21	= new Message(ERROR21.message,21);
 	//calculated
-	private Conductor conductor = Conductor.getConductorBySize(size);
+	private ConductorProperties conductorProperties = ConductorProperties.getConductorBySize(size);
 	private double actualVoltageDropPercentageAC;
 	private double maxLengthAC;
 	private double actualVoltageDropPercentageDC;
@@ -57,11 +64,11 @@ public class VDropCalculator {
 		this.phases = phases;
 	}
 
-	public void setConduitMaterial(Conduit.Material conduitMaterial) {
+	public void setConduitMaterial(Material conduitMaterial) {
 		this.conduitMaterial = conduitMaterial;
 	}
 
-	public void setConductorMetal(Conductor.Metal conductorMetal) {
+	public void setConductorMetal(Metal conductorMetal) {
 		this.conductorMetal = conductorMetal;
 	}
 
@@ -81,7 +88,7 @@ public class VDropCalculator {
 		this.powerFactor = powerFactor;
 	}
 
-	public void setCopperCoating(Conductor.CopperCoating copperCoating) {
+	public void setCopperCoating(boolean copperCoating) {
 		this.copperCoating = copperCoating;
 	}
 
@@ -104,11 +111,11 @@ public class VDropCalculator {
 		return phases;
 	}
 
-	public Conduit.Material getConduitMaterial() {
+	public Material getConduitMaterial() {
 		return conduitMaterial;
 	}
 
-	public Conductor.Metal getConductorMetal() {
+	public Metal getConductorMetal() {
 		return conductorMetal;
 	}
 
@@ -128,7 +135,7 @@ public class VDropCalculator {
 		return powerFactor;
 	}
 
-	public Conductor.CopperCoating getCopperCoating() {
+	public boolean isCoated() {
 		return copperCoating;
 	}
 
@@ -172,14 +179,14 @@ public class VDropCalculator {
 	//endregion voltage drop output
 
 	//region Conductor sizing per ACVD
-	public Conductor getCalculatedSizeAC(double maxVoltageDropPercent){
+	public ConductorProperties getCalculatedSizeAC(double maxVoltageDropPercent){
 		setMaxVoltageDropPercent(maxVoltageDropPercent);
 		return getCalculatedSizeAC();
 	}
 
-	public Conductor getCalculatedSizeAC(){
+	public ConductorProperties getCalculatedSizeAC(){
 		if(checkACCSInput()) return computeSizeAC();
-		return Conductor.getInvalidConductor();
+		return ConductorProperties.getInvalidConductorProperties();
 	}
 
 	public double getActualVoltageDropPercentageAC(){
@@ -196,14 +203,14 @@ public class VDropCalculator {
 	//endregion
 
 	//region Conductor sizing per DCVD
-	public Conductor getCalculatedSizeDC(double maxVoltageDropPercent){
+	public ConductorProperties getCalculatedSizeDC(double maxVoltageDropPercent){
 		setMaxVoltageDropPercent(maxVoltageDropPercent);
 		return getCalculatedSizeDC();
 	}
 
-	public Conductor getCalculatedSizeDC(){
+	public ConductorProperties getCalculatedSizeDC(){
 		if(checkDCCSInput()) return computeSizeDC();
-		return Conductor.getInvalidConductor();
+		return ConductorProperties.getInvalidConductorProperties();
 	}
 
 	public double getActualVoltageDropPercentageDC(){
@@ -222,10 +229,10 @@ public class VDropCalculator {
 	//region private methods
 	//region COMMON
 	private double getMaxSetAmpacity(){
-		if(conductorMetal == Conductor.Metal.COPPER)
-			return conductor.copper.ampacity.t90 * numberOfSets;
+		if(conductorMetal == Metal.COPPER)
+			return conductorProperties.copper.ampacity.t90 * numberOfSets;
 		else
-			return conductor.aluminum.ampacity.t90 * numberOfSets;
+			return conductorProperties.aluminum.ampacity.t90 * numberOfSets;
 	}
 	//endregion
 
@@ -237,10 +244,10 @@ public class VDropCalculator {
 		if(numberOfSets < 1 || numberOfSets > 10) resultMessages.add(ERROR04);
 		if(oneWayLength <= 0) resultMessages.add(ERROR05);
 		if(loadCurrent <= 0) resultMessages.add(ERROR06);
-		if(Conductor.isValidSize(size)){
-			conductor = Conductor.getConductorBySize(size);
+		if(ConductorProperties.isValidSize(size)){
+			conductorProperties = ConductorProperties.getConductorBySize(size);
 			if(!resultMessages.containsMessage(ERROR04)) {
-				if (numberOfSets > 1 && Conductor.compareSizes(conductor.Size, "1/0") < 0) resultMessages.add(ERROR21);
+				if (numberOfSets > 1 && ConductorProperties.compareSizes(conductorProperties.Size, "1/0") < 0) resultMessages.add(ERROR21);
 			}
 			if(!resultMessages.containsMessage(ERROR06)) {
 				if (getMaxSetAmpacity() < loadCurrent) resultMessages.add(ERROR20);
@@ -253,14 +260,14 @@ public class VDropCalculator {
 	}
 
 	private double computeVoltageAtLoadAC(String conductorSize){
-		return computeVoltageAtLoadAC(Conductor.getConductorBySize(conductorSize));
+		return computeVoltageAtLoadAC(ConductorProperties.getConductorBySize(conductorSize));
 	}
 
-	private double computeVoltageAtLoadAC(Conductor aConductor){
+	private double computeVoltageAtLoadAC(ConductorProperties aConductorProperties){
 		double k = getK();
-		double oneWayACResistance = aConductor.getACConductorResistance(conductorMetal, conduitMaterial, oneWayLength, numberOfSets);
+		double oneWayACResistance = aConductorProperties.getACConductorResistance(conductorMetal, conduitMaterial, oneWayLength, numberOfSets);
 		//getOneWayACConductorResistance(aConductor);
-		double oneWayConductorReactance = getOneWayConductorReactance(aConductor);
+		double oneWayConductorReactance = getOneWayConductorReactance(aConductorProperties);
 		Complex totalConductorImpedanceComplex = new Complex(k * oneWayACResistance, k * oneWayConductorReactance);
 		Complex sourceVoltageComplex = new Complex(sourceVoltage, 0);
 		Complex loadCurrentComplex = new Complex(loadCurrent * powerFactor, -loadCurrent * Math.sin(Math.acos(powerFactor)));
@@ -293,12 +300,12 @@ public class VDropCalculator {
 		return resistance;
 	}*/
 
-	private double getOneWayConductorReactance(Conductor aConductor){
+	private double getOneWayConductorReactance(ConductorProperties aConductorProperties){
 		double reactance;
-		if (conduitMaterial == Conduit.Material.PVC || conduitMaterial == Conduit.Material.ALUMINUM) {
-			reactance = aConductor.reactance.inNonMagCond;
+		if (conduitMaterial == Material.PVC || conduitMaterial == Material.ALUMINUM) {
+			reactance = aConductorProperties.reactance.inNonMagCond;
 		} else {
-			reactance = aConductor.reactance.inMagCond;
+			reactance = aConductorProperties.reactance.inMagCond;
 		}
 		reactance = reactance * oneWayLength * 0.001 / numberOfSets;
 		return reactance;
@@ -317,10 +324,10 @@ public class VDropCalculator {
 		if(numberOfSets < 1 || numberOfSets > 10) resultMessages.add(ERROR04);
 		if(oneWayLength <= 0) resultMessages.add(ERROR05);
 		if(loadCurrent <= 0) resultMessages.add(ERROR06);
-		if(Conductor.isValidSize(size)){
-			conductor = Conductor.getConductorBySize(size);
+		if(ConductorProperties.isValidSize(size)){
+			conductorProperties = ConductorProperties.getConductorBySize(size);
 			if(!resultMessages.containsMessage(ERROR04)) {
-				if (numberOfSets > 1 && Conductor.compareSizes(conductor.Size, "1/0") < 0) resultMessages.add(ERROR21);
+				if (numberOfSets > 1 && ConductorProperties.compareSizes(conductorProperties.Size, "1/0") < 0) resultMessages.add(ERROR21);
 			}
 			if(!resultMessages.containsMessage(ERROR06)) {
 				if (getMaxSetAmpacity() < loadCurrent) resultMessages.add(ERROR20);
@@ -332,12 +339,12 @@ public class VDropCalculator {
 	}
 
 	private double computeVoltageAtLoadDC(String conductorSize){
-		return computeVoltageAtLoadDC(Conductor.getConductorBySize(conductorSize));
+		return computeVoltageAtLoadDC(ConductorProperties.getConductorBySize(conductorSize));
 	}
 
-	private double computeVoltageAtLoadDC(Conductor aConductor){
+	private double computeVoltageAtLoadDC(ConductorProperties aConductorProperties){
 //		return sourceVoltage - 2 * getOneWayDCConductorResistance(aConductor) * loadCurrent;
-		return sourceVoltage - 2 * aConductor.getDCConductorResistance(conductorMetal, copperCoating, oneWayLength, numberOfSets) * loadCurrent;
+		return sourceVoltage - 2 * aConductorProperties.getDCConductorResistance(conductorMetal, copperCoating, oneWayLength, numberOfSets) * loadCurrent;
 	}
 
 /*	private double getOneWayDCConductorResistance(Conductor aConductor){
@@ -369,28 +376,28 @@ public class VDropCalculator {
 		return !resultMessages.hasErrors();
 	}
 
-	private Conductor computeSizeAC(){
-		for(Conductor _conductor: Conductor.getTable()){
-			actualVoltageDropPercentageAC = 100 * (sourceVoltage - computeVoltageAtLoadAC(_conductor)) / sourceVoltage;
+	private ConductorProperties computeSizeAC(){
+		for(ConductorProperties _conductorProperties : ConductorProperties.getTable()){
+			actualVoltageDropPercentageAC = 100 * (sourceVoltage - computeVoltageAtLoadAC(_conductorProperties)) / sourceVoltage;
 
 			if(actualVoltageDropPercentageAC <= maxVoltageDropPercent){
-				maxLengthAC = computeMaxLengthAC(_conductor);
+				maxLengthAC = computeMaxLengthAC(_conductorProperties);
 				if(maxLengthAC <= 0) {
 					resultMessages.add(ERROR30);
-					return Conductor.getInvalidConductor();
+					return ConductorProperties.getInvalidConductorProperties();
 				}
-				if(numberOfSets > 1 && Conductor.compareSizes(_conductor.Size,"1/0") < 0) resultMessages.add(WARNN21);
-				return _conductor;
+				if(numberOfSets > 1 && ConductorProperties.compareSizes(_conductorProperties.Size,"1/0") < 0) resultMessages.add(WARNN21);
+				return _conductorProperties;
 			}
 		}
 		resultMessages.add(ERROR31);
-		return Conductor.getInvalidConductor();
+		return ConductorProperties.getInvalidConductorProperties();
 	}
 
-	private double computeMaxLengthAC(Conductor _conductor){
-		double conductorR = _conductor.getACConductorResistance(conductorMetal, conduitMaterial, oneWayLength, numberOfSets) / oneWayLength;
+	private double computeMaxLengthAC(ConductorProperties _conductorProperties){
+		double conductorR = _conductorProperties.getACConductorResistance(conductorMetal, conduitMaterial, oneWayLength, numberOfSets) / oneWayLength;
 		//double conductorR = (getOneWayACConductorResistance(_conductor) / oneWayLength);
-		double conductorX = (getOneWayConductorReactance(_conductor) / oneWayLength);
+		double conductorX = (getOneWayConductorReactance(_conductorProperties) / oneWayLength);
 		double theta = Math.acos(powerFactor);
 		double Vs2 = Math.pow(sourceVoltage, 2);
 		double A = getK() * loadCurrent * (conductorR * powerFactor + conductorX * Math.sin(theta));
@@ -418,28 +425,26 @@ public class VDropCalculator {
 		return !resultMessages.hasErrors();
 	}
 
-	private Conductor computeSizeDC(){
-		for(Conductor _conductor: Conductor.getTable()){
-			actualVoltageDropPercentageDC = 100 * (sourceVoltage - computeVoltageAtLoadDC(_conductor)) / sourceVoltage;
+	private ConductorProperties computeSizeDC(){
+		for(ConductorProperties _conductorProperties : ConductorProperties.getTable()){
+			actualVoltageDropPercentageDC = 100 * (sourceVoltage - computeVoltageAtLoadDC(_conductorProperties)) / sourceVoltage;
 
 			if(actualVoltageDropPercentageDC <= maxVoltageDropPercent){
-				maxLengthDC = computeMaxLengthDC(_conductor);
+				maxLengthDC = computeMaxLengthDC(_conductorProperties);
 				if(maxLengthDC <= 0) {
 					resultMessages.add(ERROR30);
-					return Conductor.getInvalidConductor();
+					return ConductorProperties.getInvalidConductorProperties();
 				}
-				if(numberOfSets > 1 && Conductor.compareSizes(_conductor.Size,"1/0") < 0) resultMessages.add(WARNN21);
-				return _conductor;
+				if(numberOfSets > 1 && ConductorProperties.compareSizes(_conductorProperties.Size,"1/0") < 0) resultMessages.add(WARNN21);
+				return _conductorProperties;
 			}
 		}
 		resultMessages.add(ERROR31);
-		return Conductor.getInvalidConductor();
+		return ConductorProperties.getInvalidConductorProperties();
 	}
 
-	private double computeMaxLengthDC(Conductor _conductor){
-//		return sourceVoltage * maxVoltageDropPercent * oneWayLength / (200 * loadCurrent * getOneWayDCConductorResistance(_conductor));
-		return sourceVoltage * maxVoltageDropPercent * oneWayLength / (200 * loadCurrent * _conductor.getDCConductorResistance(conductorMetal, copperCoating, oneWayLength, numberOfSets));
-
+	private double computeMaxLengthDC(ConductorProperties _conductorProperties){
+		return sourceVoltage * maxVoltageDropPercent * oneWayLength / (200 * loadCurrent * _conductorProperties.getDCConductorResistance(conductorMetal, copperCoating, oneWayLength, numberOfSets));
 	}
 	//endregion
 	//endregion
