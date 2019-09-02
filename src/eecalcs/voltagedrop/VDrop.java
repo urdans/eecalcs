@@ -292,10 +292,10 @@ public class VDrop {
 	 * @return The size of the conductor as defined in {@link Size}.
 	 * @see #resultMessages
 	 */
-	public PropertySet getCalculatedSizeDC(){
+	public String getCalculatedSizeDC(){
 		if(checkDCCSInput())
 			return computeSizeDC();
-		return CondProp.getInvalidPropertySet();
+		return "";
 	}
 
 	/**
@@ -345,9 +345,9 @@ public class VDrop {
 			resultMessages.add(ERROR05);
 		if(loadCurrent <= 0)
 			resultMessages.add(ERROR06);
-		if(CondProp.isValidSize(circuit.getSize())){
+		if(ConductorProperties.isValidSize(circuit.getSize())){
 			if(!resultMessages.containsMessage(ERROR04)) {
-				if (circuit.getNumberOfSets() > 1 && CondProp.compareSizes(circuit.getSize(), "1/0") < 0)
+				if (circuit.getNumberOfSets() > 1 && ConductorProperties.compareSizes(circuit.getSize(), "1/0") < 0)
 					resultMessages.add(ERROR21);
 			}
 			if(!resultMessages.containsMessage(ERROR06)) {
@@ -363,12 +363,11 @@ public class VDrop {
 	}
 
 	private double computeVoltageAtLoadAC(String conductorSize){
-		PropertySet propertySet = CondProp.bySize(conductorSize);
 		double k = getK();
-		double oneWayACResistance = propertySet.getACResistance(circuit.getMetal(), circuit.getConduitMaterial(), circuit.getLength(),
-				circuit.getNumberOfSets());
+		double oneWayACResistance = ConductorProperties.getACResistance(conductorSize, circuit.getMetal(), circuit.getConduitMaterial(),
+				circuit.getLength(), circuit.getNumberOfSets());
 
-		double oneWayConductorReactance = propertySet.getReactance(Magnetic.isMagnetic(circuit.getConduitMaterial()),
+		double oneWayConductorReactance = ConductorProperties.getReactance(conductorSize, Magnetic.isMagnetic(circuit.getConduitMaterial()),
 				circuit.getLength(), circuit.getNumberOfSets());
 		Complex totalConductorImpedanceComplex = new Complex(k * oneWayACResistance,k * oneWayConductorReactance);
 		Complex sourceVoltageComplex = new Complex(sourceVoltage, 0);
@@ -394,9 +393,9 @@ public class VDrop {
 			resultMessages.add(ERROR05);
 		if(loadCurrent <= 0)
 			resultMessages.add(ERROR06);
-		if(CondProp.isValidSize(circuit.getSize())){
+		if(ConductorProperties.isValidSize(circuit.getSize())){
 			if(!resultMessages.containsMessage(ERROR04)) {
-				if (circuit.getNumberOfSets() > 1 && CondProp.compareSizes(circuit.getSize(), "1/0") < 0)
+				if (circuit.getNumberOfSets() > 1 && ConductorProperties.compareSizes(circuit.getSize(), "1/0") < 0)
 					resultMessages.add(ERROR21);
 			}
 			if(!resultMessages.containsMessage(ERROR06)) {
@@ -410,10 +409,9 @@ public class VDrop {
 	}
 
 	private double computeVoltageAtLoadDC(String conductorSize){
-		PropertySet propertySet = CondProp.bySize(conductorSize);
 		double oneWayDCResistance;
-		oneWayDCResistance = propertySet.getDCResistance(circuit.getMetal(), circuit.getLength(), circuit.getNumberOfSets(),
-				circuit.isCopperCoated());
+		oneWayDCResistance = ConductorProperties.getDCResistance(conductorSize, circuit.getMetal(), circuit.getLength(),
+				circuit.getNumberOfSets(), circuit.isCopperCoated());
 		return sourceVoltage - 2 * oneWayDCResistance * loadCurrent;
 	}
 	//endregion
@@ -439,7 +437,7 @@ public class VDrop {
 	}
 
 	private String computeSizeAC(){
-		for(String s : CondProp.getSizes()){
+		for(String s : ConductorProperties.getSizes()){
 			actualVoltageDropPercentageAC = 100 * (sourceVoltage - computeVoltageAtLoadAC(s)) / sourceVoltage;
 			if(actualVoltageDropPercentageAC <= maxVoltageDropPercent){
 				maxLengthAC = computeMaxLengthAC(s);
@@ -447,7 +445,7 @@ public class VDrop {
 					resultMessages.add(ERROR30);
 					return "";
 				}
-				if(circuit.getNumberOfSets() > 1 && CondProp.compareSizes(s,"1/0") < 0)
+				if(circuit.getNumberOfSets() > 1 && ConductorProperties.compareSizes(s,"1/0") < 0)
 					resultMessages.add(WARNN21);
 				return s;
 			}
@@ -457,10 +455,10 @@ public class VDrop {
 	}
 
 	private double computeMaxLengthAC(String conductorSize){
-		PropertySet propertySet = CondProp.bySize(conductorSize);
-		/*double conductorR = propertySet.byMetal(circuit.getMetal()).getACResistance(circuit.getConduitType()) * 0.001 / circuit.getNumberOfSets();*/
-		double conductorR = propertySet.getACResistance(circuit.getMetal(), circuit.getConduitMaterial()) * 0.001 / circuit.getNumberOfSets();
-		double conductorX = propertySet.getReactance(Magnetic.isMagnetic(circuit.getConduitMaterial())) *0.001 / circuit.getNumberOfSets();
+		double conductorR =	ConductorProperties.getACResistance(conductorSize, circuit.getMetal(), circuit.getConduitMaterial()) *
+							0.001 / circuit.getNumberOfSets();
+		double conductorX = ConductorProperties.getReactance(conductorSize, Magnetic.isMagnetic(circuit.getConduitMaterial())) *
+							0.001 / circuit.getNumberOfSets();
 		double theta = Math.acos(powerFactor);
 		double Vs2 = Math.pow(sourceVoltage, 2);
 		double A = getK() * loadCurrent * (conductorR * powerFactor + conductorX * Math.sin(theta));
@@ -493,29 +491,28 @@ public class VDrop {
 		return !resultMessages.hasErrors();
 	}
 
-	private PropertySet computeSizeDC(){
-		for(String s : CondProp.getSizes()){
-			PropertySet _conductorProperties = CondProp.bySize(s);
-			actualVoltageDropPercentageDC = 100 * (sourceVoltage - computeVoltageAtLoadDC(s)) / sourceVoltage;
+	private String computeSizeDC(){
+		for(String conductorSize : ConductorProperties.getSizes()){
+			actualVoltageDropPercentageDC = 100 * (sourceVoltage - computeVoltageAtLoadDC(conductorSize)) / sourceVoltage;
 			if(actualVoltageDropPercentageDC <= maxVoltageDropPercent){
-				maxLengthDC = computeMaxLengthDC(_conductorProperties);
+				maxLengthDC = computeMaxLengthDC(conductorSize);
 				if(maxLengthDC <= 0) {
 					resultMessages.add(ERROR30);
-					return CondProp.getInvalidPropertySet();
+					return "";
 				}
-				if(circuit.getNumberOfSets() > 1 && CondProp.compareSizes(s,"1/0") < 0)
+				if(circuit.getNumberOfSets() > 1 && ConductorProperties.compareSizes(conductorSize,"1/0") < 0)
 					resultMessages.add(WARNN21);
-				return _conductorProperties;
+				return conductorSize;
 			}
 		}
 		resultMessages.add(ERROR31);
-		return CondProp.getInvalidPropertySet();
+		return "";
 	}
 
-	private double computeMaxLengthDC(PropertySet _conductorProperties){
+	private double computeMaxLengthDC(String conductorSize){
 		double dCResistance;
-		dCResistance = _conductorProperties.getDCResistance(circuit.getMetal(), circuit.getLength(), circuit.getNumberOfSets(),
-				circuit.isCopperCoated());
+		dCResistance = ConductorProperties.getDCResistance(conductorSize, circuit.getMetal(), circuit.getLength(),
+				circuit.getNumberOfSets(), circuit.isCopperCoated());
 		return sourceVoltage * maxVoltageDropPercent * circuit.getLength() / (200 * loadCurrent * dCResistance);
 	}
 	//endregion

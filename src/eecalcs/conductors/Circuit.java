@@ -43,15 +43,15 @@ public class Circuit extends Conductor {
 	}
 
 	public double getOneWayACResistance(){
-		return CondProp.bySize(size).getACResistance(metal, conduitMaterial) * length * 0.001 / numberOfSets;
+		return ConductorProperties.getACResistance(size, metal, conduitMaterial, length, numberOfSets);
 	}
 
 	public double getOneWayDCResistance(){
-		return CondProp.bySize(size).getDCResistance(metal, copperCoated) * length * 0.001 / numberOfSets;
+		return ConductorProperties.getDCResistance(size, metal, length, numberOfSets, copperCoated);
 	}
 
 	public double getOneWayReactance(){
-		return CondProp.bySize(size).getReactance(Magnetic.isMagnetic(conduitMaterial))  * length * 0.001 / numberOfSets;
+		return ConductorProperties.getReactance(size, Magnetic.isMagnetic(conduitMaterial), length, numberOfSets);
 	}
 
 	public double getAmpacity(){

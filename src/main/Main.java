@@ -48,11 +48,11 @@ public class Main {
 		System.out.println("**************** Ampacity of conductors ****************");
 		System.out.println(String.format("%5s","60°C")+String.format("%5s","75°C")+
 				String.format("%5s","90°C"));
-		for(String s: CondProp.getSizes()) {
-			PropertySet propSet = CondProp.bySize(s);
-			System.out.println(String.format("%5.0f",propSet.getAmpacity(Metal.COPPER, TempRating.T60))+String.format("%5.0f",
-					propSet.getAmpacity(Metal.COPPER,TempRating.T75))+ String.format("%5.0f",propSet.getAmpacity(Metal.COPPER,
-					TempRating.T90)));
+		for(String conductorSize: ConductorProperties.getSizes()) {
+			//PropertySet propSet = CondProp.bySize(conductorSize);
+			System.out.println(String.format("%5.0f", ConductorProperties.getAmpacity(conductorSize, Metal.COPPER, TempRating.T60)) +
+					String.format("%5.0f", ConductorProperties.getAmpacity(conductorSize, Metal.COPPER,TempRating.T75))+ String.format(
+							"%5.0f", ConductorProperties.getAmpacity(conductorSize, Metal.COPPER, TempRating.T90)));
 		}
 
 		System.out.println("**************** Testing an invalid conductor ****************");
@@ -62,27 +62,28 @@ public class Main {
 		double prevArea;// = myc.getAreaCM();
 		double incAmp = 0;
 		double prevAmp;// = myc.getAmpacity();
-		System.out.println(String.format("%5s",myc.getSize()) + ": " + String.format("%5.0f",myc.getAmpacity()) + "\t CM: " + String.format("%7.0f",
-				myc.getAreaCM()) +
-				"\t Size inc: " + String.format("%4.0f",incArea) + "%\t Ampacity inc: "+ String.format("%7.0f",incAmp)+"% \tArea/Amp:" +
-				" " + String.format("%4.0f CM/AMP",myc.getAreaCM()/myc.getAmpacity()));
+		System.out.println(String.format("%5s", myc.getSize()) + ": " + String.format("%5.0f", myc.getAmpacity()) + "\t CM: " +
+				String.format("%7.0f", myc.getAreaCM()) + "\t Size inc: " + String.format("%4.0f", incArea) + "%\t Ampacity inc: " +
+				String.format("%7.0f", incAmp) + "% \tArea/Amp: " + String.format("%4.0f CM/AMP", myc.getAreaCM()/myc.getAmpacity()));
 
 		System.out.println("\n**************** Testing incremental ampacity and areas of conductors ****************");
-		System.out.println("Conductor metal: "+ myc.getMetal() + "\tInsulation: " + myc.getInsulation() + "\tTemp.rating: " + myc.getTemperatureRating() + "°C");
+		System.out.println("Conductor metal: "+ myc.getMetal() + "\tInsulation: " + myc.getInsulation() + "\tTemp.rating: " +
+				myc.getTemperatureRating() + "°C");
 		myc.setSize(Size.S14);
 		prevArea = myc.getAreaCM();
 		prevAmp = myc.getAmpacity();
-		for(String s : CondProp.getSizes()){
-			myc.setSize(s);
+		for(String conductorSize : ConductorProperties.getSizes()){
+			myc.setSize(conductorSize);
 			double area = myc.getAreaCM();
 			double ampacity = myc.getAmpacity();
 			incArea = 100 * area/prevArea;
 			prevArea = area;
 			incAmp = 100 * ampacity/prevAmp;
 			prevAmp = ampacity;
-			System.out.println(String.format("%5s",s) + ": " + String.format("%5.1f",ampacity) + "\t CM: " + String.format("%7.0f",area) +
-					"\t Size inc: " + String.format("%4.0f",incArea) + "%\t Ampacity inc: "+ String.format("%7.0f",incAmp)+"% \tArea/Amp:" +
-					" " + String.format("%4.0f CM/AMP",area/ampacity));
+			System.out.println(String.format("%5s", conductorSize) + ": " + String.format("%5.1f", ampacity) + "\t CM: " +
+					String.format("%7.0f", area) + "\t Size inc: " + String.format("%4.0f", incArea) + "%\t Ampacity inc: " +
+					String.format("%7.0f", incAmp)+"% \tArea/Amp:" +
+					" " + String.format("%4.0f CM/AMP", area/ampacity));
 		}
 		//if (true) return;
 
@@ -175,7 +176,7 @@ public class Main {
 		System.out.println("   Actual voltage drop: " + String.format("%.2f", vd.getActualVoltageDropPercentageAC()) + "%");
 		System.out.println("        Maximum length: " + String.format("%.0f", vd.getMaxLengthAC()));
 		System.out.println("============== DC Results==============");
-		System.out.println("        Conductor size: " + vd.getCalculatedSizeDC().getFullSizeName());
+		System.out.println("        Conductor size: " + vd.getCalculatedSizeDC());
 		System.out.println("   Actual voltage drop: " + String.format("%.2f", vd.getActualVoltageDropPercentageDC()) + "%");
 		System.out.println("        Maximum length: " + String.format("%.0f", vd.getMaxLengthDC()));
 
@@ -203,7 +204,7 @@ public class Main {
 		System.out.println("   Actual voltage drop: " + String.format("%.2f", vd.getActualVoltageDropPercentageAC()) + "%");
 		System.out.println("        Maximum length: " + String.format("%.0f", vd.getMaxLengthAC()));
 		System.out.println("============== DC Results==============");
-		System.out.println("        Conductor size: " + vd.getCalculatedSizeDC().getFullSizeName());
+		System.out.println("        Conductor size: " + vd.getCalculatedSizeDC());
 		System.out.println("   Actual voltage drop: " + String.format("%.2f", vd.getActualVoltageDropPercentageDC()) + "%");
 		System.out.println("        Maximum length: " + String.format("%.0f", vd.getMaxLengthDC()));
 
@@ -217,34 +218,34 @@ public class Main {
 		//endregion */
 
 		//region testing conductor properties
-		PropertySet condProp = CondProp.bySize(Size.K1250);
+		String size = Size.K1250;
 		System.out.println("**************** TESTING CONDUCTOR PROPERTIES ****************");
-		System.out.println("Properties of conductor " + condProp.getFullSizeName() + ":\n" +
+		System.out.println("Properties of conductor " + ConductorProperties.getFullSizeName(size) + ":\n" +
 				"ampacity of copper wires (Amps):\n" +
-				"    at 60°C: " + condProp.getAmpacity(Metal.COPPER, TempRating.T60) + "\n" +
-				"    at 75°C: " + condProp.getAmpacity(Metal.COPPER, TempRating.T75) + "\n" +
-				"    at 90°C: " + condProp.getAmpacity(Metal.COPPER,TempRating.T90) + "\n" +
+				"    at 60°C: " + ConductorProperties.getAmpacity(size, Metal.COPPER, TempRating.T60) + "\n" +
+				"    at 75°C: " + ConductorProperties.getAmpacity(size, Metal.COPPER, TempRating.T75) + "\n" +
+				"    at 90°C: " + ConductorProperties.getAmpacity(size, Metal.COPPER,TempRating.T90) + "\n" +
 				"ampacity of aluminum wires (Amps):\n" +
-				"    at 60°C: " + condProp.getAmpacity(Metal.ALUMINUM, TempRating.T60) + "\n" +
-				"    at 75°C: " + condProp.getAmpacity(Metal.ALUMINUM, TempRating.T75) + "\n" +
-				"    at 90°C: " + condProp.getAmpacity(Metal.ALUMINUM, TempRating.T90) + "\n" +
+				"    at 60°C: " + ConductorProperties.getAmpacity(size, Metal.ALUMINUM, TempRating.T60) + "\n" +
+				"    at 75°C: " + ConductorProperties.getAmpacity(size, Metal.ALUMINUM, TempRating.T75) + "\n" +
+				"    at 90°C: " + ConductorProperties.getAmpacity(size, Metal.ALUMINUM, TempRating.T90) + "\n" +
 				"reactance all wires (Ω/1000 FT):\n" +
-				"  in non magnetic conduit: " + condProp.getReactance(Magnetic.NO) + "\n" +
-				"      in magnetic conduit: " + condProp.getReactance(Magnetic.YES) + "\n" +
+				"  in non magnetic conduit: " + ConductorProperties.getReactance(size, Magnetic.NO) + "\n" +
+				"      in magnetic conduit: " + ConductorProperties.getReactance(size, Magnetic.YES) + "\n" +
 				"resistance of copper wires (Ω/1000 FT):\n" +
-				"     in PVC conduit: " + condProp.getACResistance(Metal.COPPER, Material.PVC) + "\n" +
-				"      in AL conduit: " + condProp.getACResistance(Metal.COPPER, Material.ALUMINUM) + "\n" +
-				"   in steel conduit: " + condProp.getACResistance(Metal.COPPER, Material.STEEL) + "\n" +
-				"        dc uncoated: " + condProp.getDCResistance(Metal.COPPER, Coating.UNCOATED) + "\n" +
-				"          dc coated: " + condProp.getDCResistance(Metal.COPPER, Coating.COATED) + "\n" +
+				"     in PVC conduit: " + ConductorProperties.getACResistance(size, Metal.COPPER, Material.PVC) + "\n" +
+				"      in AL conduit: " + ConductorProperties.getACResistance(size, Metal.COPPER, Material.ALUMINUM) + "\n" +
+				"   in steel conduit: " + ConductorProperties.getACResistance(size, Metal.COPPER, Material.STEEL) + "\n" +
+				"        dc uncoated: " + ConductorProperties.getDCResistance(size, Metal.COPPER, Coating.UNCOATED) + "\n" +
+				"          dc coated: " + ConductorProperties.getDCResistance(size, Metal.COPPER, Coating.COATED) + "\n" +
 				"resistance of aluminum wires (Ω/1000 FT):\n" +
-				"     in PVC conduit: " + condProp.getACResistance(Metal.ALUMINUM, Material.PVC) + "\n" +
-				"      in AL conduit: " + condProp.getACResistance(Metal.ALUMINUM, Material.ALUMINUM) + "\n" +
-				"   in steel conduit: " + condProp.getACResistance(Metal.ALUMINUM, Material.STEEL) + "\n" +
-				"                 dc: " + condProp.getDCResistance(Metal.ALUMINUM, Coating.COATED) + "\n" +
-				"Area in circular mils: " + condProp.getAreaCM() + "\n");
-		System.out.println("isValidSize: " + CondProp.isValidSize(condProp.getSize()));
-		System.out.println("isInvalid: " + condProp.isInvalid());
+				"     in PVC conduit: " + ConductorProperties.getACResistance(size, Metal.ALUMINUM, Material.PVC) + "\n" +
+				"      in AL conduit: " + ConductorProperties.getACResistance(size, Metal.ALUMINUM, Material.ALUMINUM) + "\n" +
+				"   in steel conduit: " + ConductorProperties.getACResistance(size, Metal.ALUMINUM, Material.STEEL) + "\n" +
+				"                 dc: " + ConductorProperties.getDCResistance(size, Metal.ALUMINUM, Coating.COATED) + "\n" +
+				"Area in circular mils: " + ConductorProperties.getAreaCM(size) + "\n");
+		System.out.println("isValidSize: " + ConductorProperties.isValidSize(size));
+		System.out.println("isInvalid: N/A" /*ConductorProperties.isInvalid(size)*/);
 
 		//if (true) return;
 		//endregion
@@ -252,34 +253,34 @@ public class Main {
 		//region testing tables
 		System.out.println("\n**************** TESTING TABLES ****************");
 		String insulation = Insul.ZW;
-		System.out.println("Temperature of " + insulation + " is: " + CondProp.getInsulationTemperatureCelsius(insulation));
-		System.out.println("isValidInsulationName: " + CondProp.isValidInsulationName(insulation));
+		System.out.println("Temperature of " + insulation + " is: " + ConductorProperties.getInsulationTemperatureCelsius(insulation));
+		System.out.println("isValidInsulationName: " + ConductorProperties.isValidInsulationName(insulation));
 		String wire = Size.S1;
-		condProp = CondProp.bySize(wire);
+		//condProp = CondProp.bySize(wire);
 		//insulation = "FEP";
-		System.out.println("\nArea of conductor size '" + condProp.getFullSizeName() + "' and insulation '" + insulation + "' is: " +
-				condProp.getInsulatedAreaIn2(insulation) + "\n");
-		System.out.println("isValidSize: " + CondProp.isValidSize(wire));
-		System.out.println("isValidInsulationName: " + CondProp.isValidInsulationName(insulation));
-		System.out.println("hasInsulatedArea: " + condProp.hasInsulatedArea(insulation));
+		System.out.println("\nArea of conductor size '" + ConductorProperties.getFullSizeName(wire) + "' and insulation '" + insulation +
+				"' is: " + ConductorProperties.getInsulatedAreaIn2(wire, insulation) + "\n");
+		System.out.println("isValidSize: " + ConductorProperties.isValidSize(wire));
+		System.out.println("isValidInsulationName: " + ConductorProperties.isValidInsulationName(insulation));
+		System.out.println("hasInsulatedArea: " + ConductorProperties.hasInsulatedArea(wire, insulation));
 //		System.out.println("hasCompactBareArea: " + CondProp.hasCompactBareArea());
 
 		//if (true) return;
 		wire = Size.S8;
-		condProp = CondProp.bySize(wire);
-		System.out.println("\n\nArea of bare compact conductor size \"" + condProp.getFullSizeName() + "\" is: " +
-				condProp.getCompactBareAreaIn2());
+		//condProp = CondProp.bySize(wire);
+		System.out.println("\n\nArea of bare compact conductor size \"" + ConductorProperties.getFullSizeName(wire) + "\" is: " +
+				ConductorProperties.getCompactBareAreaIn2(wire));
 		wire = Size.K300;
-		condProp = CondProp.bySize(wire);
-		System.out.println("Now, area of bare compact conductor size \"" + condProp.getFullSizeName() + "\" is: " +
-				condProp.getCompactBareAreaIn2());
+		//condProp = CondProp.bySize(wire);
+		System.out.println("Now, area of bare compact conductor size \"" + ConductorProperties.getFullSizeName(wire) + "\" is: " +
+				ConductorProperties.getCompactBareAreaIn2(wire));
 
 		wire = Size.K1000;
-		condProp = CondProp.bySize(wire);
+		//condProp = CondProp.bySize(wire);
 		insulation = Insul.RHH;
-		System.out.println("Area of compact conductor size \"" + condProp.getFullSizeName() + "\" and " +
+		System.out.println("Area of compact conductor size \"" + ConductorProperties.getFullSizeName(wire) + "\" and " +
 				"insulation \"" + insulation + "\" is: " +
-				condProp.getCompactAreaIn2(insulation));
+				ConductorProperties.getCompactAreaIn2(wire, insulation));
 		//endregion*/
 	}
 }

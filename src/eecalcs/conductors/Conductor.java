@@ -160,11 +160,11 @@ public class Conductor {
 	 * @param length The length of the conductor in feet
 	 */
 	public Conductor(String size, Metal metal, String insulation, double length) {
-		this.size = CondProp.isValidSize(size) ? size : "";
-		this.insulation = CondProp.isValidInsulationName(insulation)? insulation: "";
+		this.size = ConductorProperties.isValidSize(size) ? size : "";
+		this.insulation = ConductorProperties.isValidInsulationName(insulation)? insulation: "";
 		this.metal = metal;
 		this.length = Math.abs(length);
-		temperatureRating = CondProp.getInsulationTemperatureCelsius(insulation);
+		temperatureRating = ConductorProperties.getInsulationTemperatureCelsius(insulation);
 		setAmpacity();
 	}
 
@@ -204,7 +204,7 @@ public class Conductor {
 	 * @param size The size of the conductor as defined by {@link Size}
 	 */
 	public void setSize(String size) {
-		this.size = CondProp.isValidSize(size) ? size : "";
+		this.size = ConductorProperties.isValidSize(size) ? size : "";
 		setAmpacity();
 	}
 
@@ -230,7 +230,7 @@ public class Conductor {
 			ampacity = 0;
 			return;
 		}
-		ampacity = CondProp.bySize(size).getAmpacity(metal, temperatureRating);
+		ampacity = ConductorProperties.getAmpacity(size, metal, temperatureRating);
 	}
 
 	/**
@@ -246,8 +246,8 @@ public class Conductor {
 	 * @param insulation The conductor's insulation type as defined by {@link Insul}
 	 */
 	public void setInsulation(String insulation) {
-		this.insulation = CondProp.isValidInsulationName(insulation)? insulation: "";
-		temperatureRating = CondProp.getInsulationTemperatureCelsius(insulation);
+		this.insulation = ConductorProperties.isValidInsulationName(insulation)? insulation: "";
+		temperatureRating = ConductorProperties.getInsulationTemperatureCelsius(insulation);
 		setAmpacity();
 	}
 
@@ -280,7 +280,7 @@ public class Conductor {
 	 * @return True if valid
 	 */
 	public boolean isValid(){
-		return CondProp.isValidSize(size) & CondProp.isValidInsulationName(insulation);
+		return ConductorProperties.isValidSize(size) & ConductorProperties.isValidInsulationName(insulation);
 	}
 
 	/**
@@ -296,7 +296,7 @@ public class Conductor {
 	 * @return The area in square inches
 	 */
 	public double getInsulatedAreaIn2(){
-		return CondProp.getInsulatedAreaIn2(size, insulation);
+		return ConductorProperties.getInsulatedAreaIn2(size, insulation);
 	}
 
 	/**
@@ -304,7 +304,7 @@ public class Conductor {
 	 * @return The area in circular mils
 	 */
 	public double getAreaCM(){
-		return CondProp.bySize(size).getAreaCM();
+		return ConductorProperties.getAreaCM(size);
 	}
 
 	/**

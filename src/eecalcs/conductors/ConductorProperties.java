@@ -130,7 +130,7 @@ public class ConductorProperties {
 	private static String[] sizes;
 	private static String[] sizeFullName;
 	private static Properties[] table;
-	private static Properties invalidPropertySet;
+	private static Properties invalidProperties;
 	//region insulation
 	private static String[] insulation60Celsius;
 	private static String[] insulation75Celsius;
@@ -168,17 +168,12 @@ public class ConductorProperties {
 	private ConductorProperties(){}
 
 	//region non conductor table property methods
-	/**
-	 * Returns a {@link PropertySet} object for the given conductor size. If the size of the conductor is not valid, an
-	 * invalidPropertySet object is returned.
-	 * @param conductorSize The size of the conductor
-	 * @return A {@link PropertySet} object.
-	 * @see #getInvalidPropertySet()
-	 */
-	public static Properties bySize(String conductorSize){
+	/* Returns an Properties object for the given conductor size. If the size of the conductor is not valid, an
+	   invalidProperties object is returned.*/
+	private static Properties bySize(String conductorSize){
 		for (int i = 0; i < table.length; i++)
 			if (table[i].size.equals(conductorSize)) return table[i];
-		return invalidPropertySet;
+		return invalidProperties;
 	}
 
 	/**
@@ -188,7 +183,7 @@ public class ConductorProperties {
 	 * @param insulationName The insulation type of the conductor as defined by {@link Insul}
 	 * @return The area of the insulated conductor or zero if any of the parameter is invalid.
 	 */
-	protected static double getInsulatedAreaIn2(String conductorSize, String insulationName){
+	public static double getInsulatedAreaIn2(String conductorSize, String insulationName){
 		if(hasInsulatedArea(conductorSize, insulationName))
 			return insulatedDimensions.get(insulationName).get(conductorSize);
 		return 0;
@@ -201,7 +196,7 @@ public class ConductorProperties {
 	 * @param insulationName The insulation type of the conductor as defined by {@link Insul}
 	 * @return The area of the compact conductor or zero if any of the parameter is invalid or the area is not defined in table 5.
 	 */
-	protected static double getCompactAreaIn2(String conductorSize, String insulationName){
+	public static double getCompactAreaIn2(String conductorSize, String insulationName){
 		if(hasCompactArea(conductorSize, insulationName))
 			return compactDimensions.get(insulationName).get(conductorSize);
 		return 0;
@@ -212,7 +207,7 @@ public class ConductorProperties {
 	 * @param conductorSize The size of the conductor as defined by {@link Size}
 	 * @return The area of the bare compact conductor or zero if the size is invalid or the area is not defined in table 5A.
 	 */
-	protected static double getCompactBareAreaIn2(String conductorSize){
+	public static double getCompactBareAreaIn2(String conductorSize){
 		if(hasCompactBareArea(conductorSize))
 			return compactBareDimensions.get(conductorSize);
 		return 0;
@@ -224,7 +219,7 @@ public class ConductorProperties {
 	 * @param insulationName The insulation type of the conductor as defined by {@link Insul}
 	 * @return True if the area is defined in table 5, false otherwise or parameters are not valid
 	 */
-	protected static boolean hasInsulatedArea(String conductorSize, String insulationName){
+	public static boolean hasInsulatedArea(String conductorSize, String insulationName){
 		return isValidSize(conductorSize) && isValidInsulationName(insulationName) && insulatedDimensions.get(insulationName).containsKey(conductorSize);
 	}
 
@@ -352,7 +347,7 @@ public class ConductorProperties {
 	 * @param conductorSize The size of the conductor as defined by {@link Size}
 	 * @return The full size name including the prefix for AWG or KCMIL. If the size is not valid an empty string is returned.
 	 */
-	protected static String getFullSizeName(String conductorSize) {
+	public static String getFullSizeName(String conductorSize) {
 		if(isValidSize(conductorSize))
 			return sizeFullName[getArrayIndexOf(sizes, conductorSize)];
 		return "";
@@ -363,13 +358,12 @@ public class ConductorProperties {
 	 * An invalidPropertySet object is a particular PropertySet object that contains only zeroes for all the properties of the a
 	 * conductor. The size of the conductor returned by an invalidPropertySet object is "Not assigned!".
 	 * @return The invalidPropertySet object.
-	 * @see PropertySet
 	 */
-	public static Properties getInvalidPropertySet() {
-		return invalidPropertySet;
+	public static Properties getInvalidProperties() {
+		return invalidProperties;
 	}
 	//endregion
-/******************************************************************************************************************************************/
+
 	//region conductor property specific methods
 	/**
 	 * Returns the reactance property of this conductor under the given magnetic conduit condition
@@ -377,7 +371,7 @@ public class ConductorProperties {
 	 * @param magneticConduit Indicates if the conduit is magnetic or not
 	 * @return The reactance of this conductor in ohms per 1000 feet
 	 */
-	public double getReactance(String conductorSize, boolean magneticConduit){
+	public static double getReactance(String conductorSize, boolean magneticConduit){
 		if(magneticConduit) return bySize(conductorSize).magXL;
 		return bySize(conductorSize).nonMagXL;
 	}
@@ -391,7 +385,7 @@ public class ConductorProperties {
 	 * @param numberOfSets The number of conductors in parallel
 	 * @return The total reactance under the specified conditions
 	 */
-	public double getReactance(String conductorSize, boolean magneticConduit, double oneWayLength, int numberOfSets){
+	public static double getReactance(String conductorSize, boolean magneticConduit, double oneWayLength, int numberOfSets){
 		return getReactance(conductorSize, magneticConduit) * 0.001 * oneWayLength / numberOfSets;
 	}
 
@@ -400,7 +394,7 @@ public class ConductorProperties {
 	 * @param conductorSize The size of the conductor as defined by {@link Size}
 	 * @return Returns the area in Circular Mils of this conductor
 	 */
-	public int getAreaCM(String conductorSize) {
+	public static int getAreaCM(String conductorSize) {
 		return bySize(conductorSize).areaCM;
 	}
 
@@ -412,7 +406,7 @@ public class ConductorProperties {
 	 * @param copperCoated Indicates for a copper conductor if it is coated or not.
 	 * @return The DC resistance of this conductor in ohms per 1000 feet.
 	 */
-	public double getDCResistance(String conductorSize, Metal metal, boolean copperCoated) {
+	public static double getDCResistance(String conductorSize, Metal metal, boolean copperCoated) {
 		if(metal == Metal.COPPER) {
 			if (copperCoated)
 				return bySize(conductorSize).CuResDCCoated;
@@ -431,7 +425,7 @@ public class ConductorProperties {
 	 * @param copperCoated Indicates for a copper conductor if it is coated or not.
 	 * @return The DC resistance in ohms of this conductor size under the given conditions.
 	 */
-	public double getDCResistance(String conductorSize, Metal metal, double length, int numberOfSets, boolean copperCoated) {
+	public static double getDCResistance(String conductorSize, Metal metal, double length, int numberOfSets, boolean copperCoated) {
 		return getDCResistance(conductorSize, metal, copperCoated) * 0.001 * length / numberOfSets;
 	}
 
@@ -442,7 +436,7 @@ public class ConductorProperties {
 	 * @param conduitMaterial The material type of the conduit as specified in {@link Material}.
 	 * @return The AC resistance in ohms per 1000 feet.
 	 */
-	public double getACResistance(String conductorSize, Metal metal, Material conduitMaterial) {
+	public static double getACResistance(String conductorSize, Metal metal, Material conduitMaterial) {
 		if(metal == Metal.COPPER) {
 			if(conduitMaterial == Material.PVC)
 				return bySize(conductorSize).CuResInPVCCond;
@@ -470,7 +464,7 @@ public class ConductorProperties {
 	 * @param numberOfSets The number of sets (conductors in parallel per phase)
 	 * @return The AC resistance in ohms of this conductor size under the given conditions.
 	 */
-	public double getACResistance(String conductorSize, Metal metal, Material conduitMaterial, double length, int numberOfSets) {
+	public static double getACResistance(String conductorSize, Metal metal, Material conduitMaterial, double length, int numberOfSets) {
 		return getACResistance(conductorSize, metal, conduitMaterial) * 0.001 * length / numberOfSets;
 	}
 
@@ -481,7 +475,7 @@ public class ConductorProperties {
 	 * @param temperatureRating The temperature rating as defined in {@link eecalcs.systems.TempRating}
 	 * @return The ampacity of this conductor size in amperes.
 	 */
-	public double getAmpacity(String conductorSize, Metal metal, int temperatureRating) {
+	public static double getAmpacity(String conductorSize, Metal metal, int temperatureRating) {
 		if(metal == Metal.COPPER) {
 			if(temperatureRating == TempRating.T60)
 				return bySize(conductorSize).CuAmp60;
@@ -543,7 +537,7 @@ public class ConductorProperties {
 				new Properties(sizes[26], 545, 650, 735, 455, 545, 615, 0.034000, 0.045000, 0.008710, 0.012275,	0.012275, 0.013100,0.019205, 0.017700, 1750000, 0.007350, 0.007560, 0.012100),
 				new Properties(sizes[27], 555, 665, 750, 470, 560, 630, 0.034000, 0.044000, 0.007928, 0.011703,	0.011703, 0.011700,0.018011, 0.016600, 2000000, 0.006430, 0.006620, 0.010600),
 		};
-		invalidPropertySet = new Properties("Not assigned!", 0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0);
+		invalidProperties = new Properties("Not assigned!", 0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0);
 		//endregion
 		//region temperature of insulators
 		// XHHW & THHW are duplicated in 75 and 90 degrees columns. It is assumed both are 90 by definition of their double Hs
