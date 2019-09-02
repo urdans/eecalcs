@@ -1,4 +1,3 @@
-/*This class encapsulates conductor properties defined in tables 310.15(B)(16), 8, 9, 5 & 5A*/
 package eecalcs.conductors;
 
 import java.util.HashMap;
@@ -7,95 +6,77 @@ import java.util.Map;
 import static tools.Tools.getArrayIndexOf;
 import static tools.Tools.stringArrayContains;
 
-public class CondProp {
 /*
-The class encapsulates only static data and static methods. This class is to be used in composition by the
-class Conductor.
-Class Circuit should inherit from Conductor
-Class Feeder, Branch and Service should inherit from class Circuit
-Class Load is for generic loads. Other load types should inherit from class Load and get specialized.
+ * This class encapsulates only static data and methods about properties of conductors as defined in NEC 2014 tables 310.15(B)(16), 8, 9,
+ * 5 & 5A.
+ *
+ *
+ *  This class is to be used in composition by the
+ * class Conductor.
+ * Class Circuit should inherit from Conductor
+ * Class Feeder, Branch and Service should inherit from class Circuit
+ * Class Load is for generic loads. Other load types should inherit from class Load and get specialized.
+ *
+ * This class groups all the properties related to a conductor of a defined size. The class is able to build and return any conductor with
+ * all these properties (as defined in NEC2014) and also build a conductor object (as defined below) that encapsulates only the
+ * properties that pertain to a particular set of conditions.
+ *
+ * Other classes should be defined separately; Composition will be preferred above inheritance, unless abstraction is necessary (which will
+ * probably be the case for the class load and its descendant)
+ *
+ * A conductor is an entity that encapsulates all the properties of a single conductor, when it is isolated, that is, the
+ * represented characteristics don't depend upon other conditions, like ambient temperature, number of conductor per raceway, type of
+ * raceway, voltage type (AC or DC), number of phases, special locations, load types, etc.
+ *
+ * Class Conductor:
+ * ----------------
+ * The independent properties of a conductor are:
+ * -size
+ * -metal (CU or AL)
+ * -insulation (if any)
+ * -length (one way length)
+ *
+ * Class Circuit:
+ * -----------------------
+ * The resistance and reactance of the conductor will depend on the raceway type and arrangement:
+ * -If conductors are in free air or tray
+ * -If they are inside a conduit and then, the metal of the conduit
+ * -The number of conductors inside the raceway that are not in parallel (this should affect the resistance and the reactance of the
+ * conductor but I haven't found a formulae or method that correlates these characteristics)
+ * -The number of conductors inside the conduit that are in parallel (same note as before; table 9 is based on the assumption the system
+ * voltage is three phase, 75°C, 60Hz, three single conductors in conduit; so, unless more information is found, I will always use the
+ * values of table 9 but will leave room for improvement once the method that considers different scenarios is found).
+ *
+ * -The ampacity of the conductor will depend mainly on all the above listed variables but also on the location of the conductor, like when
+ * it is in the rooftop (and the distance from the floor)
+ *
+ *
+ * Class Feeder, Service, Branch and Tap:
+ * --------------------------------------
+ * -These classes are similar. They differ in the fact that the branch circuit directly feeds a load, while a feeder has a OCPD on each end.
+ * A special Feeder is the Service class.
+ * SOme of the properties of these classes are:
+ * -Voltage
+ * -Phases,
+ * -Frequency
+ *
+ * The user must put the class CircuitConductor in the context of any of the classes Feeder, Service or Branch.
+ *
+ * For instance, the Branch class has a load object. The Feeder has a load intent. One or more branch circuits will always be connected to a
+ * feeder through an OCPD.
+ *
+ * Branch circuits can be multiwire
+ * Loads can be continuous or non continuous.
+ *
+ * Other classes must be designed, like for fuses, breakers, loads, motors, appliances, whatever, lights, AC equipment, panel, switchboard,
+ * etc, etc.
+ */
 
-I want to use this class this way:
-class CondProp:
-	PropertySet bySize(String size)
-	PropertySet:
-		double getReactance(boolean magneticConduit)
-		double getArea()
-		CopperCond forCopper():
-		    double getAmpacity(int temperature);
-		    double getACResistance(ConduitMaterial PVC|AL|STEEL)
-		    double getDCResistance(DCConductor CUCOATED|CUUNCOATED|AL)
-		double getDimension(String insulation TW|THHW...)
-		double getCompactDimension(String insulation TW|THHW...)
-		double getCompactBare()
-	int getInsulationTemperature(String insulation TW|THHW...)
-new Size("14", area, new(COPPER, amp60, amp75, amp90, ),
-
-	.Metal(Metal.COPPER)
-
-(Conductors.sizes[4],   55,  65,  75,  40,  50,  55, 0.051000, 0.064000, 0.490000, 0.490000,	0.490000, 0.810000,0.810000, 0.810000,   26240, 0.491000, 0.510000, 0.808000),
-
-I can create a conductor the way is defined below.
-The class conductor will offer properties for conductors.
-Conductor.Property.BySize("12").
-
-The actual class should have a different name, like ConductorProperties.
-
-This class groups all the properties related to a conductor of a defined size. The class is able to build and return any conductor with
-all these properties (as defined in NEC2014) and also build a conductor object (as defined below) that encapsulates only the
-properties that pertain to a particular set of conditions.
-
-Other classes should be defined separately; Composition will be preferred above inheritance, unless abstraction is necessary (which will
-probably be the case for the class load and its descendant)
-
-A conductor is an entity that encapsulates all the properties of a single conductor, when it is isolated, that is, the
-represented characteristics don't depend upon other conditions, like ambient temperature, number of conductor per raceway, type of
-raceway, voltage type (AC or DC), number of phases, special locations, load types, etc.
-
-Class Conductor:
-----------------
-The independent properties of a conductor are:
--size
--metal (CU or AL)
--insulation (if any)
--length (one way length)
-
-Class Circuit:
------------------------
-The resistance and reactance of the conductor will depend on the raceway type and arrangement:
--If conductors are in free air or tray
--If they are inside a conduit and then, the metal of the conduit
--The number of conductors inside the raceway that are not in parallel (this should affect the resistance and the reactance of the
-conductor but I haven't found a formulae or method that correlates these characteristics)
--The number of conductors inside the conduit that are in parallel (same note as before; table 9 is based on the assumption the system
-voltage is three phase, 75°C, 60Hz, three single conductors in conduit; so, unless more information is found, I will always use the
-values of table 9 but will leave room for improvement once the method that considers different scenarios is found).
-
--The ampacity of the conductor will depend mainly on all the above listed variables but also on the location of the conductor, like when
-it is in the rooftop (and the distance from the floor)
-
-
-Class Feeder, Service, Branch and Tap:
---------------------------------------
--These classes are similar. They differ in the fact that the branch circuit directly feeds a load, while a feeder has a OCPD on each end.
-A special Feeder is the Service class.
-SOme of the properties of these classes are:
--Voltage
--Phases,
--Frequency
-
-The user must put the class CircuitConductor in the context of any of the classes Feeder, Service or Branch.
-
-For instance, the Branch class has a load object. The Feeder has a load intent. One or more branch circuits will always be connected to a
-feeder through an OCPD.
-
-Branch circuits can be multiwire
-Loads can be continuous or non continuous.
-
-Other classes must be designed, like for fuses, breakers, loads, motors, appliances, whatever, lights, AC equipment, panel, switchboard,
-etc, etc.
-
-*/
+/**
+ *  This class encapsulates static data and methods about properties of conductors as defined in NEC 2014 tables 310.15(B)(16), 8,
+ *  9, 5 and 5A.
+ */
+public class CondProp {
 	//region static members
 	private static String[] sizes;
 	private static String[] sizeFullName;
@@ -135,55 +116,120 @@ etc, etc.
 	private static String[] insulations;
 	//endregion
 
+	private CondProp(){}
+
+	/**
+	 * Returns a {@link PropertySet} object for the given conductor size. If the size of the conductor is not valid, an
+	 * invalidPropertySet object is returned.
+	 * @param size The size of the conductor
+	 * @return A {@link PropertySet} object.
+	 * @see #getInvalidPropertySet()
+	 */
 	public static PropertySet bySize(String size){
 		for (int i = 0; i < table.length; i++)
 			if (table[i].getSize().equals(size)) return table[i];
 		return invalidPropertySet;
 	}
 
+	/**
+	 * Returns the area in square inches of an insulated conductor (conductor and insulation altogether) of size conductorSize and of
+	 * insulation insulationName.
+	 * @param conductorSize The size of the conductor as defined by {@link Size}
+	 * @param insulationName The insulation type of the conductor as defined by {@link Insul}
+	 * @return The area of the insulated conductor or zero if any of the parameter is invalid.
+	 */
 	protected static double getInsulatedAreaIn2(String conductorSize, String insulationName){
 		if(hasInsulatedArea(conductorSize, insulationName))
 			return insulatedDimensions.get(insulationName).get(conductorSize);
 		return 0;
 	}
 
+	/**
+	 * Returns the area in square inches of a compact conductor (Table 5A) of size conductorSize
+	 * and of insulation insulationName
+	 * @param conductorSize The size of the conductor as defined by {@link Size}
+	 * @param insulationName The insulation type of the conductor as defined by {@link Insul}
+	 * @return The area of the compact conductor or zero if any of the parameter is invalid or the area is not defined in table 5.
+	 */
 	protected static double getCompactAreaIn2(String conductorSize, String insulationName){
 		if(hasCompactArea(conductorSize, insulationName))
 			return compactDimensions.get(insulationName).get(conductorSize);
 		return 0;
 	}
 
+	/**
+	 * Returns the area in square inches of bare compact conductor (Table 5A) of size conductorSize.
+	 * @param conductorSize The size of the conductor as defined by {@link Size}
+	 * @return The area of the bare compact conductor or zero if the size is invalid or the area is not defined in table 5A.
+	 */
 	protected static double getCompactBareAreaIn2(String conductorSize){
 		if(hasCompactBareArea(conductorSize))
 			return compactBareDimensions.get(conductorSize);
 		return 0;
 	}
 
+	/**
+	 * Returns true if an insulated conductor of size conductorSize and insulation type insulationName has its area defined in table 5
+	 * @param conductorSize The size of the conductor as defined by {@link Size}
+	 * @param insulationName The insulation type of the conductor as defined by {@link Insul}
+	 * @return True if the area is defined in table 5, false otherwise or parameters are not valid
+	 */
 	protected static boolean hasInsulatedArea(String conductorSize, String insulationName){
 		return isValidSize(conductorSize) && isValidInsulationName(insulationName) && insulatedDimensions.get(insulationName).containsKey(conductorSize);
 	}
 
+	/**
+	 * Returns true if a compact conductor of size conductorSize and insulation type insulationName has its area defined in table 5A
+	 * @param conductorSize The size of the conductor as defined by {@link Size}
+	 * @param insulationName The insulation type of the conductor as defined by {@link Insul}
+	 * @return True if the area is defined in table 5A, false otherwise or parameters are not valid.
+	 */
 	protected static boolean hasCompactArea(String conductorSize, String insulationName){
 		return isValidSize(conductorSize) && isValidInsulationName(insulationName) && compactDimensions.containsKey(insulationName)
 				&& compactDimensions.get(insulationName).containsKey(conductorSize);
 	}
 
+	/**
+	 * Returns true if a compact bare conductor of size conductorSize has its area defined in table 5A
+	 * @param conductorSize The size of the conductor as defined by {@link Size}
+	 * @return True if the area is defined in table 5A, false otherwise or parameter is not valid
+	 */
 	protected static boolean hasCompactBareArea(String conductorSize){
 		return isValidSize(conductorSize) && compactBareDimensions.containsKey(conductorSize);
 	}
 
+	/**
+	 * Asks if the given insulation is rated for 60 degrees Celsius
+	 * @param insulationName The insulation type of the conductor as defined by {@link Insul}
+	 * @return True if rated for 60 degrees Celsius, false otherwise
+	 */
 	public static boolean insulationIs60Celsius(String insulationName){
 		return stringArrayContains(insulation60Celsius, insulationName);
 	}
 
+	/**
+	 * Asks if the given insulation is rated for 75 degrees Celsius
+	 * @param insulationName The insulation type of the conductor as defined by {@link Insul}
+	 * @return True if rated for 75 degrees Celsius, false otherwise
+	 */
 	public static boolean insulationIs75Celsius(String insulationName){
 		return stringArrayContains(insulation75Celsius, insulationName);
 	}
 
+	/**
+	 * Asks if the given insulation is rated for 90 degrees Celsius
+	 * @param insulationName The insulation type of the conductor as defined by {@link Insul}
+	 * @return True if rated for 90 degrees Celsius, false otherwise
+	 */
 	public static boolean insulationIs90Celsius(String insulationName){
 		return stringArrayContains(insulation90Celsius, insulationName);
 	}
 
+	/**
+	 * Asks for the temperature rating of the given insulation.
+	 * @param insulationName The insulation type of the conductor as defined by {@link Insul}
+	 * @return The temperature rating of the insulation in degrees Celsius (60, 75 or 90) or zero if the insulation is not valid.
+	 */
 	public static int getInsulationTemperatureCelsius(String insulationName){
 		if(insulationIs60Celsius(insulationName)) return 60;
 		else if(insulationIs75Celsius(insulationName)) return 75;
@@ -191,50 +237,93 @@ etc, etc.
 		return 0;
 	}
 
-	private static int getIndexOfSize(String size) {
-		return getArrayIndexOf(sizes, size);
+	/**
+	 * Returns the index of the conductor size in the internal table of sizes.
+	 * @param conductorSize The size of the conductor as defined by {@link Size}
+	 * @return The index of the conductor size in the internal table of sizes or -1 if the size is not valid
+	 */
+	private static int getIndexOfSize(String conductorSize) {
+		return getArrayIndexOf(sizes, conductorSize);
 	}
 
+	/**
+	 * Returns a {@link Metal} enum member corresponding to the conductorTypeIndex.
+	 * @param conductorTypeIndex An integer value (0 or 1)
+	 * @return Metal.COPPER for a conductorTypeIndex is zero, and Metal.ALUMINUM otherwise
+	 */
 	public static Metal getMetalPerIndex(int conductorTypeIndex){
 		if(conductorTypeIndex == 0)
 			return Metal.COPPER;
 		return Metal.ALUMINUM;
 	}
 
+	/**
+	 * Asks if the given conductor size is valid
+	 * @param size The size of the conductor as defined by {@link Size}
+	 * @return True if the size is valid, false otherwise.
+	 */
 	public static boolean isValidSize(String size) {
 		return getIndexOfSize(size) != -1;
 	}
 
+	/**
+	 * Asks if the given insulation name is valid
+	 * @param insulationName The insulation type of the conductor as defined by {@link Insul}
+	 * @return True if the insulation is valid, false otherwise.
+	 */
 	public static boolean isValidInsulationName(String insulationName) {
 		return (getArrayIndexOf(insulation60Celsius, insulationName) != -1)
 				|| (getArrayIndexOf(insulation75Celsius, insulationName) != -1)
 				|| (getArrayIndexOf(insulation90Celsius, insulationName) != -1);
 	}
 
+	/**
+	 * Compares two conductor sizes. This methods does not check for validity of the conductor sizes. If one of the conductor is invalid
+	 * the result will not make any sense.
+	 * @param sizeLeft The size of the left side conductor to be compared as defined by {@link Size}
+	 * @param sizeRight The size of the right side conductor to be compared  as defined by {@link Size}
+	 * @return -1 if sizeLeft is smaller than sizeRight, 0 if both are the same size of 1 if sizeLeft is bigger than sizeRight
+	 */
 	public static int compareSizes(String sizeLeft, String sizeRight){
 		int left = getIndexOfSize(sizeLeft);
 		int right = getIndexOfSize(sizeRight);
 		return Integer.compare(left, right);
 	}
 
+	/**
+	 * @return Return a table containing all the conductor sizes as defined defined by {@link Size}
+	 */
 	public static String[] getSizes() {
 		return sizes;
 	}
 
+	/**
+	 * Returns the full size name of the given conductor size.
+	 * @param size The size of the conductor as defined by {@link Size}
+	 * @return The full size name including the prefix for AWG or KCMIL. If the size is not valid an empty string is returned.
+	 */
 	protected static String getFullSizeName(String size) {
 		if(isValidSize(size))
 			return sizeFullName[getArrayIndexOf(sizes, size)];
 		return "";
 	}
 
+	/**
+	 * Returns the invalidPropertySet object.
+	 * An invalidPropertySet object is a particular PropertySet object that contains only zeroes for all the properties of the a
+	 * conductor. The size of the conductor returned by an invalidPropertySet object is "Not assigned!".
+	 * @return The invalidPropertySet object.
+	 * @see PropertySet
+	 */
 	public static PropertySet getInvalidPropertySet() {
 		return invalidPropertySet;
 	}
 
 	static {
 		//region conductor sizes and full size names
-		sizes = new String[]{"14", "12", "10", "8", "6", "4", "3", "2", "1", "1/0", "2/0", "3/0", "4/0", "250", "300", "350",
-				"400", "500", "600", "700", "750", "800", "900", "1000", "1250", "1500", "1750", "2000"};
+		sizes = new String[]{Size.S14, Size.S12, Size.S10, Size.S8, Size.S6, Size.S4, Size.S3, Size.S2, Size.S1, Size.Z1, Size.Z2,
+				Size.Z3, Size.Z4, Size.K250, Size.K300, Size.K350, Size.K400, Size.K500, Size.K600, Size.K700, Size.K750, Size.K800,
+				Size.K900, Size.K1000, Size.K1250, Size.K1500, Size.K1750, Size.K2000};
 		sizeFullName = new String[]{"AWG 14", "AWG 12", "AWG 10", "AWG 8", "AWG 6", "AWG 4", "AWG 3", "AWG 2", "AWG 1",
 				"AWG 1/0", "AWG 2/0", "AWG 3/0", "AWG 4/0", "250 KCMIL", "300 KCMIL", "350 KCMIL", "400 KCMIL", "500 KCMIL", "600 KCMIL",
 				"700 KCMIL", "750 KCMIL", "800 KCMIL", "900 KCMIL", "1000 KCMIL", "1250 KCMIL", "1500 KCMIL", "1750 KCMIL", "2000 KCMIL"};
@@ -274,10 +363,10 @@ etc, etc.
 		//endregion
 		//region temperature of insulators
 		// XHHW & THHW are duplicated in 75 and 90 degrees columns. It is assumed both are 90 by definition of their double Hs
-		insulation60Celsius = new String[]{"TW"};
-		insulation75Celsius = new String[]{"RHW", "THW", "THWN", "USE", "ZW"};
-		insulation90Celsius = new String[]{"TBS", "SA", "SIS", "FEP", "FEPB", "MI", "RHH", "RHW-2", "THHN", "THHW", "THW-2",
-				"THWN-2", "USE-2", "XHH", "XHHW", "XHHW-2", "ZW-2"};
+		insulation60Celsius = new String[]{Insul.TW};
+		insulation75Celsius = new String[]{Insul.RHW, Insul.THW, Insul.THWN, Insul.USE, Insul.ZW};
+		insulation90Celsius = new String[]{Insul.TBS, Insul.SA, Insul.SIS, Insul.FEP, Insul.FEPB, Insul.MI, Insul.RHH, Insul.RHW2,
+				Insul.THHN, Insul.THHW, Insul.THW2, Insul.THWN2, Insul.USE2, Insul.XHH, Insul.XHHW, Insul.XHHW2, Insul.ZW2};
 		insulations = new String[insulation60Celsius.length + insulation75Celsius.length + insulation90Celsius.length];
 		System.arraycopy(insulation60Celsius, 0, insulations,0, insulation60Celsius.length);
 		System.arraycopy(insulation75Celsius, 0, insulations, insulation60Celsius.length, insulation75Celsius.length);

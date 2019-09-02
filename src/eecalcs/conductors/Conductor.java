@@ -1,5 +1,72 @@
 package eecalcs.conductors;
+/*
+The class encapsulates only static data and static methods. This class is to be used in composition by the
+class Conductor.
+Class Circuit should inherit from Conductor
+Class Feeder, Branch and Service should inherit from class Circuit
+Class Load is for generic loads. Other load types should inherit from class Load and get specialized.
 
+This class groups all the properties related to a conductor of a defined size. The class is able to build and return any conductor with
+all these properties (as defined in NEC2014) and also build a conductor object (as defined below) that encapsulates only the
+properties that pertain to a particular set of conditions.
+
+Other classes should be defined separately; Composition will be preferred above inheritance, unless abstraction is necessary (which will
+probably be the case for the class load and its descendant)
+
+A conductor is an entity that encapsulates all the properties of a single conductor, when it is isolated, that is, the
+represented characteristics don't depend upon other conditions, like ambient temperature, number of conductor per raceway, type of
+raceway, voltage type (AC or DC), number of phases, special locations, load types, etc.
+
+Class Conductor:
+----------------
+The independent properties of a conductor are:
+-size
+-metal (CU or AL)
+-insulation (if any)
+-length (one way length)
+
+Class Circuit:
+-----------------------
+The resistance and reactance of the conductor will depend on the raceway type and arrangement:
+-If conductors are in free air or tray
+-If they are inside a conduit and then, the metal of the conduit
+-The number of conductors inside the raceway that are not in parallel (this should affect the resistance and the reactance of the
+conductor but I haven't found a formulae or method that correlates these characteristics)
+-The number of conductors inside the conduit that are in parallel (same note as before; table 9 is based on the assumption the system
+voltage is three phase, 75°C, 60Hz, three single conductors in conduit; so, unless more information is found, I will always use the
+values of table 9 but will leave room for improvement once the method that considers different scenarios is found).
+
+-The ampacity of the conductor will depend mainly on all the above listed variables but also on the location of the conductor, like when
+it is in the rooftop (and the distance from the floor)
+
+
+Class Feeder, Service, Branch and Tap:
+--------------------------------------
+-These classes are similar. They differ in the fact that the branch circuit directly feeds a load, while a feeder has a OCPD on each end.
+A special Feeder is the Service class.
+SOme of the properties of these classes are:
+-Voltage
+-Phases,
+-Frequency
+
+The user must put the class CircuitConductor in the context of any of the classes Feeder, Service or Branch.
+
+For instance, the Branch class has a load object. The Feeder has a load intent. One or more branch circuits will always be connected to a
+feeder through an OCPD.
+
+Branch circuits can be multiwire
+Loads can be continuous or non continuous.
+
+Other classes must be designed, like for fuses, breakers, loads, motors, appliances, whatever, lights, AC equipment, panel, switchboard,
+etc, etc.
+
+*/
+
+import tools.EEToolsException;
+
+/**
+ * Encapsulates the properties and methods for a single conductor as a physical real life object.
+ */
 public class Conductor {
 	//region static
 	private static class TempCorrectionFactor{
@@ -85,6 +152,13 @@ public class Conductor {
 	protected int ambientTemperatureF = 86;
 	protected boolean copperCoated = Coating.UNCOATED;
 
+	/**
+	 * Constructs a conductor from the given characteristics
+	 * @param size The size of the conductor as defined by {@link Size}
+	 * @param metal The conductor metal as defined by {@link Metal}
+	 * @param insulation The conductor's insulation type as defined by {@link Insul}
+	 * @param length The length of the conductor in feet
+	 */
 	public Conductor(String size, Metal metal, String insulation, double length) {
 		this.size = CondProp.isValidSize(size) ? size : "";
 		this.insulation = CondProp.isValidInsulationName(insulation)? insulation: "";
@@ -94,6 +168,10 @@ public class Conductor {
 		setAmpacity();
 	}
 
+	/**
+	 * Constructs a Conductor object as a deep copy of an existing conductor object
+	 * @param conductor The existing conductor to be copied.
+	 */
 	public Conductor(Conductor conductor) {
 		this.size = conductor.size;
 		this.metal = conductor.metal;
@@ -103,25 +181,45 @@ public class Conductor {
 		this.temperatureRating = conductor.temperatureRating;
 		this.ambientTemperatureC = conductor.ambientTemperatureC;
 		this.ambientTemperatureF = conductor.ambientTemperatureF;
+		this.copperCoated =  conductor.copperCoated;
 	}
 
+	/**
+	 * Constructs a default conductor object: size 12, copper, insulation type THW and length 100
+	 */
 	public Conductor(){
 		setAmpacity();
 	}
 
+	/**
+	 * Gets the size of this conductor
+	 * @return The size of this conductor
+	 */
 	public String getSize() {
 		return size;
 	}
 
+	/**
+	 * Sets the size to this conductor
+	 * @param size The size of the conductor as defined by {@link Size}
+	 */
 	public void setSize(String size) {
 		this.size = CondProp.isValidSize(size) ? size : "";
 		setAmpacity();
 	}
 
+	/**
+	 * Gets the metal of this conductor
+	 * @return The metal of this conductor
+	 */
 	public Metal getMetal() {
 		return metal;
 	}
 
+	/**
+	 * Sets the metal to this conductor
+	 * @param metal The conductor metal as defined by {@link Metal}
+	 */
 	public void setMetal(Metal metal) {
 		this.metal = metal;
 		setAmpacity();
@@ -132,69 +230,133 @@ public class Conductor {
 			ampacity = 0;
 			return;
 		}
-		ampacity = CondProp.bySize(size).byMetal(metal).getAmpacity(temperatureRating);
+		ampacity = CondProp.bySize(size).getAmpacity(metal, temperatureRating);
 	}
 
+	/**
+	 * Gets the insulation type of this conductor
+	 * @return The insulation type of this conductor
+	 */
 	public String getInsulation() {
 		return insulation;
 	}
 
+	/**
+	 * Sets the insulation type to this conductor
+	 * @param insulation The conductor's insulation type as defined by {@link Insul}
+	 */
 	public void setInsulation(String insulation) {
 		this.insulation = CondProp.isValidInsulationName(insulation)? insulation: "";
 		temperatureRating = CondProp.getInsulationTemperatureCelsius(insulation);
 		setAmpacity();
 	}
 
+	/**
+	 * Gets the length of this conductor
+	 * @return The length of this conductor in feet
+	 */
 	public double getLength() {
 		return length;
 	}
 
+	/**
+	 * Sets the length to this conductor
+	 * @param length The length of the conductor in feet
+	 */
 	public void setLength(double length) {
 		this.length = Math.abs(length);
 	}
 
+	/**
+	 * Gets the ampacity of this conductor under its giving ambient temperature and for its insulation given's temperature rating
+	 * @return The ampacity in amperes
+	 */
 	public double getAmpacity(){
 		return ampacity * getCorrectionFactorF(ambientTemperatureF, temperatureRating);
 	}
 
+	/**
+	 * Indicates if this conductor's size AND insulation name are valid
+	 * @return True if valid
+	 */
 	public boolean isValid(){
 		return CondProp.isValidSize(size) & CondProp.isValidInsulationName(insulation);
 	}
 
+	/**
+	 * Gets the temperature rating of this conductor's insulation
+	 * @return The temperature in degrees Celsius
+	 */
 	public int getTemperatureRating() {
 		return temperatureRating;
 	}
 
+	/**
+	 * Returns the area in square inches, of this insulated conductor (conductor and insulation altogether)
+	 * @return The area in square inches
+	 */
 	public double getInsulatedAreaIn2(){
 		return CondProp.getInsulatedAreaIn2(size, insulation);
 	}
 
+	/**
+	 * Returns the area of this conductor, in Circular Mils
+	 * @return The area in circular mils
+	 */
 	public double getAreaCM(){
 		return CondProp.bySize(size).getAreaCM();
 	}
 
+	/**
+	 * Gets the ambient temperature of this conductor
+	 * @return The ambient temperature in degrees Celsius
+	 */
 	public int getAmbientTemperatureC() {
 		return ambientTemperatureC;
 	}
 
+	/**
+	 * Sets the ambient temperature to this conductor
+	 * @param ambientTemperatureC The ambient temperature in degrees Celsius
+	 */
 	public void setAmbientTemperatureC(int ambientTemperatureC) {
 		this.ambientTemperatureC = ambientTemperatureC;
 		this.ambientTemperatureF = (int)Math.floor(ambientTemperatureC * 1.8 + 32);
 	}
 
+	/**
+	 * Gets the ambient temperature of this conductor
+	 * @return The ambient temperature in degrees Fahrenheits
+	 */
 	public int getAmbientTemperatureF() {
 		return ambientTemperatureF;
 	}
 
+	/**
+	 * Sets the ambient temperature to this conductor
+	 * @param ambientTemperatureF The ambient temperature in degrees Fahrenheits
+	 */
 	public void setAmbientTemperatureF(int ambientTemperatureF) {
 		this.ambientTemperatureF = ambientTemperatureF;
 		this.ambientTemperatureC = (int)Math.ceil((ambientTemperatureF - 32) * 5/9);
 	}
 
-	public boolean isCopperCoated() {
+	/**
+	 * Indicates if this copper conductor is coated.
+	 * Notice that this property has no meaning when this conductor metal is aluminum.
+	 * @return True if coated, false otherwise
+	 */
+	public boolean isCopperCoated(){
+		if(metal == Metal.ALUMINUM)
+			return false;
 		return copperCoated;
 	}
 
+	/**
+	 * Sets the coating to this copper conductor.
+	 * Setting this property does not have any effect if this conductor metal is aluminum.
+	 * @param copperCoated Indicates if the conductor is coated
+	 */
 	public void setCopperCoated(boolean copperCoated) {
 		this.copperCoated = copperCoated;
 	}

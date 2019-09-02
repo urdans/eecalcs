@@ -3,6 +3,9 @@ package eecalcs.systems;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Container for residential and commercial system voltages
+ */
 public class SystemACVoltages {
 	private static List<VoltageData> voltages;
 
@@ -18,10 +21,29 @@ public class SystemACVoltages {
 		voltages.add(new VoltageData("480v 3Ø", 480, 3));
 	}
 
+	/**
+	 * Inner class for the data structure containing infomation about the system voltage
+	 */
 	public static class VoltageData {
+		/**
+		 * A string containing the tag for this voltage system
+		 */
 		public String tag;
+		/**
+		 * The voltage of this voltage system
+		 */
 		public int value;
+		/**
+		 * The number of phases of this voltage system
+		 */
 		public int phases;
+
+		/**
+		 * Constructs a voltage system object with the given data. No data validation is performed
+		 * @param tag The string tag of this system voltage
+		 * @param value The voltage of this system voltage
+		 * @param phases The number of phases of this system voltage
+		 */
 		public VoltageData(String tag, int value, int phases){
 			this.tag = tag;
 			this.value = value;
@@ -31,6 +53,10 @@ public class SystemACVoltages {
 
 	private SystemACVoltages() {}
 
+	/**
+	 * Returns the list containing the registered system voltages
+	 * @return The list containing the registered system voltages
+	 */
 	public static List<VoltageData> getVoltages() {
 		return voltages;
 	}

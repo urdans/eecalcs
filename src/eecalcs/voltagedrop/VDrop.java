@@ -2,14 +2,17 @@ package eecalcs.voltagedrop;
 
 import eecalcs.conductors.*;
 import eecalcs.conduits.Magnetic;
-import eecalcs.conduits.Material;
 import org.apache.commons.math3.complex.Complex;
 import tools.Message;
 import tools.ResultMessages;
 
+/**
+ * Provides methods for calculation of the voltage drop across circuits and for calculation of the maximum length of a circuit for a
+ * given maximum voltage drop.
+ */
 public class VDrop {
 	//region private fields
-	//input
+	//default values of input variables
 	private double sourceVoltage = 120;
 	private int phases = 1;
 	private Circuit circuit;
@@ -29,7 +32,8 @@ public class VDrop {
 	private static Message ERROR21	= new Message("Paralleled power conductors in sizes smaller than 1/0 AWG are not permitted. NEC-310" +
 			".10(H)(1)",-21);
 	private static Message ERROR30	= new Message("No length can achieve that voltage drop under the given conditions.", -30);
-	private static Message ERROR31	= new Message("No building conductor can achieve that voltage drop under these conditions.", -31);
+	private static Message ERROR31	= new Message("No building conductor can achieve that voltage drop under the given conditions.",
+			-31);
 	private static Message WARNN21	= new Message(ERROR21.message,21);
 	//calculated
 	private double actualVoltageDropPercentageAC;
@@ -39,141 +43,200 @@ public class VDrop {
 	//endregion
 
 	//region constructor
+	/**
+	 * Constructs a VDrop object for a given circuit object. The result object will contain a deep copy of the given circuit object.
+	 * @param circuit The existing circuit object.
+	 */
 	public VDrop(Circuit circuit){
 		this.circuit = new Circuit(circuit);
 	}
 	//endregion
 
 	//region public fields
+	/**
+	 * Container for messages resulting from calculations performed by this class.
+	 * @see ResultMessages
+	 */
 	public ResultMessages resultMessages = new ResultMessages();
 	//endregion
 
 	//region setters
+	/**
+	 * Sets the value of the voltage at the source of the circuit to this VDrop object.
+	 * @param sourceVoltage The voltage at the source in volts. Default value is 120.
+	 */
 	public void setSourceVoltage(double sourceVoltage) {
 		this.sourceVoltage = sourceVoltage;
 	}
 
-	public void setConductorSize(String conductorSize) {
-		circuit.setSize(conductorSize);
-	}
-
+	/**
+	 * Sets the number of phases of the source voltage.
+	 * @param phases The number of phases. Notice there is no validation for this input. Default value is 1.
+	 */
 	public void setPhases(int phases) {
 		this.phases = phases;
 	}
 
-	public void setConduitType(Material conduitType) {
-		circuit.setConduitType(conduitType);
-	}
-
-	public void setMetal(Metal metal) {
-		circuit.setMetal(metal);
-	}
-
-	public void setNumberOfSets(int numberOfSets) {
-		circuit.setNumberOfSets(numberOfSets);
-	}
-
-	public void setOneWayLength(double oneWayLength) {
-		circuit.setLength(oneWayLength);
-	}
-
+	/**
+	 * Sets the circuit connected load's current.
+	 * @param loadCurrent The current of the load in amperes. Default value is 10.
+	 * Notice that no validation is performed while setting this value, so the user must check for the presence of errors or
+	 * warnings after setting any value or obtaining a calculation result.
+	 */
 	public void setLoadCurrent(double loadCurrent) {
 		this.loadCurrent = loadCurrent;
 	}
 
+	/**
+	 * Sets the power factor of the circuit connected load.
+	 * @param powerFactor The power factor of the load. Should be a number between 0.7 and 1.0 inclusive. Default value is 1.
+	 * Notice that no validation is performed while setting this value, so the user must check for the presence of errors or
+	 * warnings after setting any value or obtaining a calculation result.
+	 */
 	public void setPowerFactor(double powerFactor) {
 		this.powerFactor = powerFactor;
 	}
 
-	public void setCopperCoating(boolean copperCoating) {
-		circuit.setCopperCoated(copperCoating);
-	}
-
+	/**
+	 * Sets the maximum allowed voltage drop. This value is used to compute the maximum length of the circuit that would have a voltage
+	 * drop less or equal to the specified value.
+	 * @param maxVoltageDropPercent The maximum voltage drop in percentage. The default value is 3.
+	 */
 	public void setMaxVoltageDropPercent(double maxVoltageDropPercent) {
 		this.maxVoltageDropPercent = maxVoltageDropPercent;
 	}
 	//endregion
 
 	//region getters
-	//region input fields
+	/**
+	 * Gets the voltage value of the source feeding the circuit.
+	 * @return The voltage value at the source
+	 */
 	public double getSourceVoltage() {
 		return sourceVoltage;
 	}
 
-	public String getSize() {
-		return circuit.getSize();
-	}
-
+	/**
+	 * Gets the number of phases of the voltage.
+	 * @return The number of phases of the voltage
+	 */
 	public int getPhases() {
 		return phases;
 	}
 
-	public Material getConduitType() {
-		return circuit.getConduitType();
-	}
-
-	public Metal getMetal() {
-		return circuit.getMetal();
-	}
-
-	public int getNumberOfSets() {
-		return circuit.getNumberOfSets();
-	}
-
-	public double getOneWayLength() {
-		return circuit.getLength();
-	}
-
+	/**
+	 * Returns the circuit connected load's current.
+	 * @return The circuit connected load's current.
+	 */
 	public double getLoadCurrent() {
 		return loadCurrent;
 	}
 
+	/**
+	 * Returns the power factor of the circuit connected load.
+	 * @return The power factor of the circuit connected load.
+	 */
 	public double getPowerFactor() {
 		return powerFactor;
 	}
 
-	public boolean isCoated() {
-		return circuit.isCopperCoated();
-	}
-
+	/**
+	 * Returns the maximum allowed voltage drop.
+	 * @return Tthe maximum allowed voltage drop.
+	 */
 	public double getMaxVoltageDropPercent() {
 		return maxVoltageDropPercent;
+	}
+
+	/**
+	 * Returns the internal circuit object maintained by this VDrop object. You can get access to this object to set or get its properties.
+	 * @return This object's internal circuit object.
+	 */
+	public Circuit getCircuit() {
+		return circuit;
 	}
 	//endregion input fields
 
 	//region AC voltage drop output
+
+	/**
+	 * Returns the calculated AC voltage at the load terminals. If the returned value is zero, check this object's {@link ResultMessages}
+	 * object for errors.
+	 * Notice that even if there are no errors, there could be warnings. The user should always check the ResultMessages object for
+	 * errors and warnings.
+	 * @return The calculated AC voltage at the load terminals, in volts.
+	 * @see tools.ResultMessages
+	 * @see #resultMessages
+	 */
 	public double getVoltageAtLoadAC() {
 		if(checkACVDInput())
 			return computeVoltageAtLoadAC(circuit.getSize());
 		return 0;
 	}
 
+	/**
+	 * Returns the calculated AC voltage drop. This voltage is obtained following the following method:
+	 * The voltage V at the source is assumed to be at zero degrees (the reference angle).
+	 * The Impedance Z of the conductors is calculated based on the given conditions (size, metal, conduit type, length, etc).
+	 * The current I phasor modulus is the connected load's current. The phasor angle is determined by the power factor of the load.
+	 * The complex voltage Vw (drop) across the circuit is calculated as Vw = Z x I
+	 * The voltage drop returned is |V|-|Vw|.
+	 * @return The calculated AC voltage drop in volts.
+	 */
 	public double getVoltageDropVoltsAC() {
 		if(checkACVDInput())
 			return sourceVoltage - getVoltageAtLoadAC();
 		return 0;
 	}
 
+	/**
+	 * Returns the calculated AC voltage drop in percentage.
+	 * The percentage is in reference to the voltage at the source.
+	 * @return The calculated AC voltage drop in percentage.
+	 */
 	public double getVoltageDropPercentageAC() {
 		if(checkACVDInput())
 			return 100 * getVoltageDropVoltsAC() / sourceVoltage;
 		return 0;
 	}
-	//endregion voltage drop output
+	//endregion AC voltage drop output
 
 	//region DC voltage drop output
+	/**
+	 * Returns the calculated DC voltage at the load terminals. If the returned value is zero check this object's {@link ResultMessages}
+	 * object for errors.
+	 * Notice that even if there are no errors, there could be warnings. The user should always check the ResultMessages object for
+	 * errors and warnings.
+	 * @return The calculated DC voltage at the load terminals, in volts.
+	 * @see tools.ResultMessages
+	 * @see #resultMessages
+	 */
 	public double getVoltageAtLoadDC() {
 		if(checkDCVDInput())
 			return computeVoltageAtLoadDC(circuit.getSize());
 		return 0;
 	}
 
+	/**
+	 * Returns the calculated DC voltage drop. This voltage is obtained following the following method:
+	 * Given the voltage V at the source.
+	 * The resistance R of the conductors is calculated based on the given conditions (size, metal, length, etc).
+	 * Given the connected load's current I.
+	 * The voltage Vw (drop) across the circuit is calculated as Vw = R x I
+	 * The voltage drop returned is V-Vw.
+	 * @return The calculated DC voltage drop in volts.
+	 */
 	public double getVoltageDropVoltsDC() {
 		if(checkDCVDInput())
 			return sourceVoltage - getVoltageAtLoadDC();
 		return 0;
 	}
 
+	/**
+	 * Returns the calculated DC voltage drop in percentage.
+	 * The percentage is in reference to the voltage at the source.
+	 * @return The calculated DC voltage drop in percentage.
+	 */
 	public double getVoltageDropPercentageDC() {
 		if(checkDCVDInput())
 			return 100 * getVoltageDropVoltsDC() / sourceVoltage;
@@ -182,12 +245,24 @@ public class VDrop {
 	//endregion voltage drop output
 
 	//region Conductor sizing per ACVD
+
+	/**
+	 * Returns the size of the circuit's conductor whose AC voltage drop (under the given conditions) is less or equals to the given
+	 * maximum voltage drop. If the returned string is empty the user should check for errors in the ResultMessage object.
+	 * @return The size of the conductor as defined in {@link Size}.
+	 * @see #resultMessages
+	 */
 	public String getCalculatedSizeAC(){
 		if(checkACCSInput())
 			return computeSizeAC();
 		return "";
 	}
 
+	/**
+	 * Returns the actual AC voltage drop for the calculated conductor size, under the given conditions.
+	 * @return The AC voltage drop in volts, of the calculated conductor.
+	 * @see #getCalculatedSizeAC()
+	 */
 	public double getActualVoltageDropPercentageAC(){
 		getCalculatedSizeAC();
 		if(resultMessages.hasErrors())
@@ -195,6 +270,13 @@ public class VDrop {
 		return actualVoltageDropPercentageAC;
 	}
 
+	/**
+	 * Returns the calculated one way length of the circuit's conductor whose AC voltage drop (under the given conditions) is less or
+	 * equals to the given maximum voltage drop. If the returned value is zero, the user should check for errors in the
+	 * ResultMessage object.
+	 * @return The maximum conductor's length in feet.
+	 * @see #getCalculatedSizeAC()
+	 */
 	public double getMaxLengthAC(){
 		getCalculatedSizeAC();
 		if(resultMessages.hasErrors())
@@ -204,12 +286,23 @@ public class VDrop {
 	//endregion
 
 	//region Conductor sizing per DCVD
+	/**
+	 * Returns the size of the circuit's conductor whose DC voltage drop (under the given conditions) is less or equals to the given
+	 * maximum voltage drop. If the returned string is empty the user should check for errors in the ResultMessage object.
+	 * @return The size of the conductor as defined in {@link Size}.
+	 * @see #resultMessages
+	 */
 	public PropertySet getCalculatedSizeDC(){
 		if(checkDCCSInput())
 			return computeSizeDC();
 		return CondProp.getInvalidPropertySet();
 	}
 
+	/**
+	 * Returns the actual DC voltage drop for the calculated conductor size, under the given conditions.
+	 * @return The DC voltage drop in volts, of the calculated conductor.
+	 * @see #getCalculatedSizeDC()
+	 */
 	public double getActualVoltageDropPercentageDC(){
 		getCalculatedSizeDC();
 		if(resultMessages.hasErrors())
@@ -217,6 +310,13 @@ public class VDrop {
 		return actualVoltageDropPercentageDC;
 	}
 
+	/**
+	 * Returns the calculated one way length of the circuit's conductor whose DC voltage drop (under the given conditions) is less or
+	 * equals to the given maximum voltage drop. If the returned value is zero, the user should check for errors in the
+	 * ResultMessage object.
+	 * @return The maximum conductor's length in feet.
+	 * @see #getCalculatedSizeDC()
+	 */
 	public double getMaxLengthDC(){
 		getCalculatedSizeDC();
 		if(resultMessages.hasErrors())
@@ -227,7 +327,7 @@ public class VDrop {
 
 	//region private methods
 	//region COMMON
-	private double getSetMaxAmpacity(){
+	private double getMaxAmpacity(){
 		return circuit.getAmpacity();
 	}
 	//endregion
@@ -251,7 +351,7 @@ public class VDrop {
 					resultMessages.add(ERROR21);
 			}
 			if(!resultMessages.containsMessage(ERROR06)) {
-				if (getSetMaxAmpacity() < loadCurrent)
+				if (getMaxAmpacity() < loadCurrent)
 					resultMessages.add(ERROR20);
 			}
 		}
@@ -265,9 +365,10 @@ public class VDrop {
 	private double computeVoltageAtLoadAC(String conductorSize){
 		PropertySet propertySet = CondProp.bySize(conductorSize);
 		double k = getK();
-		double oneWayACResistance = propertySet.byMetal(circuit.getMetal()).getACResistance(circuit.getConduitType(),
-				circuit.getLength(), circuit.getNumberOfSets());
-		double oneWayConductorReactance = propertySet.getReactance(Magnetic.isMagnetic(circuit.getConduitType()),
+		double oneWayACResistance = propertySet.getACResistance(circuit.getMetal(), circuit.getConduitMaterial(), circuit.getLength(),
+				circuit.getNumberOfSets());
+
+		double oneWayConductorReactance = propertySet.getReactance(Magnetic.isMagnetic(circuit.getConduitMaterial()),
 				circuit.getLength(), circuit.getNumberOfSets());
 		Complex totalConductorImpedanceComplex = new Complex(k * oneWayACResistance,k * oneWayConductorReactance);
 		Complex sourceVoltageComplex = new Complex(sourceVoltage, 0);
@@ -299,7 +400,7 @@ public class VDrop {
 					resultMessages.add(ERROR21);
 			}
 			if(!resultMessages.containsMessage(ERROR06)) {
-				if (getSetMaxAmpacity() < loadCurrent)
+				if (getMaxAmpacity() < loadCurrent)
 					resultMessages.add(ERROR20);
 			}
 		}
@@ -311,11 +412,8 @@ public class VDrop {
 	private double computeVoltageAtLoadDC(String conductorSize){
 		PropertySet propertySet = CondProp.bySize(conductorSize);
 		double oneWayDCResistance;
-		if(circuit.getMetal() == Metal.COPPER)
-			oneWayDCResistance = propertySet.forCopper().getDCResistance(circuit.isCopperCoated(), circuit.getLength(),
-					circuit.getNumberOfSets());
-		else
-			oneWayDCResistance = propertySet.forAluminum().getDCResistance(circuit.getLength(), circuit.getNumberOfSets());
+		oneWayDCResistance = propertySet.getDCResistance(circuit.getMetal(), circuit.getLength(), circuit.getNumberOfSets(),
+				circuit.isCopperCoated());
 		return sourceVoltage - 2 * oneWayDCResistance * loadCurrent;
 	}
 	//endregion
@@ -360,8 +458,9 @@ public class VDrop {
 
 	private double computeMaxLengthAC(String conductorSize){
 		PropertySet propertySet = CondProp.bySize(conductorSize);
-		double conductorR = propertySet.byMetal(circuit.getMetal()).getACResistance(circuit.getConduitType()) * 0.001 / circuit.getNumberOfSets();
-		double conductorX = propertySet.getReactance(Magnetic.isMagnetic(circuit.getConduitType())) *0.001 / circuit.getNumberOfSets();
+		/*double conductorR = propertySet.byMetal(circuit.getMetal()).getACResistance(circuit.getConduitType()) * 0.001 / circuit.getNumberOfSets();*/
+		double conductorR = propertySet.getACResistance(circuit.getMetal(), circuit.getConduitMaterial()) * 0.001 / circuit.getNumberOfSets();
+		double conductorX = propertySet.getReactance(Magnetic.isMagnetic(circuit.getConduitMaterial())) *0.001 / circuit.getNumberOfSets();
 		double theta = Math.acos(powerFactor);
 		double Vs2 = Math.pow(sourceVoltage, 2);
 		double A = getK() * loadCurrent * (conductorR * powerFactor + conductorX * Math.sin(theta));
@@ -415,15 +514,10 @@ public class VDrop {
 
 	private double computeMaxLengthDC(PropertySet _conductorProperties){
 		double dCResistance;
-		if(circuit.getMetal() == Metal.COPPER)
-			dCResistance = _conductorProperties.forCopper().getDCResistance(circuit.isCopperCoated(), circuit.getLength(),
-				circuit.getNumberOfSets());
-		else
-			dCResistance = _conductorProperties.forAluminum().getDCResistance(circuit.getLength(), circuit.getNumberOfSets());
-
+		dCResistance = _conductorProperties.getDCResistance(circuit.getMetal(), circuit.getLength(), circuit.getNumberOfSets(),
+				circuit.isCopperCoated());
 		return sourceVoltage * maxVoltageDropPercent * circuit.getLength() / (200 * loadCurrent * dCResistance);
 	}
-	//endregion
 	//endregion
 	//endregion
 }

@@ -5,8 +5,36 @@ import tools.Message;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Encapsulates constants, static data and methods about electrical conduits as found in NEC 2014 table 4
+ */
 public class Conduit {
-	//public static enum Material { PVC, ALUMINUM, STEEL }
+	public static final String TYP_EMT    = "EMT";
+	public static final String TYP_ENT    = "ENT";
+	public static final String TYP_FMC    = "FMC";
+	public static final String TYP_IMC    = "IMC";
+	public static final String TYP_LFNC_A = "LFNC-A";
+	public static final String TYP_LFNC_B = "LFNC-B";
+	public static final String TYP_LFMC   = "LFMC";
+	public static final String TYP_RMC    = "RMC";
+	public static final String TYP_PVC_80 = "PVC-80";
+	public static final String TYP_PVC_40 = "PVC-40";
+	public static final String TYP_HDPE   = "HDPE";
+	public static final String TYP_PVC_A  = "PVC-A";
+	public static final String TYP_PVC_EB = "PVC-EB";
+	public static final String TRADE_38  = "3/8";
+	public static final String TRADE_12  = "1/2";
+	public static final String TRADE_34  = "3/4";
+	public static final String TRADE_1   = "1";
+	public static final String TRADE_114 = "1-1/4";
+	public static final String TRADE_112 = "1-1/2";
+	public static final String TRADE_2   = "2";
+	public static final String TRADE_212 = "2-1/2";
+	public static final String TRADE_3   = "3";
+	public static final String TRADE_312 = "3-1/2";
+	public static final String TRADE_4   = "4";
+	public static final String TRADE_5   = "5";
+	public static final String TRADE_6   = "6";
 	private static String[] tradeSizes;
 	private static String[] types;
 	private static Map<String, Double> areaEMT;
@@ -27,6 +55,12 @@ public class Conduit {
 	private static Message ERROR41	= new Message("Trade size not available for this conduit type.", -41);
 	private static Message ERROR42	= new Message("Area of conduit not available.", -42);
 
+	/**
+	 * Returns the conduit material corresponding to the given index
+	 * @param conduitTypeIndex The index of the conduit material. 0 = PVC, 1 = aluminum and other = steel
+	 * @return The requested material
+	 * @see Material
+	 */
 	public static Material getConduitMaterialPerIndex(int conduitTypeIndex){
 		if(conduitTypeIndex == 0)
 			return Material.PVC;
@@ -35,22 +69,47 @@ public class Conduit {
 		return Material.STEEL;
 	}
 
+	/**
+	 * Returns the list of the registered conduit standard trade sizes
+	 * @return The list of the registered conduit standard trade sizes
+	 */
 	public static String[] getTradeSizes() {
 		return tradeSizes;
 	}
 
+	/**
+	 * Returns the list of the registered conduit types
+	 * @return The list of the registered conduit types
+	 */
 	public static String[] getTypes() {
 		return types;
 	}
 
+	/**
+	 * Asks if the given conduit type is valid, that is, it's registered in the conduit type list
+	 * @param conduitType The requested conduit type
+	 * @return True if it's a valid conduit type, false otherwise
+	 */
 	public static boolean isValidType(String conduitType){
 		return dimensions.containsKey(conduitType);
 	}
 
+	/**
+	 * Asks if the given conduit type and trade size has an internal area, that is the type and size are valid (NEC 2014 Table 4)
+	 * @param conduitType The type of conduit
+	 * @param tradeSize The size of the conduit
+	 * @return True if the requested conduit type and size has an internal area.
+	 */
 	public static boolean hasArea(String conduitType, String tradeSize){
 		return isValidType(conduitType) && dimensions.get(conduitType).containsKey(tradeSize);
 	}
 
+	/**
+	 * Gets the area of the given conduit type and trade size
+	 * @param conduitType The type of conduit
+	 * @param tradeSize The size of the conduit
+	 * @return The area in square inches of the conduit or zero if not in NEC 2014 table 4
+	 */
 	public static double getArea(String conduitType, String tradeSize){
 		if(hasArea(conduitType, tradeSize))
 			return dimensions.get(conduitType).get(tradeSize);
@@ -59,9 +118,10 @@ public class Conduit {
 
 	static {
 		//region conduit types and trade sizes
-		tradeSizes = new String[]{"3/8", "1/2", "3/4", "1", "1-1/4", "1-1/2", "2", "2-1/2", "3", "3-1/2", "4", "5", "6"};
-		types = new String[]{"EMT", "ENT", "FMC", "IMC", "LFNC-A", "LFNC-B", "LFMC", "RMC", "PVC-80", "PVC-40", "HDPE",
-				"PVC-A", "PVC-EB"};
+		tradeSizes = new String[]{TRADE_38, TRADE_12, TRADE_34, TRADE_1, TRADE_114, TRADE_112, TRADE_2, TRADE_212, TRADE_3, TRADE_312,
+				TRADE_4, TRADE_5, TRADE_6};
+		types = new String[]{TYP_EMT, TYP_ENT, TYP_FMC, TYP_IMC, TYP_LFNC_A, TYP_LFNC_B, TYP_LFMC, TYP_RMC, TYP_PVC_80,
+				TYP_PVC_40, TYP_HDPE, TYP_PVC_A, TYP_PVC_EB};
 		//endregion
 		//region EMT
 		areaEMT = new HashMap<>();
