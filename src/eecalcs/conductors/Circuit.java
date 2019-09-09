@@ -58,10 +58,48 @@ public class Circuit extends Conductor {
 		return super.getAmpacity() * numberOfSets;
 	}
 
+	/*this doesnt make any sense unles the number of phases is known
 	public double getAreaCM(){
 		return super.getAreaCM() * numberOfSets;
-	}
+	}*/
 }
+
+/*quede aqui
+* All classes have been refactored to the perfection except class Circuit which the more I think about it the more I believe should not
+* inherit from conductor but instead uses a conductor object (a copy of it).
+* This is because of the concept of circuit, which needs to also use other objects like Load and Conduit
+* I need to think about the fact that a conduit can have different circuits in it. That brings the idea that a circuit does not depend on
+* the conduit, that it may or may not exist in a conduit (like in free air). If a circuit uses a conduit, then that conduit is a
+* separate object that is referenced by a circuit. I would need then to rename the class conduit as ConduitProperties and develop the
+* class Conduit in the same sense I did for the class conductor. If a circuit references a conduit object, that conduit object should
+* also reference all the circuits that are registered with it. Like every time a new circuit is added or an existing one is removed
+* from a conduit, the conduit size is updated (if the user indicates so, like allowUp, allowDown, or noChange). The conduit should also
+* have a state to indicate that it is locked and not accepting more conductors. This locking mechanism can be activated by the circuit
+* that is being added to the conduit. It's like "add me and lock to prevent other circuits to be added". Once a circuit or conductors are
+* added to a Conduit, the conduit will update its trade size (going bigger or going smaller, as requested) or issue warning in case
+* noChange is specified and the actual conduit size is too small to accommodate those conductors per NEC. The conduit can be asked if its
+* size is compliant or not, if it is locked, the number and size of conductors, etc. It can be instructed to upgrade or downgrade its
+* size to minimal code requirements, or to force goUp or goDown or just to set a specific trade size. After any instruction the Conduit
+* will always respond with messages (errors and warnings). The caller should always be aware of the messages. Some instructions with
+* certain parameter are more likely than others to not throw any message. Some instructions should return a boolean indicating that the
+* instruction was successful or not (if not, the user can know the reasons by consulting the message response).
+*
+* Notice that a conduit can also accept individual conductor circuit like grounding conductors (0 volt, 0 phase circuit). This allow for
+* applying certain rules that restrict having circuits of different voltages in the same raceway.
+*
+* Circuit class should account for "class A" type circuits (study about this), since the type or class is also related to restriction for
+* combining with other classes.
+* A circuit has a set of conductor that supplies only one load. A circuit should have a description and a number and eventually reference
+* the panel (and spaces in the panel) it belongs to.
+*
+* Pending to develop (in this order):
+* The class Conduit, after renaming the existing one to ConduitProperties
+* The class load
+* Amend correct the class circuit
+* The service to determine the conductor size giving the load MCA, ambient temp, temp ratings, number of conductor in a conduit, etc.
+*
+* */
+
 /*
 When designing a circuit, the goal is to determine:
 	1-The proper size of the conductors and eventually the number of them, based on the load characteristics, and other parameters.

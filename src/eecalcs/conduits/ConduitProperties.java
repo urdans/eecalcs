@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * Encapsulates constants, static data and methods about electrical conduits as found in NEC 2014 table 4
  */
-public class Conduit {
+public class ConduitProperties {
 	public static final String TYP_EMT    = "EMT";
 	public static final String TYP_ENT    = "ENT";
 	public static final String TYP_FMC    = "FMC";

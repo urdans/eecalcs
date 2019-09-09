@@ -300,6 +300,71 @@ public class Conductor {
 	}
 
 	/**
+	 * Returns the area in square inches of this compact conductor (Table 5A) with the given insulation
+	 * @param insulationName The insulation type of the conductor as defined by {@link Insul}
+	 * @return The area of the compact conductor or zero if any of the parameter is invalid or the area is not defined in table 5.
+	 */
+	public double getCompactAreaIn2(String insulationName){
+		return ConductorProperties.getCompactAreaIn2(size, insulationName);
+	}
+
+	/**
+	 * Returns the area in square inches of this bare compact conductor (Table 5A).
+	 * @return The area of the bare compact conductor or zero if the size is invalid or the area is not defined in table 5A.
+	 */
+	public double getCompactBareAreaIn2(){
+		return ConductorProperties.getCompactBareAreaIn2(size);
+	}
+
+	/**
+	 * Returns true if this insulated conductor has its area defined in table 5
+	 * @return True if the area is defined in table 5, false otherwise or parameters are not valid
+	 */
+	public boolean hasInsulatedArea(){
+		return ConductorProperties.hasInsulatedArea(size, insulation);
+	}
+
+	/**
+	 * Returns true if this compact conductor has its area defined in table 5A
+	 * @return True if the area is defined in table 5A, false otherwise or parameters are not valid.
+	 */
+	protected boolean hasCompactArea(){
+		return ConductorProperties.hasCompactArea(size, insulation);
+	}
+
+	/**
+	 * Returns true if this compact bare conductor has its area defined in table 5A
+	 * @return True if the area is defined in table 5A, false otherwise or parameter is not valid
+	 */
+	protected boolean hasCompactBareArea(){
+		return ConductorProperties.hasCompactBareArea(size);
+	}
+
+	/**
+	 * Asks if this conductor's insulation is rated for 60 degrees Celsius
+	 * @return True if rated for 60 degrees Celsius, false otherwise
+	 */
+	public boolean insulationIs60Celsius(){
+		return ConductorProperties.insulationIs60Celsius(insulation);
+	}
+
+	/**
+	 * Asks if this conductor's insulation is rated for 75 degrees Celsius
+	 * @return True if rated for 75 degrees Celsius, false otherwise
+	 */
+	public boolean insulationIs75Celsius(){
+		return ConductorProperties.insulationIs75Celsius(insulation);
+	}
+
+	/**
+	 *Asks if this conductor's insulation is rated for 90 degrees Celsius
+	 * @return True if rated for 90 degrees Celsius, false otherwise
+	 */
+	public boolean insulationIs90Celsius(String insulationName){
+		return ConductorProperties.insulationIs90Celsius(insulation);
+	}
+
+	/**
 	 * Returns the area of this conductor, in Circular Mils
 	 * @return The area in circular mils
 	 */
@@ -359,5 +424,13 @@ public class Conductor {
 	 */
 	public void setCopperCoated(boolean copperCoated) {
 		this.copperCoated = copperCoated;
+	}
+
+	/**
+	 * Returns the full name of this conductor size.
+	 * @return The full size name including the prefix for AWG or KCMIL. If the size is not valid an empty string is returned.
+	 */
+	public String getFullSizeName() {
+		return ConductorProperties.getFullSizeName(size);
 	}
 }

@@ -1,7 +1,7 @@
 package main;
 
 import eecalcs.conductors.*;
-import eecalcs.conduits.Conduit;
+import eecalcs.conduits.ConduitProperties;
 import eecalcs.conduits.Magnetic;
 import eecalcs.conduits.Material;
 import eecalcs.systems.TempRating;
@@ -89,11 +89,11 @@ public class Main {
 
 		System.out.println("**************** Testing conduit sizes ****************");
 		String tradeSize = "2";
-		String type = Conduit.TYP_PVC_40;
-		System.out.println("Area in inch2 of " + tradeSize + "\" conduit, type " + type + " is: " + Conduit.getArea(type,
+		String type = ConduitProperties.TYP_PVC_40;
+		System.out.println("Area in inch2 of " + tradeSize + "\" conduit, type " + type + " is: " + ConduitProperties.getArea(type,
 				tradeSize));
-		System.out.println("isValidType: " + Conduit.isValidType(type));
-		System.out.println("hasArea: " + Conduit.hasArea(type,tradeSize));
+		System.out.println("isValidType: " + ConduitProperties.isValidType(type));
+		System.out.println("hasArea: " + ConduitProperties.hasArea(type,tradeSize));
 		//endregion
 
 		//region testing voltage drop
