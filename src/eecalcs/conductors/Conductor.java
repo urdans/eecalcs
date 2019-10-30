@@ -62,95 +62,42 @@ etc, etc.
 
 */
 
-import tools.EEToolsException;
+import eecalcs.conduits.Conduit;
+import eecalcs.systems.TempRating;
+import tools.Listener;
+import tools.Speaker;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Encapsulates the properties and methods for a single conductor as a physical real life object.
  */
-public class Conductor {
-	//region static
-	private static class TempCorrectionFactor{
-		private int minTC;
-		private int maxTC;
-		private int minTF;
-		private int maxTF;
-		private double correctionFactor60;
-		private double correctionFactor75;
-		private double correctionFactor90;
-
-		public TempCorrectionFactor(int minTC, int maxTC, int minTF, int maxTF, double correctionFactor60, double correctionFactor75,
-		                            double correctionFactor90) {
-			this.minTC = minTC;
-			this.maxTC = maxTC;
-			this.minTF = minTF;
-			this.maxTF = maxTF;
-			this.correctionFactor60 = correctionFactor60;
-			this.correctionFactor75 = correctionFactor75;
-			this.correctionFactor90 = correctionFactor90;
-		}
-
-		public double getCorrectionFactor(int tempRating){
-			if(tempRating == 60) return correctionFactor60;
-			if(tempRating == 75) return correctionFactor75;
-			if(tempRating == 90) return correctionFactor90;
-			return 0;
-		}
-
-		public boolean inRangeC(int ambientTempC){
-			return ambientTempC >= minTC & ambientTempC <= maxTC;
-		}
-
-		public boolean inRangeF(int ambientTempF){
-			return ambientTempF >= minTF & ambientTempF <= maxTF;
-		}
-	}
-	private static TempCorrectionFactor[] tempCorrectionFactors;
-
-	private static double getCorrectionFactorC(int ambientTemperatureC, int temperatureRating){
-		for(TempCorrectionFactor tcf: tempCorrectionFactors){
-			if(tcf.inRangeC(ambientTemperatureC)) return tcf.getCorrectionFactor(temperatureRating);
-		}
-		return 0;
+public class Conductor implements Conduitable, Speaker {
+	public enum Role{
+		HOT, NEUCC, NEUNCC, GND, NCONC
+	  /*yes,        yes,         no,     no,            no*/
+/* Neutral counting as current carrying conductor
+"120v 1Ø: => 2w:yes
+"208v 1Ø: => 2w:no neutral present; 3w:yes
+"208v 3Ø: => 3w:no; 4w:no; >50% harmonic:yes
+"240v 1Ø: => 2w:no neutral present; 3w:yes
+"240v 3Ø: => 3w:no; 4w:no; >50% harmonic:yes
+"277v 1Ø: => 2w:yes
+"480v 1Ø: => 2w:no neutral present; 3w:yes
+"480v 3Ø: => 3w:no; 4w:no; >50% harmonic:yes*/
 	}
 
-	private static double getCorrectionFactorF(int ambientTemperatureF, int temperatureRating){
-		for(TempCorrectionFactor tcf: tempCorrectionFactors){
-			if(tcf.inRangeF(ambientTemperatureF)) return tcf.getCorrectionFactor(temperatureRating);
-		}
-		return 0;
-	}
-
-	static {
-		tempCorrectionFactors = new TempCorrectionFactor[]{
-				new TempCorrectionFactor(-15, 10, 5, 50, 1.29, 1.2, 1.15),
-				new TempCorrectionFactor(11, 15, 51, 59, 1.22, 1.15, 1.12),
-				new TempCorrectionFactor(16, 20, 60, 68, 1.15, 1.11, 1.08),
-				new TempCorrectionFactor(21, 25, 69, 77, 1.08, 1.05, 1.04),
-				new TempCorrectionFactor(26, 30, 78, 86, 1, 1, 1),
-				new TempCorrectionFactor(31, 35, 87, 95, 0.91, 0.94, 0.96),
-				new TempCorrectionFactor(36, 40, 96, 104, 0.82, 0.88, 0.91),
-				new TempCorrectionFactor(41, 45, 105, 113, 0.71, 0.82, 0.87),
-				new TempCorrectionFactor(46, 50, 114, 122, 0.58, 0.75, 0.82),
-				new TempCorrectionFactor(51, 55, 123, 131, 0.41, 0.67, 0.76),
-				new TempCorrectionFactor(56, 60, 132, 140, 0, 0.58, 0.71),
-				new TempCorrectionFactor(61, 65, 141, 149, 0, 0.47, 0.65),
-				new TempCorrectionFactor(66, 70, 150, 158, 0, 0.33, 0.58),
-				new TempCorrectionFactor(71, 75, 159, 167, 0, 0, 0.5),
-				new TempCorrectionFactor(76, 80, 168, 176, 0, 0, 0.41),
-				new TempCorrectionFactor(81, 85, 177, 185, 0, 0, 0.29),
-		};
-	}
-	//endregion
-
-	protected String size = "12"; //empty means invalid size
-	protected Metal metal = Metal.COPPER;
-	protected String insulation = "THW"; //empty means invalid insulation
-	protected double length = 100;
-	protected double ampacity = 0; //size or insulation is invalid
-	protected int temperatureRating = 75; //zero means size or insulation is invalid
-	protected int ambientTemperatureC = 30;
-	protected int ambientTemperatureF = 86;
-	protected boolean copperCoated = Coating.UNCOATED;
+	private List<Listener> listeners = new ArrayList<>();
+	private Size size = Size.AWG_12;
+	private Metal metal = Metal.COPPER;
+	private Insul insulation = Insul.THW;
+	private double length = 100;
+	private TempRating temperatureRating = TempRating.T75;
+	private int ambientTemperatureF = 86;
+	private Coating copperCoated = Coating.UNCOATED;
+	private Conduit conduit = null;
+	private Role role = Role.HOT;
 
 	/**
 	 * Constructs a conductor from the given characteristics
@@ -158,44 +105,42 @@ public class Conductor {
 	 * @param metal The conductor metal as defined by {@link Metal}
 	 * @param insulation The conductor's insulation type as defined by {@link Insul}
 	 * @param length The length of the conductor in feet
+	 * //@param role
 	 */
-	public Conductor(String size, Metal metal, String insulation, double length) {
-		this.size = ConductorProperties.isValidSize(size) ? size : "";
-		this.insulation = ConductorProperties.isValidInsulationName(insulation)? insulation: "";
+	public Conductor(Size size, Metal metal, Insul insulation, double length) {
+		this.size = size;
 		this.metal = metal;
+		this.insulation = insulation;
 		this.length = Math.abs(length);
-		temperatureRating = ConductorProperties.getInsulationTemperatureCelsius(insulation);
-		setAmpacity();
+		temperatureRating = ConductorProperties.getTempRating(insulation);
 	}
 
 	/**
-	 * Constructs a Conductor object as a deep copy of an existing conductor object
-	 * @param conductor The existing conductor to be copied.
+	 * Constructs a Conductor object as a deep copy of the given conductor object. The new copy is exactly the same as the existing passed in
+	 * conductor except that it does not copy the conduit property, that is, the new conductor is assumed in free air (not in a conduit)
+	 * @param conductorToCopy The existing conductor to be copied.
 	 */
-	public Conductor(Conductor conductor) {
-		this.size = conductor.size;
-		this.metal = conductor.metal;
-		this.insulation = conductor.insulation;
-		this.length = conductor.length;
-		this.ampacity = conductor.ampacity;
-		this.temperatureRating = conductor.temperatureRating;
-		this.ambientTemperatureC = conductor.ambientTemperatureC;
-		this.ambientTemperatureF = conductor.ambientTemperatureF;
-		this.copperCoated =  conductor.copperCoated;
+	public Conductor(Conductor conductorToCopy) {
+		this.size = conductorToCopy.size;
+		this.metal = conductorToCopy.metal;
+		this.insulation = conductorToCopy.insulation;
+		this.length = conductorToCopy.length;
+		this.temperatureRating = conductorToCopy.temperatureRating;
+		this.ambientTemperatureF = conductorToCopy.ambientTemperatureF;
+		this.copperCoated =  conductorToCopy.copperCoated;
+		this.role = conductorToCopy.role;
 	}
 
 	/**
 	 * Constructs a default conductor object: size 12, copper, insulation type THW and length 100
 	 */
-	public Conductor(){
-		setAmpacity();
-	}
+	public Conductor(){}
 
 	/**
 	 * Gets the size of this conductor
 	 * @return The size of this conductor
 	 */
-	public String getSize() {
+	public Size getSize() {
 		return size;
 	}
 
@@ -203,14 +148,13 @@ public class Conductor {
 	 * Sets the size to this conductor
 	 * @param size The size of the conductor as defined by {@link Size}
 	 */
-	public void setSize(String size) {
-		this.size = ConductorProperties.isValidSize(size) ? size : "";
-		setAmpacity();
+	public void setSize(Size size) {
+		this.size = size;
 	}
 
 	/**
 	 * Gets the metal of this conductor
-	 * @return The metal of this conductor
+	 * @return The metal of this conductor as defined by {@link Metal}
 	 */
 	public Metal getMetal() {
 		return metal;
@@ -222,22 +166,13 @@ public class Conductor {
 	 */
 	public void setMetal(Metal metal) {
 		this.metal = metal;
-		setAmpacity();
-	}
-
-	private void setAmpacity(){
-		if(!isValid()){
-			ampacity = 0;
-			return;
-		}
-		ampacity = ConductorProperties.getAmpacity(size, metal, temperatureRating);
 	}
 
 	/**
 	 * Gets the insulation type of this conductor
-	 * @return The insulation type of this conductor
+	 * @return The insulation type of this conductor as defined by {@link Insul}
 	 */
-	public String getInsulation() {
+	public Insul getInsulation() {
 		return insulation;
 	}
 
@@ -245,10 +180,9 @@ public class Conductor {
 	 * Sets the insulation type to this conductor
 	 * @param insulation The conductor's insulation type as defined by {@link Insul}
 	 */
-	public void setInsulation(String insulation) {
-		this.insulation = ConductorProperties.isValidInsulationName(insulation)? insulation: "";
-		temperatureRating = ConductorProperties.getInsulationTemperatureCelsius(insulation);
-		setAmpacity();
+	public void setInsulation(Insul insulation) {
+		this.insulation = insulation;
+		temperatureRating = ConductorProperties.getTempRating(insulation);
 	}
 
 	/**
@@ -259,151 +193,42 @@ public class Conductor {
 		return length;
 	}
 
-	/**
-	 * Sets the length to this conductor
-	 * @param length The length of the conductor in feet
-	 */
 	public void setLength(double length) {
 		this.length = Math.abs(length);
 	}
 
-	/**
-	 * Gets the ampacity of this conductor under its giving ambient temperature and for its insulation given's temperature rating
-	 * @return The ampacity in amperes
-	 */
-	public double getAmpacity(){
-		return ampacity * getCorrectionFactorF(ambientTemperatureF, temperatureRating);
-	}
-
-	/**
-	 * Indicates if this conductor's size AND insulation name are valid
-	 * @return True if valid
-	 */
-	public boolean isValid(){
-		return ConductorProperties.isValidSize(size) & ConductorProperties.isValidInsulationName(insulation);
-	}
-
-	/**
-	 * Gets the temperature rating of this conductor's insulation
-	 * @return The temperature in degrees Celsius
-	 */
-	public int getTemperatureRating() {
-		return temperatureRating;
-	}
-
-	/**
-	 * Returns the area in square inches, of this insulated conductor (conductor and insulation altogether)
-	 * @return The area in square inches
-	 */
-	public double getInsulatedAreaIn2(){
+	@Override
+	public double getInsulatedAreaIn2() {
 		return ConductorProperties.getInsulatedAreaIn2(size, insulation);
 	}
 
 	/**
-	 * Returns the area in square inches of this compact conductor (Table 5A) with the given insulation
-	 * @param insulationName The insulation type of the conductor as defined by {@link Insul}
-	 * @return The area of the compact conductor or zero if any of the parameter is invalid or the area is not defined in table 5.
+	 * Returns the ampacity of this conductor. The result accounts for the ambient temperature, the insulation of this conductor, and the number of
+	 * other conductors that share the same raceway with this conductor. That is, the ampacity returned is corrected for ambient temperature (other
+	 * than 86F/30C), and adjusted for the number of conductors in the same raceway.
+	 * @return The ampacity in amperes.
 	 */
-	public double getCompactAreaIn2(String insulationName){
-		return ConductorProperties.getCompactAreaIn2(size, insulationName);
+	public double getAmpacity(){
+		return ConductorProperties.getAmpacity(size, metal, temperatureRating)
+				* Factors.getTemperatureCorrectionF(ambientTemperatureF, temperatureRating)
+				* Factors.getAdjustmentFactor(conduit);
 	}
 
-	/**
-	 * Returns the area in square inches of this bare compact conductor (Table 5A).
-	 * @return The area of the bare compact conductor or zero if the size is invalid or the area is not defined in table 5A.
-	 */
-	public double getCompactBareAreaIn2(){
-		return ConductorProperties.getCompactBareAreaIn2(size);
-	}
-
-	/**
-	 * Returns true if this insulated conductor has its area defined in table 5
-	 * @return True if the area is defined in table 5, false otherwise or parameters are not valid
-	 */
-	public boolean hasInsulatedArea(){
-		return ConductorProperties.hasInsulatedArea(size, insulation);
-	}
-
-	/**
-	 * Returns true if this compact conductor has its area defined in table 5A
-	 * @return True if the area is defined in table 5A, false otherwise or parameters are not valid.
-	 */
-	protected boolean hasCompactArea(){
-		return ConductorProperties.hasCompactArea(size, insulation);
-	}
-
-	/**
-	 * Returns true if this compact bare conductor has its area defined in table 5A
-	 * @return True if the area is defined in table 5A, false otherwise or parameter is not valid
-	 */
-	protected boolean hasCompactBareArea(){
-		return ConductorProperties.hasCompactBareArea(size);
-	}
-
-	/**
-	 * Asks if this conductor's insulation is rated for 60 degrees Celsius
-	 * @return True if rated for 60 degrees Celsius, false otherwise
-	 */
-	public boolean insulationIs60Celsius(){
-		return ConductorProperties.insulationIs60Celsius(insulation);
-	}
-
-	/**
-	 * Asks if this conductor's insulation is rated for 75 degrees Celsius
-	 * @return True if rated for 75 degrees Celsius, false otherwise
-	 */
-	public boolean insulationIs75Celsius(){
-		return ConductorProperties.insulationIs75Celsius(insulation);
-	}
-
-	/**
-	 *Asks if this conductor's insulation is rated for 90 degrees Celsius
-	 * @return True if rated for 90 degrees Celsius, false otherwise
-	 */
-	public boolean insulationIs90Celsius(String insulationName){
-		return ConductorProperties.insulationIs90Celsius(insulation);
-	}
-
-	/**
-	 * Returns the area of this conductor, in Circular Mils
-	 * @return The area in circular mils
-	 */
-	public double getAreaCM(){
-		return ConductorProperties.getAreaCM(size);
-	}
-
-	/**
-	 * Gets the ambient temperature of this conductor
-	 * @return The ambient temperature in degrees Celsius
-	 */
-	public int getAmbientTemperatureC() {
-		return ambientTemperatureC;
-	}
-
-	/**
-	 * Sets the ambient temperature to this conductor
-	 * @param ambientTemperatureC The ambient temperature in degrees Celsius
-	 */
-	public void setAmbientTemperatureC(int ambientTemperatureC) {
-		this.ambientTemperatureC = ambientTemperatureC;
-		this.ambientTemperatureF = (int)Math.floor(ambientTemperatureC * 1.8 + 32);
-	}
-
-	/**
-	 * Gets the ambient temperature of this conductor
-	 * @return The ambient temperature in degrees Fahrenheits
-	 */
+	@Override
 	public int getAmbientTemperatureF() {
 		return ambientTemperatureF;
 	}
 
-	/**
-	 * Sets the ambient temperature to this conductor
-	 * @param ambientTemperatureF The ambient temperature in degrees Fahrenheits
-	 */
 	public void setAmbientTemperatureF(int ambientTemperatureF) {
+		if(conduit != null)
+			conduit.getConduitables().forEach(conduitable -> conduitable.setAmbientTemperatureFSilently(ambientTemperatureF));
+		else
+			setAmbientTemperatureFSilently(ambientTemperatureF);
+	}
+
+	@Override
+	public void setAmbientTemperatureFSilently(int ambientTemperatureF) {
 		this.ambientTemperatureF = ambientTemperatureF;
-		this.ambientTemperatureC = (int)Math.ceil((ambientTemperatureF - 32) * 5/9);
 	}
 
 	/**
@@ -414,7 +239,7 @@ public class Conductor {
 	public boolean isCopperCoated(){
 		if(metal == Metal.ALUMINUM)
 			return false;
-		return copperCoated;
+		return copperCoated.isCoated();
 	}
 
 	/**
@@ -422,15 +247,102 @@ public class Conductor {
 	 * Setting this property does not have any effect if this conductor metal is aluminum.
 	 * @param copperCoated Indicates if the conductor is coated
 	 */
-	public void setCopperCoated(boolean copperCoated) {
+	public void setCopperCoated(Coating copperCoated) {
 		this.copperCoated = copperCoated;
 	}
 
 	/**
-	 * Returns the full name of this conductor size.
-	 * @return The full size name including the prefix for AWG or KCMIL. If the size is not valid an empty string is returned.
+	 * Return the coating of this copper conductor. The returned value has meaning only when the metal of this conductor is copper.
+	 * @return The coating of this copper conductor.
 	 */
-	public String getFullSizeName() {
-		return ConductorProperties.getFullSizeName(size);
+	public Coating getCopperCoating(){
+		return copperCoated;
 	}
+
+	@Override
+	public void setConduit(Conduit conduit) {
+		if(conduit == null)
+			return;
+		if(conduit.hasConduitable(this))
+			this.conduit = conduit;
+	}
+
+	@Override
+	public void leaveConduit(){
+		if(this.conduit == null)
+			return;
+		if(!this.conduit.hasConduitable(this))
+			this.conduit = null;
+	}
+
+	@Override
+	public Conduit getConduit() {
+		return conduit;
+	}
+
+	@Override
+	public boolean hasConduit() {
+		return conduit != null;
+	}
+
+	/**
+	 * Returns the temperature rating of this conductor which is defined by its insulator.
+	 * @return The enum temperature rating.
+	 * @see TempRating
+	 */
+	public TempRating getTemperatureRating() {
+		return temperatureRating;
+	}
+
+	/**
+	 * Returns the role of this conductor as defined by {@link Role}.
+	 * @return The role of this conductor.
+	 */
+	public Role getRole() {
+		return role;
+	}
+
+	/**
+	 * Sets the role of this conductor as defined by {@link Role}.
+	 * @param role The role of this conductor. Notice the default role if HOT.
+	 */
+	public void setRole(Role role) {
+		this.role = role;
+	}
+
+	@Override
+	public int getCurrentCarryingCount() {
+		if(role == Role.GND | role == Role.NEUNCC | role == Role.NCONC)
+			return 0;
+		return 1; //this is considering the neutral is a current carrying conductor.
+	}
+
+	@Override
+	public void addListener(Listener listener) {
+		if(listeners.contains(listener))
+			return;
+		listeners.add(listener);
+	}
+
+	@Override
+	public void removeListener(Listener listener) {
+		listeners.remove(listener);
+	}
+
+	@Override
+	public void notifyAllListeners() {
+		for(Listener listener: listeners)
+			listener.notify(this);
+	}
+
+	@Override
+	public String getDescription() {
+		//"#12 AWG THW (CU)(HOT)"
+		return "#" + size.getName() + " " + insulation.getName()+ " (" + getMetal().getSymbol() + ")(" + role + ")";
+	}
+
+	public void setRoofTopDistance(double roofTopDistance){}
+
+	public void resetRoofTop(){}
+
 }

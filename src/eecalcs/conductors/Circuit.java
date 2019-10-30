@@ -1,9 +1,53 @@
 package eecalcs.conductors;
 
-import eecalcs.conduits.Magnetic;
+import eecalcs.conduits.ConduitProperties;
 import eecalcs.conduits.Material;
+
 /**
- * This class represents a set of conductors inside a conduit.
+ * This class represents a circuit. A circuit is a concept made out of physical objects and characteristics.
+ * The physical objects that make a circuit are:
+ * - One or more set of conductors or one cable.
+ * - One overcurrent protection device.
+ * - One optional conduit.
+ * - One connected load.
+ * The characteristics that make a circuit are:
+ * - The one way AC resistance.
+ * - The one way DC resistance.
+ * - The one way reactance.
+ * - The nominal voltage.
+ * - The system (number of phases, number of wires and if delta or wye connection for 3 phase systems.
+ * - The number of current carrying conductors.
+ * - The number of sets (for parallel sets).
+ * - How are the sets installed in parallel: all sets in a conduit or same number of sets per separate conduit.
+ * Some properties of these properties are calculated as a result of combining the physical objects that make a circuit and their properties.
+ * For example, the ampacity of a circuit is a property that depends on the conductors but also the number of current carrying conductors inside the conduit
+ * when the circuit is inside a conduit (not in free air). Another example is the resistance or the reactance of the circuit, which depends on the type of
+ * conduit and the metal of the conductor. The current of a circuit depends on the load; the rating of a circuit depends on the OCPD...
+ * The ultimate goal of a circuit, once provided with all the required properties like length, metal, load type, ambient temperature, conditions (which might
+ * define the insulation type), locations, etc., is to provide:
+ * - the correct size of the conductor calculated based on the ampacity (corrected and adjusted), the voltage drop and other possible conditions.
+ * - the correct size of the overcurrent protection device (OCPD).
+ * - the correct size of the conduit when required/optional. This will always be computed, even if the installation is in free air.
+ *
+ * The classes involved in this concept are: Conductor, Cable, Conduit, Circuit, Load, Ocdp and probably Conditions (to think about this).
+ * The classes Conductor, Cable and Circuit must implement the interface Conduitable with the following methods:
+ * - getInsulatedAreaIn2(): returns the total area occupied by the cable, or the sum of all the conductors contained in a circuit or the area of a conductor.
+ * - getCurrentCarryingCount(): returns the number of current carrying conductors. A conductor object always returns 1. Cable and circuit will return the
+ * number accordingly.
+ * - getConductorCount(): Cable and Conductor objects return 1; circuit returns the count accordingly.
+ * - getAmpacity(): return the ampacity of the circuit, conductor or cable, accounting for all corrections and adjustments.
+ * - setConduit(): sets the container conduit of the Conduitable object. if the object already had a conduit, it will be replaced with no warning.
+ * - hasConduit(): asks if the Conduitable object is inside a conduit. A false response means the Conduitable is in free air.
+ *
+ * The area and conductor count is used to compute conduit fill. Current carrying count is used to compute ampacity.
+ *
+ * A Conduit object maintain a list af Conduitable objects. To compute the trade size, the Conduit object retrieves and get the total the area of all members
+ * of the list.
+ * As a circuit can be made out of conductors or out of one cable, it will use the current carrying count from either one of those to adjust the
+ * ampacity of the circuit. Conductor and cable will do the same. These three classes will always ask its container conduit for the number of other current
+ * carrying conductors to compute the adjusted ampacity of themselves. However, this adjustment is not required when conductors are not installed in a
+ * raceway or cable, like in free air or in a cable tray (only cables).
+ *
 */
 public class Circuit extends Conductor {
 	protected Material conduitMaterial = Material.PVC;
@@ -43,15 +87,15 @@ public class Circuit extends Conductor {
 	}
 
 	public double getOneWayACResistance(){
-		return ConductorProperties.getACResistance(size, metal, conduitMaterial, length, numberOfSets);
+		return ConductorProperties.getACResistance(getSize(), getMetal(), conduitMaterial, getLength(), numberOfSets);
 	}
 
 	public double getOneWayDCResistance(){
-		return ConductorProperties.getDCResistance(size, metal, length, numberOfSets, copperCoated);
+		return ConductorProperties.getDCResistance(getSize(), getMetal(), getLength(), numberOfSets, getCopperCoating());
 	}
 
 	public double getOneWayReactance(){
-		return ConductorProperties.getReactance(size, Magnetic.isMagnetic(conduitMaterial), length, numberOfSets);
+		return ConductorProperties.getReactance(getSize(), ConduitProperties.isMagnetic(conduitMaterial), getLength(), numberOfSets);
 	}
 
 	public double getAmpacity(){

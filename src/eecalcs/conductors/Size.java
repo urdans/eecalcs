@@ -3,33 +3,61 @@ package eecalcs.conductors;
 /**
  * Contains only static strings with the conductor valid sizes
  */
-public class Size {
-	public static final String S14   = "14";
-	public static final String S12   = "12";
-	public static final String S10   = "10";
-	public static final String S8    = "8";
-	public static final String S6    = "6";
-	public static final String S4    = "4";
-	public static final String S3    = "3";
-	public static final String S2    = "2";
-	public static final String S1    = "1";
-	public static final String Z1    = "1/0";
-	public static final String Z2    = "2/0";
-	public static final String Z3    = "3/0";
-	public static final String Z4    = "4/0";
-	public static final String K250  = "250";
-	public static final String K300  = "300";
-	public static final String K350  = "350";
-	public static final String K400  = "400";
-	public static final String K500  = "500";
-	public static final String K600  = "600";
-	public static final String K700  = "700";
-	public static final String K750  = "750";
-	public static final String K800  = "800";
-	public static final String K900  = "900";
-	public static final String K1000 = "1000";
-	public static final String K1250 = "1250";
-	public static final String K1500 = "1500";
-	public static final String K1750 = "1750";
-	public static final String K2000 = "2000";
+public enum Size {
+	AWG_14("14 AWG"),
+	AWG_12("12 AWG"),
+	AWG_10("10 AWG"),
+	AWG_8("8 AWG"),
+	AWG_6("6 AWG"),
+	AWG_4("4 AWG"),
+	AWG_3("3 AWG"),
+	AWG_2("2 AWG"),
+	AWG_1("1 AWG"),
+	AWG_1$0("1/0 AWG"),
+	AWG_2$0("2/0 AWG"),
+	AWG_3$0("3/0 AWG"),
+	AWG_4$0("4/0 AWG"),
+	KCMIL_250("250 KCMIL"),
+	KCMIL_300("300 KCMIL"),
+	KCMIL_350("350 KCMIL"),
+	KCMIL_400("400 KCMIL"),
+	KCMIL_500("500 KCMIL"),
+	KCMIL_600("600 KCMIL"),
+	KCMIL_700("700 KCMIL"),
+	KCMIL_750("750 KCMIL"),
+	KCMIL_800("800 KCMIL"),
+	KCMIL_900("900 KCMIL"),
+	KCMIL_1000("1000 KCMIL"),
+	KCMIL_1250("1250 KCMIL"),
+	KCMIL_1500("1500 KCMIL"),
+	KCMIL_1750("1750 KCMIL"),
+	KCMIL_2000("2000 KCMIL");
+	private String name;
+	private static String[] names;
+
+	static{
+		names = new String[values().length];
+		for(int i=0; i<values().length; i++)
+			names[i] = values()[i].getName();
+	}
+
+	private Size(String name){
+		this.name = name;
+	}
+
+	/**
+	 * Returns the string name that this enum represents.
+	 * @return The string name.
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * Returns an array of the string names that the enum values represent
+	 * @return An array of strings
+	 */
+	public static String[] getNames(){
+		return names;
+	}
 }

@@ -1,7 +1,6 @@
 package eecalcs.conduits;
 
 import tools.Message;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,300 +8,350 @@ import java.util.Map;
  * Encapsulates constants, static data and methods about electrical conduits as found in NEC 2014 table 4
  */
 public class ConduitProperties {
-	public static final String TYP_EMT    = "EMT";
-	public static final String TYP_ENT    = "ENT";
-	public static final String TYP_FMC    = "FMC";
-	public static final String TYP_IMC    = "IMC";
-	public static final String TYP_LFNC_A = "LFNC-A";
-	public static final String TYP_LFNC_B = "LFNC-B";
-	public static final String TYP_LFMC   = "LFMC";
-	public static final String TYP_RMC    = "RMC";
-	public static final String TYP_PVC_80 = "PVC-80";
-	public static final String TYP_PVC_40 = "PVC-40";
-	public static final String TYP_HDPE   = "HDPE";
-	public static final String TYP_PVC_A  = "PVC-A";
-	public static final String TYP_PVC_EB = "PVC-EB";
-	public static final String TRADE_38  = "3/8";
-	public static final String TRADE_12  = "1/2";
-	public static final String TRADE_34  = "3/4";
-	public static final String TRADE_1   = "1";
-	public static final String TRADE_114 = "1-1/4";
-	public static final String TRADE_112 = "1-1/2";
-	public static final String TRADE_2   = "2";
-	public static final String TRADE_212 = "2-1/2";
-	public static final String TRADE_3   = "3";
-	public static final String TRADE_312 = "3-1/2";
-	public static final String TRADE_4   = "4";
-	public static final String TRADE_5   = "5";
-	public static final String TRADE_6   = "6";
-	private static String[] tradeSizes;
-	private static String[] types;
-	private static Map<String, Double> areaEMT;
-	private static Map<String, Double> areaENT;
-	private static Map<String, Double> areaFMT;
-	private static Map<String, Double> areaIMC;
-	private static Map<String, Double> areaLFNCA;
-	private static Map<String, Double> areaLFNCB;
-	private static Map<String, Double> areaLFMC;
-	private static Map<String, Double> areaRMC;
-	private static Map<String, Double> areaPVC80;
-	private static Map<String, Double> areaPVC40;
-	private static Map<String, Double> areaHDPE;
-	private static Map<String, Double> areaPVCA;
-	private static Map<String, Double> areaPVCEB;
-	private static Map<String, Map<String, Double>> dimensions;
+	public static final boolean Magnetic = true;
+	public static final boolean nonMagnetic = false;
+	private static Map<Trade, Double> areaEMT;
+	private static Map<Trade, Double> areaENT;
+	private static Map<Trade, Double> areaFMT;
+	private static Map<Trade, Double> areaIMC;
+	private static Map<Trade, Double> areaLFNCA;
+	private static Map<Trade, Double> areaLFNCB;
+	private static Map<Trade, Double> areaLFMC;
+	private static Map<Trade, Double> areaRMC;
+	private static Map<Trade, Double> areaPVC80;
+	private static Map<Trade, Double> areaPVC40;
+	private static Map<Trade, Double> areaHDPE;
+	private static Map<Trade, Double> areaPVCA;
+	private static Map<Trade, Double> areaPVCEB;
+	private static Map<Trade, Double> areaINVALID;
+	private static Map<Type, Map<Trade, Double>> dimensions;
 	private static Message ERROR40	= new Message("Invalid conduit type.", -40);
 	private static Message ERROR41	= new Message("Trade size not available for this conduit type.", -41);
 	private static Message ERROR42	= new Message("Area of conduit not available.", -42);
 
+	static {
+		//region EMT
+		areaEMT = new HashMap<>();
+		areaEMT.put(Trade.T1$2,    0.304);
+		areaEMT.put(Trade.T3$4,    0.533);
+		areaEMT.put(Trade.T1,      0.864);
+		areaEMT.put(Trade.T1_1$4,  1.496);
+		areaEMT.put(Trade.T1_1$2,  2.036);
+		areaEMT.put(Trade.T2,      3.356);
+		areaEMT.put(Trade.T2_1$2,  5.858);
+		areaEMT.put(Trade.T3,      8.846);
+		areaEMT.put(Trade.T3_1$2, 11.545);
+		areaEMT.put(Trade.T4,     14.753);
+		//endregion
+
+		//region ENT
+		areaENT = new HashMap<>();
+		areaENT.put(Trade.T1$2,   0.285);
+		areaENT.put(Trade.T3$4,   0.508);
+		areaENT.put(Trade.T1,     0.832);
+		areaENT.put(Trade.T1_1$4, 1.453);
+		areaENT.put(Trade.T1_1$2, 1.986);
+		areaENT.put(Trade.T2,     3.291);
+		//endregion
+
+		//region FMT
+		areaFMT = new HashMap<>();
+		areaFMT.put(Trade.T3$8,   0.116);
+		areaFMT.put(Trade.T1$2,   0.317);
+		areaFMT.put(Trade.T3$4,   0.533);
+		areaFMT.put(Trade.T1,     0.817);
+		areaFMT.put(Trade.T1_1$4, 1.277);
+		areaFMT.put(Trade.T1_1$2, 1.858);
+		areaFMT.put(Trade.T2,     3.269);
+		areaFMT.put(Trade.T2_1$2, 4.909);
+		areaFMT.put(Trade.T3,     7.069);
+		areaFMT.put(Trade.T3_1$2, 9.621);
+		areaFMT.put(Trade.T4,    12.566);
+		//endregion
+
+		//region IMC
+		areaIMC = new HashMap<>();
+		areaIMC.put(Trade.T1$2,    0.342);
+		areaIMC.put(Trade.T3$4,    0.586);
+		areaIMC.put(Trade.T1,      0.959);
+		areaIMC.put(Trade.T1_1$4,  1.647);
+		areaIMC.put(Trade.T1_1$2,  2.225);
+		areaIMC.put(Trade.T2,       3.63);
+		areaIMC.put(Trade.T2_1$2,  5.135);
+		areaIMC.put(Trade.T3,      7.922);
+		areaIMC.put(Trade.T3_1$2, 10.584);
+		areaIMC.put(Trade.T4,     13.631);
+		//endregion
+
+		//region LFNCA
+		areaLFNCA = new HashMap<>();
+		areaLFNCA.put(Trade.T3$8,   0.192);
+		areaLFNCA.put(Trade.T1$2,   0.312);
+		areaLFNCA.put(Trade.T3$4,   0.535);
+		areaLFNCA.put(Trade.T1,     0.854);
+		areaLFNCA.put(Trade.T1_1$4, 1.502);
+		areaLFNCA.put(Trade.T1_1$2, 2.018);
+		areaLFNCA.put(Trade.T2,     3.343);
+		//endregion
+
+		//region LFNCB
+		areaLFNCB = new HashMap<>();
+		areaLFNCB.put(Trade.T3$8,   0.192);
+		areaLFNCB.put(Trade.T1$2,   0.314);
+		areaLFNCB.put(Trade.T3$4,   0.541);
+		areaLFNCB.put(Trade.T1,     0.873);
+		areaLFNCB.put(Trade.T1_1$4, 1.528);
+		areaLFNCB.put(Trade.T1_1$2, 1.981);
+		areaLFNCB.put(Trade.T2,     3.246);
+		//endregion
+
+		//region LFMC
+		areaLFMC = new HashMap<>();
+		areaLFMC.put(Trade.T3$8,   0.192);
+		areaLFMC.put(Trade.T1$2,   0.314);
+		areaLFMC.put(Trade.T3$4,   0.541);
+		areaLFMC.put(Trade.T1,     0.873);
+		areaLFMC.put(Trade.T1_1$4, 1.528);
+		areaLFMC.put(Trade.T1_1$2, 1.981);
+		areaLFMC.put(Trade.T2,     3.246);
+		areaLFMC.put(Trade.T2_1$2, 4.881);
+		areaLFMC.put(Trade.T3,     7.475);
+		areaLFMC.put(Trade.T3_1$2, 9.731);
+		areaLFMC.put(Trade.T4,    12.692);
+		//endregion
+
+		//region RMC
+		areaRMC = new HashMap<>();
+		areaRMC.put(Trade.T1$2,   0.314);
+		areaRMC.put(Trade.T3$4,   0.549);
+		areaRMC.put(Trade.T1,     0.887);
+		areaRMC.put(Trade.T1_1$4, 1.526);
+		areaRMC.put(Trade.T1_1$2, 2.071);
+		areaRMC.put(Trade.T2,     3.408);
+		areaRMC.put(Trade.T2_1$2, 4.866);
+		areaRMC.put(Trade.T3,     7.499);
+		areaRMC.put(Trade.T3_1$2, 10.01);
+		areaRMC.put(Trade.T4,    12.882);
+		areaRMC.put(Trade.T5,    20.212);
+		areaRMC.put(Trade.T6,    29.158);
+		//endregion
+
+		//region PVC80
+		areaPVC80 = new HashMap<>();
+		areaPVC80.put(Trade.T1$2,   0.217);
+		areaPVC80.put(Trade.T3$4,   0.409);
+		areaPVC80.put(Trade.T1,     0.688);
+		areaPVC80.put(Trade.T1_1$4, 1.237);
+		areaPVC80.put(Trade.T1_1$2, 1.711);
+		areaPVC80.put(Trade.T2,     2.874);
+		areaPVC80.put(Trade.T2_1$2, 4.119);
+		areaPVC80.put(Trade.T3,     6.442);
+		areaPVC80.put(Trade.T3_1$2, 8.688);
+		areaPVC80.put(Trade.T4,    11.258);
+		areaPVC80.put(Trade.T5,    17.855);
+		areaPVC80.put(Trade.T6,    25.598);
+		//endregion
+
+		//region PVC40
+		areaPVC40 = new HashMap<>();
+		areaPVC40.put(Trade.T1$2,   0.285);
+		areaPVC40.put(Trade.T3$4,   0.508);
+		areaPVC40.put(Trade.T1,     0.832);
+		areaPVC40.put(Trade.T1_1$4, 1.453);
+		areaPVC40.put(Trade.T1_1$2, 1.986);
+		areaPVC40.put(Trade.T2,     3.291);
+		areaPVC40.put(Trade.T2_1$2, 4.695);
+		areaPVC40.put(Trade.T3,     7.268);
+		areaPVC40.put(Trade.T3_1$2, 9.737);
+		areaPVC40.put(Trade.T4,    12.554);
+		areaPVC40.put(Trade.T5,    19.761);
+		areaPVC40.put(Trade.T6,    28.567);
+		//endregion
+
+		//region HDPE
+		areaHDPE = new HashMap<>();
+		areaHDPE.put(Trade.T1$2,   0.285);
+		areaHDPE.put(Trade.T3$4,   0.508);
+		areaHDPE.put(Trade.T1,     0.832);
+		areaHDPE.put(Trade.T1_1$4, 1.453);
+		areaHDPE.put(Trade.T1_1$2, 1.986);
+		areaHDPE.put(Trade.T2,     3.291);
+		areaHDPE.put(Trade.T2_1$2, 4.695);
+		areaHDPE.put(Trade.T3,     7.268);
+		areaHDPE.put(Trade.T3_1$2, 9.737);
+		areaHDPE.put(Trade.T4,    12.554);
+		areaHDPE.put(Trade.T5,    19.761);
+		areaHDPE.put(Trade.T6,    28.567);
+		//endregion
+
+		//region PVCA
+		areaPVCA = new HashMap<>();
+		areaPVCA.put(Trade.T1$2,    0.385);
+		areaPVCA.put(Trade.T3$4,     0.65);
+		areaPVCA.put(Trade.T1,      1.084);
+		areaPVCA.put(Trade.T1_1$4,  1.767);
+		areaPVCA.put(Trade.T1_1$2,  2.324);
+		areaPVCA.put(Trade.T2,      3.647);
+		areaPVCA.put(Trade.T2_1$2,  5.453);
+		areaPVCA.put(Trade.T3,      8.194);
+		areaPVCA.put(Trade.T3_1$2, 10.694);
+		areaPVCA.put(Trade.T4,     13.723);
+		//endregion
+
+		//region PVCEB
+		areaPVCEB = new HashMap<>();
+		areaPVCEB.put(Trade.T2,      3.874);
+		areaPVCEB.put(Trade.T3,      8.709);
+		areaPVCEB.put(Trade.T3_1$2, 11.365);
+		areaPVCEB.put(Trade.T4,     14.448);
+		areaPVCEB.put(Trade.T5,     22.195);
+		areaPVCEB.put(Trade.T6,      31.53);
+		//endregion
+
+		//region dimensions
+		dimensions = new HashMap<>();
+		dimensions.put(Type.EMT,    areaEMT);
+		dimensions.put(Type.EMTAL,  areaEMT);
+		dimensions.put(Type.ENT,    areaENT);
+		dimensions.put(Type.FMC,    areaFMT);
+		dimensions.put(Type.FMCAL,  areaFMT);
+		dimensions.put(Type.IMC,    areaIMC);
+		dimensions.put(Type.LFNCA,  areaLFNCA);
+		dimensions.put(Type.LFNCB,  areaLFNCB);
+		dimensions.put(Type.LFMC,   areaLFMC);
+		dimensions.put(Type.LFMCAL, areaLFMC);
+		dimensions.put(Type.RMC,    areaRMC);
+		dimensions.put(Type.RMCAL,  areaRMC);
+		dimensions.put(Type.PVC80,  areaPVC80);
+		dimensions.put(Type.PVC40,  areaPVC40);
+		dimensions.put(Type.HDPE,   areaHDPE);
+		dimensions.put(Type.PVCA,   areaPVCA);
+		dimensions.put(Type.PVCEB,  areaPVCEB);
+		//endregion
+	}
+
 	/**
-	 * Returns the conduit material corresponding to the given index
-	 * @param conduitTypeIndex The index of the conduit material. 0 = PVC, 1 = aluminum and other = steel
-	 * @return The requested material
+	 * Returns the conduit material corresponding to the given index.
+	 * @param conduitTypeIndex The index of the conduit material. 0 = PVC, 1 = aluminum and other = steel.
+	 * @return The requested material if the given index correspond to a material, null otherwise.
 	 * @see Material
 	 */
 	public static Material getConduitMaterialPerIndex(int conduitTypeIndex){
-		if(conduitTypeIndex == 0)
-			return Material.PVC;
-		if(conduitTypeIndex == 1)
-			return Material.ALUMINUM;
-		return Material.STEEL;
+		if(conduitTypeIndex < Material.values().length)
+			return Material.values()[conduitTypeIndex];
+		return null;
 	}
 
 	/**
-	 * Returns the list of the registered conduit standard trade sizes
-	 * @return The list of the registered conduit standard trade sizes
-	 */
-	public static String[] getTradeSizes() {
-		return tradeSizes;
-	}
-
-	/**
-	 * Returns the list of the registered conduit types
-	 * @return The list of the registered conduit types
-	 */
-	public static String[] getTypes() {
-		return types;
-	}
-
-	/**
-	 * Asks if the given conduit type is valid, that is, it's registered in the conduit type list
-	 * @param conduitType The requested conduit type
+	 * Asks if the given conduit string type is valid, that is, if it's registered in the conduit type string list
+	 * @param conduitType The requested conduit string type
 	 * @return True if it's a valid conduit type, false otherwise
 	 */
 	public static boolean isValidType(String conduitType){
-		return dimensions.containsKey(conduitType);
+		return getTypeByString(conduitType) != null;
 	}
 
 	/**
-	 * Asks if the given conduit type and trade size has an internal area, that is the type and size are valid (NEC 2014 Table 4)
-	 * @param conduitType The type of conduit
-	 * @param tradeSize The size of the conduit
-	 * @return True if the requested conduit type and size has an internal area.
+	 * Asks if the giving string name correspond to a valid trade size.
+	 * @param tradeSize The requested string name.
+	 * @return True if the given string correspond to a valid trade size; false otherwise.
 	 */
-	public static boolean hasArea(String conduitType, String tradeSize){
-		return isValidType(conduitType) && dimensions.get(conduitType).containsKey(tradeSize);
+	public static boolean isValidTrade(String tradeSize){
+		return getTradeSizeByString(tradeSize) != null;
 	}
 
 	/**
-	 * Gets the area of the given conduit type and trade size
-	 * @param conduitType The type of conduit
-	 * @param tradeSize The size of the conduit
-	 * @return The area in square inches of the conduit or zero if not in NEC 2014 table 4
+	 * Asks if the given conduit type and trade size has an internal area, that is if the type and trade size have an entry in NEC 2014 Table 4.
+	 * @param conduitType The type of conduit.
+	 * @param tradeSize The trade size of the conduit.
+	 * @return True if the requested conduit type and trade size have an internal area in table 4.
 	 */
-	public static double getArea(String conduitType, String tradeSize){
+	public static boolean hasArea(Type conduitType, Trade tradeSize){
+		return dimensions.get(conduitType).containsKey(tradeSize);
+	}
+
+	/**
+	 * Gets the area of the given conduit type and trade size.
+	 * @param conduitType  The type of conduit.
+	 * @param tradeSize The size of the conduit.
+	 * @return The area in square inches of the conduit or zero if not in NEC 2014 table 4.
+	 */
+	public static double getArea(Type conduitType, Trade tradeSize){
 		if(hasArea(conduitType, tradeSize))
 			return dimensions.get(conduitType).get(tradeSize);
 		return 0;
 	}
 
-	static {
-		//region conduit types and trade sizes
-		tradeSizes = new String[]{TRADE_38, TRADE_12, TRADE_34, TRADE_1, TRADE_114, TRADE_112, TRADE_2, TRADE_212, TRADE_3, TRADE_312,
-				TRADE_4, TRADE_5, TRADE_6};
-		types = new String[]{TYP_EMT, TYP_ENT, TYP_FMC, TYP_IMC, TYP_LFNC_A, TYP_LFNC_B, TYP_LFMC, TYP_RMC, TYP_PVC_80,
-				TYP_PVC_40, TYP_HDPE, TYP_PVC_A, TYP_PVC_EB};
-		//endregion
-		//region EMT
-		areaEMT = new HashMap<>();
-		areaEMT.put(tradeSizes[1], 0.304);
-		areaEMT.put(tradeSizes[2], 0.533);
-		areaEMT.put(tradeSizes[3], 0.864);
-		areaEMT.put(tradeSizes[4], 1.496);
-		areaEMT.put(tradeSizes[5], 2.036);
-		areaEMT.put(tradeSizes[6], 3.356);
-		areaEMT.put(tradeSizes[7], 5.858);
-		areaEMT.put(tradeSizes[8], 8.846);
-		areaEMT.put(tradeSizes[9], 11.545);
-		areaEMT.put(tradeSizes[10], 14.753);
-		//endregion
-		//region ENT
-		areaENT = new HashMap<>();
-		areaENT.put(tradeSizes[1], 0.285);
-		areaENT.put(tradeSizes[2], 0.508);
-		areaENT.put(tradeSizes[3], 0.832);
-		areaENT.put(tradeSizes[4], 1.453);
-		areaENT.put(tradeSizes[5], 1.986);
-		areaENT.put(tradeSizes[6], 3.291);
-		//endregion
-		//region FMT
-		areaFMT = new HashMap<>();
-		areaFMT.put(tradeSizes[0], 0.116);
-		areaFMT.put(tradeSizes[1], 0.317);
-		areaFMT.put(tradeSizes[2], 0.533);
-		areaFMT.put(tradeSizes[3], 0.817);
-		areaFMT.put(tradeSizes[4], 1.277);
-		areaFMT.put(tradeSizes[5], 1.858);
-		areaFMT.put(tradeSizes[6], 3.269);
-		areaFMT.put(tradeSizes[7], 4.909);
-		areaFMT.put(tradeSizes[8], 7.069);
-		areaFMT.put(tradeSizes[9], 9.621);
-		areaFMT.put(tradeSizes[10], 12.566);
-		//endregion
-		//region IMC
-		areaIMC = new HashMap<>();
-		areaIMC.put(tradeSizes[1], 0.342);
-		areaIMC.put(tradeSizes[2], 0.586);
-		areaIMC.put(tradeSizes[3], 0.959);
-		areaIMC.put(tradeSizes[4], 1.647);
-		areaIMC.put(tradeSizes[5], 2.225);
-		areaIMC.put(tradeSizes[6], 3.63);
-		areaIMC.put(tradeSizes[7], 5.135);
-		areaIMC.put(tradeSizes[8], 7.922);
-		areaIMC.put(tradeSizes[9], 10.584);
-		areaIMC.put(tradeSizes[10], 13.631);
-		//endregion
-		//region LFNCA
-		areaLFNCA = new HashMap<>();
-		areaLFNCA.put(tradeSizes[0], 0.192);
-		areaLFNCA.put(tradeSizes[1], 0.312);
-		areaLFNCA.put(tradeSizes[2], 0.535);
-		areaLFNCA.put(tradeSizes[3], 0.854);
-		areaLFNCA.put(tradeSizes[4], 1.502);
-		areaLFNCA.put(tradeSizes[5], 2.018);
-		areaLFNCA.put(tradeSizes[6], 3.343);
-		//endregion
-		//region LFNCB
-		areaLFNCB = new HashMap<>();
-		areaLFNCB.put(tradeSizes[0], 0.192);
-		areaLFNCB.put(tradeSizes[1], 0.314);
-		areaLFNCB.put(tradeSizes[2], 0.541);
-		areaLFNCB.put(tradeSizes[3], 0.873);
-		areaLFNCB.put(tradeSizes[4], 1.528);
-		areaLFNCB.put(tradeSizes[5], 1.981);
-		areaLFNCB.put(tradeSizes[6], 3.246);
-		//endregion
-		//region LFMC
-		areaLFMC = new HashMap<>();
-		areaLFMC.put(tradeSizes[0], 0.192);
-		areaLFMC.put(tradeSizes[1], 0.314);
-		areaLFMC.put(tradeSizes[2], 0.541);
-		areaLFMC.put(tradeSizes[3], 0.873);
-		areaLFMC.put(tradeSizes[4], 1.528);
-		areaLFMC.put(tradeSizes[5], 1.981);
-		areaLFMC.put(tradeSizes[6], 3.246);
-		areaLFMC.put(tradeSizes[7], 4.881);
-		areaLFMC.put(tradeSizes[8], 7.475);
-		areaLFMC.put(tradeSizes[9], 9.731);
-		areaLFMC.put(tradeSizes[10], 12.692);
-		//endregion
-		//region RMC
-		areaRMC = new HashMap<>();
-		areaRMC.put(tradeSizes[1], 0.314);
-		areaRMC.put(tradeSizes[2], 0.549);
-		areaRMC.put(tradeSizes[3], 0.887);
-		areaRMC.put(tradeSizes[4], 1.526);
-		areaRMC.put(tradeSizes[5], 2.071);
-		areaRMC.put(tradeSizes[6], 3.408);
-		areaRMC.put(tradeSizes[7], 4.866);
-		areaRMC.put(tradeSizes[8], 7.499);
-		areaRMC.put(tradeSizes[9], 10.01);
-		areaRMC.put(tradeSizes[10], 12.882);
-		areaRMC.put(tradeSizes[11], 20.212);
-		areaRMC.put(tradeSizes[12], 29.158);
-		//endregion
-		//region PVC80
-		areaPVC80 = new HashMap<>();
-		areaPVC80.put(tradeSizes[1], 0.217);
-		areaPVC80.put(tradeSizes[2], 0.409);
-		areaPVC80.put(tradeSizes[3], 0.688);
-		areaPVC80.put(tradeSizes[4], 1.237);
-		areaPVC80.put(tradeSizes[5], 1.711);
-		areaPVC80.put(tradeSizes[6], 2.874);
-		areaPVC80.put(tradeSizes[7], 4.119);
-		areaPVC80.put(tradeSizes[8], 6.442);
-		areaPVC80.put(tradeSizes[9], 8.688);
-		areaPVC80.put(tradeSizes[10], 11.258);
-		areaPVC80.put(tradeSizes[11], 17.855);
-		areaPVC80.put(tradeSizes[12], 25.598);
-		//endregion
-		//region PVC40
-		areaPVC40 = new HashMap<>();
-		areaPVC40.put(tradeSizes[1], 0.285);
-		areaPVC40.put(tradeSizes[2], 0.508);
-		areaPVC40.put(tradeSizes[3], 0.832);
-		areaPVC40.put(tradeSizes[4], 1.453);
-		areaPVC40.put(tradeSizes[5], 1.986);
-		areaPVC40.put(tradeSizes[6], 3.291);
-		areaPVC40.put(tradeSizes[7], 4.695);
-		areaPVC40.put(tradeSizes[8], 7.268);
-		areaPVC40.put(tradeSizes[9], 9.737);
-		areaPVC40.put(tradeSizes[10], 12.554);
-		areaPVC40.put(tradeSizes[11], 19.761);
-		areaPVC40.put(tradeSizes[12], 28.567);
-		//endregion
-		//region HDPE
-		areaHDPE = new HashMap<>();
-		areaHDPE.put(tradeSizes[1], 0.285);
-		areaHDPE.put(tradeSizes[2], 0.508);
-		areaHDPE.put(tradeSizes[3], 0.832);
-		areaHDPE.put(tradeSizes[4], 1.453);
-		areaHDPE.put(tradeSizes[5], 1.986);
-		areaHDPE.put(tradeSizes[6], 3.291);
-		areaHDPE.put(tradeSizes[7], 4.695);
-		areaHDPE.put(tradeSizes[8], 7.268);
-		areaHDPE.put(tradeSizes[9], 9.737);
-		areaHDPE.put(tradeSizes[10], 12.554);
-		areaHDPE.put(tradeSizes[11], 19.761);
-		areaHDPE.put(tradeSizes[12], 28.567);
-		//endregion
-		//region PVCA
-		areaPVCA = new HashMap<>();
-		areaPVCA.put(tradeSizes[1], 0.385);
-		areaPVCA.put(tradeSizes[2], 0.65);
-		areaPVCA.put(tradeSizes[3], 1.084);
-		areaPVCA.put(tradeSizes[4], 1.767);
-		areaPVCA.put(tradeSizes[5], 2.324);
-		areaPVCA.put(tradeSizes[6], 3.647);
-		areaPVCA.put(tradeSizes[7], 5.453);
-		areaPVCA.put(tradeSizes[8], 8.194);
-		areaPVCA.put(tradeSizes[9], 10.694);
-		areaPVCA.put(tradeSizes[10], 13.723);
-		//endregion
-		//region PVCEB
-		areaPVCEB = new HashMap<>();
-		areaPVCEB.put(tradeSizes[6], 3.874);
-		areaPVCEB.put(tradeSizes[8], 8.709);
-		areaPVCEB.put(tradeSizes[9], 11.365);
-		areaPVCEB.put(tradeSizes[10], 14.448);
-		areaPVCEB.put(tradeSizes[11], 22.195);
-		areaPVCEB.put(tradeSizes[12], 31.53);
-		//endregion
-		//region dimensions
-		dimensions = new HashMap<>();
-		dimensions.put(types[0], areaEMT);
-		dimensions.put(types[1], areaENT);
-		dimensions.put(types[2], areaFMT);
-		dimensions.put(types[3], areaIMC);
-		dimensions.put(types[4], areaLFNCA);
-		dimensions.put(types[5], areaLFNCB);
-		dimensions.put(types[6], areaLFMC);
-		dimensions.put(types[7], areaRMC);
-		dimensions.put(types[8], areaPVC80);
-		dimensions.put(types[9], areaPVC40);
-		dimensions.put(types[10], areaHDPE);
-		dimensions.put(types[11], areaPVCA);
-		dimensions.put(types[12], areaPVCEB);
-		//endregion
+	/**
+	 * Returns the map of trade-size-and-area pair values corresponding to the given conduit type.
+	 * @param conduitType The conduit type for which the areas are requested.
+	 * @return The map with trade sizes and areas for the requesting conduit type.
+	 */
+	public static Map<Trade, Double> getAreasForType(Type conduitType){
+		return dimensions.get(conduitType);
+	}
+
+	/**
+	 * Returns the conduit type of the given conduit string type.
+	 * @param conduitTypeS The conduit string type.
+	 * @return The conduit type if the given string is valid, null otherwise.
+	 * @see Type
+	 */
+	public static Type getTypeByString(String conduitTypeS){
+		conduitTypeS = conduitTypeS.trim();
+		for(Type type: Type.values()){
+			if(type.getName().equals(conduitTypeS))
+				return type;
+		}
+		return null;
+	}
+
+	/**
+	 * Returns the conduit trade size of the given conduit string trade size.
+	 * @param tradeSizeS The conduit string trade size.
+	 * @return The trade size. If the given string is not valid, the returned value is Trade.INVALID.
+	 */
+	public static Trade getTradeSizeByString(String tradeSizeS){
+		tradeSizeS = tradeSizeS.trim();
+		for(Trade trade: Trade.values()){
+			if(trade.getName().equals(tradeSizeS))
+				return trade;
+		}
+		return null;
+	}
+
+	/**
+	 * Asks is the given conduit material is magnetic.
+	 * @param material The material of the conduit.
+	 * @return True if the material is magnetic, false otherwise.
+	 * @see Material
+	 */
+	public static boolean isMagnetic(Material material){
+		if(material == Material.PVC | material == Material.ALUMINUM) return nonMagnetic;
+		return Magnetic;
+	}
+
+	/**
+	 * Asks is the given conduit type is magnetic.
+	 * @param conduitType The material of the conduit.
+	 * @return True if the material is magnetic, false otherwise.
+	 * @see Type
+	 */
+	public static boolean isMagnetic(Type conduitType){
+		if(conduitType == Type.EMT | conduitType == Type.FMC | conduitType == Type.IMC | conduitType == Type.LFMC | conduitType == Type.RMC) return Magnetic;
+		return nonMagnetic;
+	}
+
+	/**
+	 * Returns the material (aluminum, steel or pvc) of the given conduit type.
+	 * @param type The conduit type as defined in {@link Type} for which the material is requested.
+	 * @return The requested material.
+	 */
+	public static Material getMaterial(Type type){
+		if(type == Type.EMTAL | type == Type.FMCAL | type == Type.LFMCAL | type == Type.RMCAL)
+			return Material.ALUMINUM;
+		else if(type == Type.EMT | type == Type.FMC | type == Type.IMC | type == Type.LFMC | type == Type.RMC)
+			return Material.STEEL;
+		return Material.PVC;
 	}
 }
