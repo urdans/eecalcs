@@ -12,6 +12,9 @@ class ConductorPropertiesTest {
 
     @Test
     void getAllowedSize() {
+        System.out.println("╔════════════════╗");
+        System.out.println("║ getAllowedSize ║");
+        System.out.println("╚════════════════╝");
         assertEquals(Size.AWG_1, ConductorProperties.getAllowedSize(144.23, Metal.COPPER, TempRating.T90));
         assertEquals(Size.AWG_1$0, ConductorProperties.getAllowedSize(144.23, Metal.COPPER, TempRating.T75));
         assertEquals(Size.AWG_2$0, ConductorProperties.getAllowedSize(144.23, Metal.COPPER, TempRating.T60));

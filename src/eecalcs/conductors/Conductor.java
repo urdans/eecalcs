@@ -93,11 +93,11 @@ public class Conductor implements Conduitable, Speaker {
 	private Metal metal = Metal.COPPER;
 	private Insul insulation = Insul.THW;
 	private double length = 100;
-	private TempRating temperatureRating = TempRating.T75;
 	private int ambientTemperatureF = 86;
 	private Coating copperCoated = Coating.UNCOATED;
 	private Conduit conduit = null;
 	private Role role = Role.HOT;
+	private Bundle bundle;
 
 	/**
 	 * Constructs a conductor from the given characteristics
@@ -112,14 +112,15 @@ public class Conductor implements Conduitable, Speaker {
 		this.metal = metal;
 		this.insulation = insulation;
 		this.length = Math.abs(length);
-		temperatureRating = ConductorProperties.getTempRating(insulation);
 	}
 
-	/**
+	/* OLD CODE
 	 * Constructs a Conductor object as a deep copy of the given conductor object. The new copy is exactly the same as the existing passed in
-	 * conductor except that it does not copy the conduit property, that is, the new conductor is assumed in free air (not in a conduit)
+	 * conductor except:
+	 * <p>-it does not copy the conduit property, that is, the new conductor is assumed in free air (not in a conduit).
+	 * <p>-it does not copy the listener list.
 	 * @param conductorToCopy The existing conductor to be copied.
-	 */
+	 *
 	public Conductor(Conductor conductorToCopy) {
 		this.size = conductorToCopy.size;
 		this.metal = conductorToCopy.metal;
@@ -129,6 +130,24 @@ public class Conductor implements Conduitable, Speaker {
 		this.ambientTemperatureF = conductorToCopy.ambientTemperatureF;
 		this.copperCoated =  conductorToCopy.copperCoated;
 		this.role = conductorToCopy.role;
+	}*/
+
+	/**
+	 * Returns a deep copy of this Conductor object. The new copy is exactly the same as this conductor, except:
+	 * <p>-it does not copy the conduit property, that is, the new clone is assumed in free air (not in a conduit).
+	 * <p>-it does not copy the listener list of this Conductor.
+	 */
+	@Override
+	public Conductor clone(){
+		Conductor conductorClone = new Conductor();
+		conductorClone.size = this.size;
+		conductorClone.metal = this.metal;
+		conductorClone.insulation =this.insulation;
+		conductorClone.length = this.length;
+		conductorClone.ambientTemperatureF = this.ambientTemperatureF;
+		conductorClone.copperCoated = this.copperCoated;
+		conductorClone.role = this.role;
+		return conductorClone;
 	}
 
 	/**
@@ -182,7 +201,6 @@ public class Conductor implements Conduitable, Speaker {
 	 */
 	public void setInsulation(Insul insulation) {
 		this.insulation = insulation;
-		temperatureRating = ConductorProperties.getTempRating(insulation);
 	}
 
 	/**
@@ -209,8 +227,8 @@ public class Conductor implements Conduitable, Speaker {
 	 * @return The ampacity in amperes.
 	 */
 	public double getAmpacity(){
-		return ConductorProperties.getAmpacity(size, metal, temperatureRating)
-				* Factors.getTemperatureCorrectionF(ambientTemperatureF, temperatureRating)
+		return ConductorProperties.getAmpacity(size, metal, ConductorProperties.getTempRating(insulation))
+				* Factors.getTemperatureCorrectionF(ambientTemperatureF, ConductorProperties.getTempRating(insulation))
 				* Factors.getAdjustmentFactor(conduit);
 	}
 
@@ -222,6 +240,8 @@ public class Conductor implements Conduitable, Speaker {
 	public void setAmbientTemperatureF(int ambientTemperatureF) {
 		if(conduit != null)
 			conduit.getConduitables().forEach(conduitable -> conduitable.setAmbientTemperatureFSilently(ambientTemperatureF));
+		else if(bundle != null)
+			bundle.getConduitables().forEach(conduitable -> conduitable.setAmbientTemperatureFSilently(ambientTemperatureF));
 		else
 			setAmbientTemperatureFSilently(ambientTemperatureF);
 	}
@@ -291,7 +311,7 @@ public class Conductor implements Conduitable, Speaker {
 	 * @see TempRating
 	 */
 	public TempRating getTemperatureRating() {
-		return temperatureRating;
+		return ConductorProperties.getTempRating(insulation);
 	}
 
 	/**
@@ -341,8 +361,34 @@ public class Conductor implements Conduitable, Speaker {
 		return "#" + size.getName() + " " + insulation.getName()+ " (" + getMetal().getSymbol() + ")(" + role + ")";
 	}
 
-	public void setRoofTopDistance(double roofTopDistance){}
+	//todo to be implemented
+	@Override
+	public void setRoofTopDistance(double roofTopDistance) {
 
-	public void resetRoofTop(){}
+	}
 
+	@Override
+	public void resetRoofTop() {
+
+	}
+
+	@Override
+	public void setBundle(Bundle bundle) {
+
+	}
+
+	@Override
+	public void leaveBundle() {
+
+	}
+
+	@Override
+	public Bundle getBundle() {
+		return null;
+	}
+
+	@Override
+	public boolean hasBundle() {
+		return false;
+	}
 }

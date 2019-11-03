@@ -1,4 +1,4 @@
-package main;
+//package main;
 
 import eecalcs.conductors.*;
 import eecalcs.conduits.*;
@@ -15,7 +15,29 @@ import java.util.List;
 //import Size;
 public class Main {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws CloneNotSupportedException {
+		//testing cloning a cable
+		Cable cab1 = new Cable(SystemAC.Voltage.v120_1ph, SystemAC.Wires.W2, 1.23);
+		cab1.setJacketed(true);
+		cab1.setLength(125);
+		cab1.setMetal(Metal.ALUMINUM);
+		cab1.setPhaseConductorSize(Size.AWG_1);
+		System.out.println("cab1: " + cab1.getDescription()+" "+cab1.getLength());
+		Cable cab2 = (Cable)cab1.clone();
+		System.out.println("cab2: " + cab2.getDescription()+" "+cab2.getLength());
+		cab2.setPhaseConductorSize(Size.AWG_2);
+		cab2.setGroundingConductorSize(Size.AWG_8);
+		System.out.println("cab1: " + cab1.getDescription()+" "+cab1.getLength());
+		System.out.println("cab2: " + cab2.getDescription()+" "+cab2.getLength());
+
+/*		if(true)
+			return;*/
+
+
+
+
+
+
 		Trade tradeSize;
 		DecimalFormat df = new DecimalFormat("#.##");
 		df.setRoundingMode(RoundingMode.HALF_UP);
@@ -125,7 +147,8 @@ public class Main {
 		conductor2.setRole(Conductor.Role.HOT);
 		conductor3.setRole(Conductor.Role.HOT);
 		conductor4.setRole(Conductor.Role.HOT);
-		conduit.add(new Conductor(conductor4));
+//		conduit.add(new Conductor(conductor4));
+		conduit.add(conductor4.clone());
 
 /*		System.out.println("conductor 1 ambient temperature: " + conductor1.getAmbientTemperatureF());
 		System.out.println("conductor 2 ambient temperature: " + conductor2.getAmbientTemperatureF());

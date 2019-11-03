@@ -61,7 +61,7 @@ public class Circuit extends Conductor {
 	//pending taking into account different ampacities in same circuit
 
 	public Circuit(Conductor conductor){
-		super(conductor);
+		//super(conductor);
 	}
 
 	public Circuit(Circuit circuit){

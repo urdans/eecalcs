@@ -115,12 +115,12 @@ public class ConductorProperties {
 		public int areaCM;
 		public double nonMagXL;
 		public double magXL;
-		public int CuAmp60;
-		public int CuAmp75;
-		public int CuAmp90;
-		public int AlAmp60;
-		public int AlAmp75;
-		public int AlAmp90;
+		public double CuAmp60;
+		public double CuAmp75;
+		public double CuAmp90;
+		public double AlAmp60;
+		public double AlAmp75;
+		public double AlAmp90;
 		public double CuResInPVCCond;
 		public double CuResInALCond;
 		public double CuResInSteelCond;

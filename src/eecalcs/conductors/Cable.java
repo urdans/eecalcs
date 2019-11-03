@@ -4,70 +4,68 @@ import eecalcs.conduits.Conduit;
 import eecalcs.systems.SystemAC;
 import eecalcs.systems.TempRating;
 import tools.Listener;
-import tools.Speaker;
 
 /**
  * This class encapsulates the properties of a cable.
- * A cable is a fabricated assembly of insulated conductors embedded into a protective jacket.
- * The NEC recognizes the following group of cables as wiring methods for permanent installations:
- * AC - Armored Cable (round)
- * MC - Metal Clad Cable (round)
- * FC - Flat Cable (flat, to be used in a surface metal raceway, not in conduits), not covered by this software.
- * FCC - Flat Conductor Cable (flat, to be used for branch circuits installed under carpet squares, not in conduits), not covered by this software.
- * IGS - Integrated Gas Spacer Cable (round, uses sulfur hexafluoride SF6 as insulator). Not a building wire, not covered by this software.
- * MV - Medium Voltage Cable (round, rated for 2001-35000 volts), not covered by this software.
- * MI - Mineral Insulated Cable (round, for especial conditions, like gasoline, oils, etc.), not covered by this software.
- * NM - Non metallic jacket
- * NMC - Non metallic corrosion resistant jacket.
- * NMS - Non metallic jacket, insulated power or control with signaling data.
- * TC - Power and Control Tray Cable (rounds, for power, lighting, controls and signaling circuits).
+ * <p>
+ *     A cable is a fabricated assembly of insulated conductors embedded into a protective jacket.
+ * <p>
+ *     The NEC recognizes the following group of cables as wiring methods for permanent installations:
+ * <p>AC - Armored Cable (round)
+ * <p>MC - Metal Clad Cable (round)
+ * <p>FC - Flat Cable (flat, to be used in a surface metal raceway, not in conduits), not covered by this software.
+ * <p>FCC - Flat Conductor Cable (flat, to be used for branch circuits installed under carpet squares, not in conduits), not covered by this software.
+ * <p>IGS - Integrated Gas Spacer Cable (round, uses sulfur hexafluoride SF6 as insulator). Not a building wire, not covered by this software.
+ * <p>MV - Medium Voltage Cable (round, rated for 2001-35000 volts), not covered by this software.
+ * <p>MI - Mineral Insulated Cable (round, for especial conditions, like gasoline, oils, etc.), not covered by this software.
+ * <p>NM - Non metallic jacket
+ * <p>NMC - Non metallic corrosion resistant jacket.
+ * <p>NMS - Non metallic jacket, insulated power or control with signaling data.
+ * <p>TC - Power and Control Tray Cable (rounds, for power, lighting, controls and signaling circuits).
  *
- * Each cable type may have a slightly different method of ampacity calculation, so each cable must be created as one of the types covered by this
+ * <p>Each cable type may have a slightly different method of ampacity calculation, so each cable must be created as one of the types covered by this
  * software (AC, MC, NM, NMC, NMS, TC). MC cable is the default type.
  *
- * The cable this class represents is made of:
- * - 1, 2 or 3 phase conductors. These are always considered current carrying conductors (CCC).
- * - 0 or 1 neutral conductor. If the neutral is present, it can be a CCC depending of the system voltage and number of wires.
- * - 1 Equipment grounding conductor.
+ * <p>The cable this class represents is made of:
+ * <p>&emsp;&emsp;- 1, 2 or 3 phase conductors. These are always considered current carrying conductors (CCC).
+ * <p>&emsp;&emsp;- 0 or 1 neutral conductor. If the neutral is present, it can be a CCC depending of the system voltage and number of wires.
+ * <p>&emsp;&emsp;- 1 Equipment grounding conductor.
  *
- * The constructor of this cable takes as parameters the voltage system, the number of wires, a conductor to use as a phase conductor, and the outer
+ * <p>The constructor of this cable takes as parameters the voltage system, the number of wires, a conductor to use as a phase conductor, and the outer
  * diameter. Based on those parameters, the class determines if the neutral is required and if it is, it will create that conductor as a copy
  * of the hot conductor.
  *
- * The grounding conductor is always created as a copy of the hot conductor as well.
+ * <p>The grounding conductor is always created as a copy of the hot conductor as well.
  *
- * The size of all these conductors (hot, neutral and grounding) can be later adjusted if required calling the appropriate method.
+ * <p>The size of all these conductors (hot, neutral and grounding) can be later adjusted if required calling the appropriate method.
  *
- * The outer diameter is used for conduit sizing. The number of CCC is used for determining the adjusted ampacity of this and other cables sharing the
+ * <p>The outer diameter is used for conduit sizing. The number of CCC is used for determining the adjusted ampacity of this and other cables sharing the
  * same conduit.
  *
- * A cable used for a 240/208/120 volts delta system can be created as using any 3 phase voltage and 4 wires.
+ * <p>A cable used for a 240/208/120 volts delta system can be created as using any 3 phase voltage and 4 wires.
  *
- * The voltage system is used only to determined the presence of a neutral conductor and if it is initially a CCC
+ * <p>The voltage system is used only to determined the presence of a neutral conductor and if it is initially a CCC
  *
- * As cables can be used as the conductors in a Circuit object, the size of its conductors can be adjusted by the circuit based on the circuit
+ * <p>As cables can be used as the conductors in a Circuit object, the size of its conductors can be adjusted by the circuit based on the circuit
  * characteristics. Refer to the {@link Circuit} class for more information.
  */
-public class Cable implements Conduitable, Listener {
+public class Cable implements Conduitable, Listener{
     private Type cableType = Type.MC;
     private boolean jacketed = false;
-    //when true, means that this cable is bundled (os stacked) with others, without maintaining space
-//    private boolean bundled = false;
-    //when true, means that this cable is bundled (os stacked) with 20 or more other cables. It has meaning if bundle is true.
     private boolean bundlingExceeds20 = false;
-    //when true, means that this cable is bundled (os stacked) with others cables for a distance greater than 24".
     private boolean bundlingDistanceExceeds24 = false;
-    private SystemAC.Voltage voltage;
-    private SystemAC.Wires wires;
-    private Conductor phaseAConductor;
+    private SystemAC.Voltage voltage = SystemAC.Voltage.v120_1ph;
+    private SystemAC.Wires wires = SystemAC.Wires.W2;
+    private Conductor phaseAConductor = new Conductor();
     private Conductor phaseBConductor;
     private Conductor phaseCConductor;
     private Conductor neutralConductor;
-    private Conductor groundingConductor;
-    private double outerDiameter;
-    private Conduit conduit = null;
+    private Conductor groundingConductor = new Conductor();
+    private double outerDiameter = 0.25;
+    private Conduit conduit;
     private double roofTopDistance = -1.0; //means no rooftop condition
-    private boolean neutralCarryingConductor = false;
+    //private boolean neutralCarryingConductor = true;
+    private Bundle bundle;
 
     private int getHotCount(){
         return (phaseAConductor == null ? 0 : 1) + (phaseBConductor == null ? 0 : 1) + (phaseCConductor == null ? 0 : 1);
@@ -129,46 +127,68 @@ public class Cable implements Conduitable, Listener {
      */
     public Cable(SystemAC.Voltage voltage, SystemAC.Wires wires, double outerDiameter){
         setSystem(voltage, wires);
-        phaseAConductor = new Conductor();
         phaseAConductor.setRole(Conductor.Role.HOT);
-        groundingConductor = new Conductor();
         groundingConductor.setRole(Conductor.Role.GND);
-
-        /*if(voltage == SystemAC.Voltage.v120_1ph | voltage == SystemAC.Voltage.v277_1ph) {
-            //the number of wires is always 2 for this type of system, hence wires is ignored
-            neutralConductor = new Conductor();
-            neutralConductor.setRole(Conductor.Role.NEUCC);
-        }
-        else if(voltage == SystemAC.Voltage.v208_1ph | voltage == SystemAC.Voltage.v240_1ph | voltage == SystemAC.Voltage.v480_1ph){
-            phaseBConductor = new Conductor();
-            phaseBConductor.setRole(Conductor.Role.HOT);
-            if(wires != SystemAC.Wires.W2){//this would account for malformed systems (1-phase, 4w) treating them as 3w
-                neutralConductor = new Conductor();
-                neutralConductor.setRole(Conductor.Role.NEUCC);
-            }
-        }
-        else {//this account for all 3-phase systems.
-            phaseBConductor = new Conductor();
-            phaseBConductor.setRole(Conductor.Role.HOT);
-            phaseCConductor = new Conductor();
-            phaseCConductor.setRole(Conductor.Role.HOT);
-            //Any 3-phase system indicated as 2w or 3w will not have a neutral
-            if(wires == SystemAC.Wires.W4){
-                neutralConductor = new Conductor();
-                neutralConductor.setRole(Conductor.Role.NEUNCC);
-            }
-        }*/
         setOuterDiameter(outerDiameter);
     }
 
     /**
-     * Asks if this cable has an outer jacket. Most cables have. MC & AC cable are commonly non jacketed but versions with an outer jacket are available
-     * in the market. This value is false by default and remains unchanged, unless is set by calling the {@link this.setJacketed()} method.
+     * Constructs a default cable:
+     * <p>MC type.
+     * <p>Non jacketed.
+     * <p>Voltage system 120V 1ph 2 wires.
+     * <p>One conductor for phase A, one for neutral and one for ground.
+     * <p>The neutral is CCC
+     * <p>Outer diameter = 0.25"
+     * <p>No conduit, no bundle.
+     * <p>No roof top condition
+     */
+    public Cable(){
+        phaseAConductor.setRole(Conductor.Role.HOT);
+        groundingConductor.setRole(Conductor.Role.GND);
+    }
+    /**
+     * Returns a deep copy of this Cable object. The new copy is exactly the same as this cable, except:
+     * <p>-it does not copy the conduit property, that is, the new clone is assumed in free air (not in a conduit).
+     */
+    @Override
+    public Cable clone(){
+        Cable cable = new Cable();
+        cable.cableType = this.cableType;
+        cable.jacketed = this.jacketed;
+        cable.bundlingExceeds20 = this.bundlingExceeds20;
+        cable.bundlingDistanceExceeds24 = this.bundlingDistanceExceeds24;
+        cable.voltage = this.voltage;
+        cable.wires = this.wires;
+        cable.phaseAConductor = this.phaseAConductor.clone();
+        cable.phaseBConductor = this.phaseBConductor == null ? null : phaseBConductor.clone();
+        cable.phaseCConductor = this.phaseCConductor == null ? null : phaseCConductor.clone();
+        cable.neutralConductor = this.neutralConductor == null ? null : neutralConductor.clone();
+        cable.groundingConductor = this.groundingConductor.clone();
+        cable.outerDiameter = this.outerDiameter;
+        cable.conduit = null;
+        cable.roofTopDistance = this.roofTopDistance;
+        return cable;
+    }
+
+    @Override
+    public String toString(){
+        String cableS = cableType+", "+jacketed+", "+bundlingExceeds20+", "+bundlingDistanceExceeds24+", "+voltage+", "+wires
+                +", "+phaseAConductor+", "+phaseBConductor+", "+phaseCConductor+", "+neutralConductor+", "+groundingConductor
+                +", "+outerDiameter+", "+conduit+", "+roofTopDistance;
+        return  cableS;
+    }
+
+    /**
+     * Asks if this cable has an outer jacket. Most cables have. MC and AC cable are commonly non jacketed but versions with an
+     * outer jacket are available in the market. This value is false by default and remains unchanged, unless is set by calling
+     * the {@link #setJacketed(boolean jacketed)} method.
      * @return True if the cable has an outer jacket, false otherwise.
      */
     public boolean isJacketed() {
         return jacketed;
     }
+
 
     /**
      * Asks if the condition where this cable is bundled with other 20 cables or more is set.
@@ -203,16 +223,29 @@ public class Cable implements Conduitable, Listener {
     }
 
     /**
-     * Returns the adjustment factor for ampacity of this cable, accounting for rules 310.15(B)(3)(a)(4) & (5) and table 310.15(B)(3)(a)
+     * Returns the adjustment factor for ampacity of this cable, accounting for rules 310.15(B)(3)(a)(4) {@literal &} (5) and table 310.15(B)(3)(a)
      * @return The adjustment factor.
      */
     public double getAdjustmentFactor() {
+        //todo CONTINUE HERE
+//        if(hasConduit())
+//            return Factors.getAdjustmentFactor(conduit);
+//
+//        if(cableType == Type.MC | cableType == Type.AC){ //310.15(B)(3)(a)(4)
+//            if(!jacketed //310.15(B)(3)(a)(4)-a.
+//                && getCurrentCarryingCount() <= 3 //310.15(B)(3)(a)(4)-b. All the others bundled cables must meet this condition as well.
+//                //future do I need to create a class BundledCables? uhmm....
+//                // also I could just indicate these conditions as external condition (not using a class), just flags in the UI.
+//                && phaseAConductor.getSize() == Size.AWG_12 && phaseAConductor.getMetal() == Metal.COPPER //310.15(B)(3)(a)(4)-c.
+//                && !hasConduit() && !bundlingExceeds20) //310.15(B)(3)(a)(4)-d. Of course, no conduit.
+//            adjustmentFactor = 1;
+
         double adjustmentFactor = Factors.getAdjustmentFactor(conduit);
         //NEC-310.15(B)(3)(a)(4)
         if(cableType == Type.MC | cableType == Type.AC){ //310.15(B)(3)(a)(4) & (5)
             if(!jacketed //310.15(B)(3)(a)(4)-a.
                     && getCurrentCarryingCount() <= 3 //310.15(B)(3)(a)(4)-b. All the others bundled cables must meet this condition as well.
-                    //todo do I need to create a class BundledCables? uhmm....
+                    //future do I need to create a class BundledCables? uhmm....
                     // also I could just indicate these conditions as external condition (not using a class), just flags in the UI.
                     && phaseAConductor.getSize() == Size.AWG_12 && phaseAConductor.getMetal() == Metal.COPPER //310.15(B)(3)(a)(4)-c.
                     && !hasConduit() && !bundlingExceeds20) //310.15(B)(3)(a)(4)-d. Of course, no conduit.
@@ -223,6 +256,21 @@ public class Cable implements Conduitable, Listener {
                 adjustmentFactor = 0.6;
         }
         return adjustmentFactor;
+/*todo this needs refactoring: the bundlingExceeds20 doesnt make sense. For example when 8 cables are bundled (without maintaining space) and they
+don't comply with the any of the conditions of 310.15(B)(3)(a)(4), an adjustment factor of 0.7 must apply, unless they comply with the
+conditions of 310.15(B)(3)(a)(5), in which case the adjustment factor must be 0.6
+The approach should be like this:
+If (this cable is in a conduit) the conduit should count as jacketed
+    return applying table 310.15(B)(3)(a)
+if (conditions 310.15(B)(3)(a)(4) are met)
+    return adjustment factor = 1
+if (conditions 310.15(B)(3)(a)(5) are met)
+    return adjustment factor is 0.6
+return adjustment factor is 1
+So, bundlingExceeds20 should be an int called bundledCCC. I need to have a better interpretation of 310.15(B)(3)(a), especially for the wording:
+"...and are not installed in raceways..."
+*/
+
     }
 
     /**
@@ -264,8 +312,7 @@ public class Cable implements Conduitable, Listener {
      * @param neutralCarryingConductor True if the neutral is a current carrying conductor, false otherwise.
      */
     public void setNeutralCarryingConductor(boolean neutralCarryingConductor){
-        this.neutralCarryingConductor = neutralCarryingConductor;
-        if(neutralConductor != null) {
+        if(neutralConductor != null){
             if(neutralCarryingConductor)
                 neutralConductor.setRole(Conductor.Role.NEUCC);
             else
@@ -278,11 +325,13 @@ public class Cable implements Conduitable, Listener {
      * @return True if it's a current carrying conductor, false otherwise.
      */
     public boolean isNeutralCarryingConductor() {
-        return neutralCarryingConductor;
+        if(neutralConductor != null)
+            return neutralConductor.getRole() == Conductor.Role.NEUCC;
+        return false;
     }
 
     /**
-     * Sets the voltage system for this cable
+     * Sets the voltage system for this cable. Setting this property may change the existence of the phase and neutral conductor.
      * @param voltage The voltage as defined in {@link SystemAC.Voltage}
      * @param wires The wiring system as defined in {@link SystemAC.Wires}
      */
@@ -292,6 +341,7 @@ public class Cable implements Conduitable, Listener {
 
         if(voltage == SystemAC.Voltage.v120_1ph | voltage == SystemAC.Voltage.v277_1ph) {
             //the number of wires is always 2 for this type of system, hence wires is ignored
+            this.wires = SystemAC.Wires.W2;
             if(neutralConductor == null)
                 neutralConductor = new Conductor();
             neutralConductor.setRole(Conductor.Role.NEUCC);
@@ -305,7 +355,8 @@ public class Cable implements Conduitable, Listener {
             if(wires == SystemAC.Wires.W2){
                 neutralConductor = null;
             }
-            else {//Any 2-hot system of this voltage, indicated as 3w or 4w will have a neutral
+            else {//Any 2-hot system of this voltage, indicated as w3 or w4 will have a neutral and will be assumed as a w3
+                this.wires = SystemAC.Wires.W3;
                 if(neutralConductor == null)
                     neutralConductor = new Conductor();
                 neutralConductor.setRole(Conductor.Role.NEUCC);
@@ -321,13 +372,16 @@ public class Cable implements Conduitable, Listener {
             phaseCConductor.setRole(Conductor.Role.HOT);
             if(wires == SystemAC.Wires.W4){
                 neutralConductor = new Conductor();
-                if(neutralCarryingConductor)
+                neutralConductor.setRole(Conductor.Role.NEUNCC);
+/*                if(neutralCarryingConductor)
                     neutralConductor.setRole(Conductor.Role.NEUCC);
                 else
-                    neutralConductor.setRole(Conductor.Role.NEUNCC);
+                    neutralConductor.setRole(Conductor.Role.NEUNCC);*/
             }
-            else //Any 3-phase system indicated as 2w or 3w will not have a neutral
+            else {//Any 3-phase system indicated as w2 or w3 will not have a neutral
                 neutralConductor = null;
+                this.wires = SystemAC.Wires.W3;
+            }
         }
     }
 
@@ -351,7 +405,11 @@ public class Cable implements Conduitable, Listener {
         return ccc;
     }
 
-    /*todo implement this*/
+    /**
+     * Returns the compound factor to be applied to the ampacity.
+     * <p>A compound factor is all the corrections and adjustment factors combined (multiplied) together.
+     * @return The total compound factor.
+     */
     public double getFactors(){
         int adjustedTemp = roofTopDistance <= 0 ? 0 : Factors.getRoofTopTempAdjustment(roofTopDistance);
         return Factors.getTemperatureCorrectionF(phaseAConductor.getAmbientTemperatureF() + adjustedTemp,
@@ -359,54 +417,62 @@ public class Cable implements Conduitable, Listener {
     }
 
     /**
-     * Returns the ampacity of this cable (for voltages up to 2000v). The result accounts for the ambient temperature, the insulation of
-     * the hot conductors, and the number of other conductors that share the same raceway with this cable. That is, the ampacity returned is
-     * corrected for ambient temperature (other than 86°F/30°C), and adjusted for the number of conductors (including the cable ones) in the same
-     * raceway. This is the ampacity for this cable size, metal and insulation type under the specified conditions (ambient temperature, bundling, rooftop,
-     * etc.) condition .
-     * The rule allowing the temperature correction and adjustment factors to be applied to the ampacity for the temperature rating of the
+     * <p>Returns the ampacity of this cable (for voltages up to 2000v).
+     * <p><br>The result accounts for the ambient temperature, the insulation of the hot conductors, and the number of other conductors that share
+     * the same raceway with this cable. That is, the ampacity returned is corrected for ambient temperature (other than 86°F/30°C), and
+     * adjusted for the number of conductors (including the cable ones) in the same raceway. This is the ampacity for this cable size, metal and insulation
+     * type under the specified conditions (ambient temperature, bundling, rooftop, etc.)
+     * <p><br>The rule allowing the temperature correction and adjustment factors to be applied to the ampacity for the temperature rating of the
      * conductor, if the corrected and adjusted ampacity does not exceed the ampacity for the temperature rating of the terminals in accordance with
      * 110.14(C), is not accounted for in this method. It is accounted for at the {@link Circuit} class level.
-     * For example, NM, NMC and NMS cables, their ampacity can be calculated, corrected and adjusted for 75°C or 90°C but that ampacity shall not exceed what
-     * would be required for a 60 deg. This rule appears several times throughout the code.
-     * A concrete example is as follow:
+     * <p><br>If no correction factor is required ({@link #getFactors()} returns 1), the copper conductor should be sized per
+     * 110.14(C), that is:
+     * <p>&emsp;-per the 60°C column for conductors 14AWG thru 1AWG or circuits up to 100AMPS, UNLESS the terminals are rated for 75°C.
+     * <p>&emsp;-per the 75°C column for conductors larger than 1AWG or circuits above 100AMPS.
+     * <p>In both cases, conductors with temperature ratings higher than specified for terminations
+     * shall be permitted to be used for ampacity adjustment, correction, or both. This is the reason why the rating of the terminals are specified at a
+     * different level.
+     *
+     * <p><br>For example, NM, NMC and NMS cables, their ampacity can be calculated, corrected and adjusted for 75°C or 90°C
+     * but that ampacity shall not exceed what would be required for a 60°C. This rule appears several times throughout the code.
+     * <p><br><br>A concrete example is as follow:
      * Suppose a load was calculated at 105 AMPS. The installer decides to use a THHW conductors which is rated for 90°C. Let's assume that there are 4
      * current-carrying conductors in the raceway and that the ambient temperature is 100°C:
-     * -Temperature correction factor for a 90°C conductor (TABLE 310.15(B)(2)(a)) = 0.91
-     * -Adjustment factor for four current-carrying conductors (TABLE 310.15(B)(3)(a)) = 0.8
-     * -Ampacity of a # 1 AWG THHW = 145 AMPS
-     * -Allowed ampacity under specified conditions = 145*0.91*0.8 = 105.56 AMPS
-     * The # 1 AWG THHW wire is good because the ampacity for the same wire at 60°C is 110AMP.
-     * The general approach to determine the allowed ampacity is:
-     *          AllowedAmpacity*TCF*AF >= Load Amps
-     *          AllowedAmpacity >= (Load Amps)/(TCF*AF)
-     *          AllowedAmpacity >= (105)/(0.91*0.8)
-     *          AllowedAmpacity >= 144.23 AMPS.
-     *          Now, a conductor can be selected from table 310.15(B)(16):
-     *          It could be a #2/0 AWG TW, or a #1/0 AWG THW or a #1 AWG THHW.
-     * This method alone does not calculate the allowed ampacity because the load amps is not known at this level.
-     * However, the method {@link this.getFactors()} will provide the (0.91*0.8) value (from the example) that the {@link Circuit} class would need as
+     * <p>&emsp;-Temperature correction factor for a 90°C conductor (TABLE 310.15(B)(2)(a)) = 0.91
+     * <p>&emsp;-Adjustment factor for four current-carrying conductors (TABLE 310.15(B)(3)(a)) = 0.8
+     * <p>&emsp;-Ampacity of a # 1 AWG THHW = 145 AMPS
+     * <p>&emsp;-Allowed ampacity under specified conditions = 145*0.91*0.8 = 105.56 AMPS
+     * <p>The # 1 AWG THHW wire is good because the ampacity for the same wire at 60°C is 110AMP.
+     * <p><br>The general approach to determine the allowed ampacity is:
+     * <p>&emsp;&emsp;AllowedAmpacity*TCF*AF {@literal >}= Load Amps
+     * <p>&emsp;&emsp;AllowedAmpacity {@literal >}= (Load Amps)/(TCF*AF)
+     * <p>&emsp;&emsp;AllowedAmpacity {@literal >}= (105)/(0.91*0.8)
+     * <p>&emsp;&emsp;AllowedAmpacity {@literal >}= 144.23 AMPS.
+     * <p>&emsp;&emsp;Now, a conductor can be selected from table 310.15(B)(16):
+     * <p>&emsp;&emsp;It could be a #2/0 AWG TW, or a #1/0 AWG THW or a #1 AWG THHW.
+     * <p><br>This method alone does not calculate the allowed ampacity because the load amps is not known at this level.
+     * However, the method {@link #getFactors()} will provide the (0.91*0.8) value (from the example) that the {@link Circuit} class would need as
      * reversed coefficient to multiply the load amperes (to get the 144.23 AMPS from the example). Then the method
      * {@link ConductorProperties#getAllowedSize(double, Metal, TempRating)} can provide the proper size of the conductor.
-     *
+     *<p><br>
      * Adjustment factor exceptions apply to AC and MC cable under the conditions explained in 310.15(B)(3)(a)(4).
      * What this method DOES NOT cover:
-     * Ampacity for MC cable:
-     *      -for voltages higher than 2000v and sizes 14 AWG and up (table 310.60).
-     *      -for sizes 18 AWG and 16 AWG (table 402.5). This software does not cover conductor/cables smaller than 14 AWG.
-     *      -when installed in cable tray (392.80)
-     * Ampacity for AC cable:
-     *      -when installed in thermal insulation ( 320.80(A) ).
-     *      -when installed in cable tray (392.80(A) as required by 320.80(B)).
-     * Ampacity for NM cable:
-     *      -when installed in cable tray (392.80(A) as required by 334.80).
-     *      -when installed through wood framing or in contact with thermal insulation as explained in 334.80.
-     * Ampacity for NMC, NMS cable:
-     *      -when installed in cable tray (392.80(A) as required by 334.80).
-     * Ampacity for others cables:
-     *      -not covered.
+     * <p><br>Ampacity for MC cable:
+     * <p>&emsp;&emsp;-for voltages higher than 2000v and sizes 14 AWG and up (table 310.60).
+     * <p>&emsp;&emsp;-for sizes 18 AWG and 16 AWG (table 402.5). This software does not cover conductor/cables smaller than 14 AWG.
+     * <p>&emsp;&emsp;-when installed in cable tray (392.80)
+     * <p>Ampacity for AC cable:
+     * <p>&emsp;&emsp;-when installed in thermal insulation ( 320.80(A) ).
+     * <p>&emsp;&emsp;-when installed in cable tray (392.80(A) as required by 320.80(B)).
+     * <p>Ampacity for NM cable:
+     * <p>&emsp;&emsp;-when installed in cable tray (392.80(A) as required by 334.80).
+     * <p>&emsp;&emsp;-when installed through wood framing or in contact with thermal insulation as explained in 334.80.
+     * <p>Ampacity for NMC, NMS cable:
+     * <p>&emsp;&emsp;-when installed in cable tray (392.80(A) as required by 334.80).
+     * <p>Ampacity for others cables:
+     * <p>&emsp;&emsp;-not covered.
      * @return The ampacity in amperes.
-     * @see this#getAdjustmentFactor()
+     * @see #getAdjustmentFactor()
      */
     @Override
     public double getAmpacity() {
@@ -415,6 +481,14 @@ public class Cable implements Conduitable, Listener {
                 * getFactors();
                 /*Factors.getTemperatureCorrectionF(phaseAConductor.getAmbientTemperatureF() + adjustedTemp, phaseAConductor.getTemperatureRating()) * getAdjustmentFactor();*/
     }
+
+    /*future 110.14(C) to be implemented outside like this:
+    if getFactor == 1 then
+        if LoadAmpacity <= 100 and unknownRating then
+            getAmpacity(conductorSize, metal, TempRating.T60)
+        else
+            getAmpacity(conductorSize, metal, TempRating.T75)
+     */
 
     @Override
     public boolean hasConduit() {
@@ -430,16 +504,50 @@ public class Cable implements Conduitable, Listener {
     public void setConduit(Conduit conduit) {
         if(conduit == null)
             return;
-        if(conduit.hasConduitable(this))
-            this.conduit = conduit;
+        if(conduit == this.conduit)
+            return;
+        leaveBundle();
+        leaveConduit();
+        conduit.add(this);
+        this.conduit = conduit;
     }
 
     @Override
     public void leaveConduit() {
-        if(this.conduit == null)
+        if(conduit == null)
             return;
-        if(!this.conduit.hasConduitable(this))
-            this.conduit = null;
+        conduit.remove(this);
+        conduit = null;
+    }
+
+    @Override
+    public void setBundle(Bundle bundle) {
+        if(bundle == null)
+            return;
+        if(bundle == this.bundle)
+            return;
+        leaveConduit();
+        leaveBundle();
+        bundle.add(this);
+        this.bundle = bundle;
+    }
+
+    @Override
+    public void leaveBundle() {
+        if(bundle == null)
+            return;
+        bundle.remove(this);
+        bundle = null;
+    }
+
+    @Override
+    public Bundle getBundle() {
+        return bundle;
+    }
+
+    @Override
+    public boolean hasBundle() {
+        return bundle != null;
     }
 
     /**
@@ -583,6 +691,8 @@ public class Cable implements Conduitable, Listener {
     public void setAmbientTemperatureF(int ambientTemperatureF){
         if(conduit != null)
             conduit.getConduitables().forEach(conduitable -> conduitable.setAmbientTemperatureFSilently(ambientTemperatureF));
+        else if(bundle != null)
+            bundle.getConduitables().forEach(conduitable -> conduitable.setAmbientTemperatureFSilently(ambientTemperatureF));
         else
             setAmbientTemperatureFSilently(ambientTemperatureF);
     }
@@ -660,13 +770,29 @@ public class Cable implements Conduitable, Listener {
 
     /**
      * Sets the type of cable for this cable.
-     * @param cableType
+     * @param cableType The new cable type.
      * @see Type
      */
     public void setType(Type cableType) {
         this.cableType = cableType;
     }
 
-    //todo quede aqui
-    /* todo implement rooftop features to the conduit class as well*/
+    /**
+     * Returns the voltage system of this cable.
+     * @return The voltage system of this cable.
+     * @see eecalcs.systems.SystemAC.Voltage
+     */
+    public SystemAC.Voltage getVoltage() {
+        return voltage;
+    }
+
+    /**
+     * Returns the wire system of this cable.
+     * @return The wire system of this cable.
+     */
+    public SystemAC.Wires getWires() {
+        return wires;
+    }
+
+    //todo implement rooftop features to the conduit class as well
 }

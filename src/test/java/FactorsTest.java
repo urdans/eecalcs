@@ -18,6 +18,9 @@ class FactorsTest {
 
     @Test
     void getTemperatureCorrectionF() {
+        System.out.println("╔═══════════════════════════╗");
+        System.out.println("║ getTemperatureCorrectionF ║");
+        System.out.println("╚═══════════════════════════╝");
         assertEquals(0.91, Factors.getTemperatureCorrectionF(100, TempRating.T90));
         assertEquals(0.29, Factors.getTemperatureCorrectionF(185, TempRating.T90));
         assertEquals(0.0,  Factors.getTemperatureCorrectionF(185, TempRating.T60));
@@ -29,6 +32,9 @@ class FactorsTest {
 
     @Test
     void getAdjustmentFactor() {
+        System.out.println("╔═════════════════════╗");
+        System.out.println("║ getAdjustmentFactor ║");
+        System.out.println("╚═════════════════════╝");
         assertEquals(1.0, Factors.getAdjustmentFactor(conduit));
     }
 }

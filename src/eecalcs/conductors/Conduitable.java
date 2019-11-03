@@ -48,17 +48,14 @@ public interface Conduitable {
     double getAmpacity();
 
     /**
-     * Sets this conduitable's conduit reference to the conduit object that registered this conduitable.
-     * Never call this method directly. It is called from a conduit object when this conduitable is being added to that conduit.
-     * Particularly, if the given conduit parameter doesn't already contain this conduitable in advance, nothing happen, and it's an
-     * indication that this method was called directly (from outside a conduit object).
+     * Puts this conduitable inside the given conduit. After calling this method, the given conduit will contain
+     * this conduitable and this conduitable will have a reference to that conduit.
      * @param conduit The Conduit object that owns this conduitable.
      */
     void setConduit(Conduit conduit);
 
     /**
-     * Never call this method directly. It is called by a conduit object when unregistering this conduitable.
-     * This methods sets this conduitable's conduit reference to null only if the referenced conduit does not contain this conduitable.
+     * Removes this conduitable from its conduit (if any).
      */
     void leaveConduit();
 
@@ -73,6 +70,35 @@ public interface Conduitable {
      * @return True if it's contained in a conduit, false otherwise.
      */
     boolean hasConduit();
+
+
+    /**
+     * Puts this conduitable within the given bundle. After calling this method, the given bundle will "contain"
+     * this conduitable and this conduitable will have a reference to that bundle.
+     * @param bundle The Bundle object that owns this conduitable.
+     */
+    void setBundle(Bundle bundle);
+
+    /**
+     * Removes this conduitable from its bundle (if any).
+     */
+    void leaveBundle();
+
+    /**
+     * Returns the bundle that contains this conduitable.
+     * @return A Bundle object if this conduitable has one or null if not.
+     */
+    Bundle getBundle();
+
+    /**
+     * Asks if this conduitable object is part of a bundle object.
+     * @return True if it's contained in a bundle, false otherwise.
+     */
+    boolean hasBundle();
+
+
+
+
 
     /**
      * Sets the length to this conduitable.
@@ -103,15 +129,16 @@ public interface Conduitable {
     /**
      * Returns the description of this conduitable.
      * Conductors should return their size-metal-insulation description, like:
-     *      - "#12 AWG THW (CU)"
+     * <p>&emsp;&emsp;- "#12 AWG THW (CU)"
      * Cables should return a description of the form:
-     *      - "MC CABLE (CU): (3) #8 AWG (HOTS) + #10 AWG (NEU) + 12 AWG (GND)"
+     * <p>&emsp;&emsp;- "MC CABLE (CU): (3) #8 AWG (HOTS) + #10 AWG (NEU) + 12 AWG (GND)"
      * Circuits should return a string composed of several lines (separated by returns and line feed), of the form:
-     *      - First line, circuit description:  "POOL HEATER"
-     *        Second line, configuration:       "(3) #8 AWG THHN (AL) + #10 AWG THHN (CU)(NEU) + #12 AWG THHN (CU)(GND) IN 2" EMT CONDUIT" or
-     *                                          "(3) SETS OF (4) 250 KCMIL THHW (CU) + #1/0 AWG THHW (CU)(GND) IN 4" EMT CONDUIT" or
-     *                                          "MC CABLE (CU): (3) #8 AWG (HOTS) + #10 AWG (NEU) + 12 AWG (GND) IN FREE AIR or 2" EMT CONDUIT or IN CABLE TRAY"
-     *        Third line, circuit ratings:      "208 VOLTS 3ⱷ 3W 125 AMPS DPH-24,26,28"
+     * <p>&emsp;&emsp; First line, circuit description:  "POOL HEATER"
+     * <p>&emsp;&emsp; Second line, configuration:       "(3) #8 AWG THHN (AL) + #10 AWG THHN (CU)(NEU) + #12 AWG THHN (CU)(GND) IN 2" EMT CONDUIT" or
+     * <p>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;           "(3) SETS OF (4) 250 KCMIL THHW (CU) + #1/0 AWG THHW (CU)(GND) IN 4" EMT CONDUIT" or
+     * <p>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;           "MC CABLE (CU): (3) #8 AWG (HOTS) + #10 AWG (NEU) + 12 AWG (GND) IN FREE AIR or
+     * <p>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;           2" EMT CONDUIT or IN CABLE TRAY"
+     * <p>&emsp;&emsp; Third line, circuit ratings:      "208 VOLTS 3ⱷ 3W 125 AMPS DPH-24,26,28"
      * @return The description string as explained above
      */
     String getDescription();
@@ -129,10 +156,10 @@ public interface Conduitable {
     void resetRoofTop();
 
 
-/* todo quede aqui
+/*
 run test of ampacity of cable and conductors when sharing same conduit and after removing/adding more from/to conduit
     done for cables
-    quede aqui: do it for conductors
+    /*todo quede aqui: do it for conductors
 
 add cases to cable (depending on cable type, how ampacity is calculated). Refer to my notes about what I read on the NEC.
 add cases to conduit (depending on type, how sizes are calculated, min sizes, restriction, etc, read the code)

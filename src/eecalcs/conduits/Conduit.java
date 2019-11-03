@@ -41,7 +41,7 @@ public class Conduit {
     private List<Conduitable> conduitables = new ArrayList<>();
 
     /**
-     * Returns the list of all conduitable objects that are inside this conduit (for instance, conductors, cables and circuits).
+     * Returns the list of all conduitable objects that are inside this conduit (for instance, conductors and cables).
      * @return The list of conduitable objects.
      * @see Conduitable
      */
@@ -61,47 +61,48 @@ public class Conduit {
         setNipple(nipple);
     }
 
-    /*todo work with messages; this method should add a result message to its result message list (when implemented)*/
+    /*todo work with messages; this method should add a result message to its result message list (when implemented)
+    *  really?
+    *  instead of this list, why not just implement the explain why list....or both..?*/
 
     /**
      * Adds a conduitable object to this conduit.
+     * If the conduitable was inside another conduit, it will be removed from it.
+     * If the conduitable was part of a bundle, it will be removed from it.
+     * <p>The ambient temperature of the conduitable will be set to the ambient temperature
+     * of any of the existing conduitables already in the conduit.
      * @param conduitable The conduitable object to be added.
-     * @return True if the given conduitable was added in this call. False if any of the following conditions exist:
-     * - The given conduitable is null.
-     * - The given conduitable is already registered with this conduit.
-     * - The given conduitable is already registered with another conduit.
      * @see Conduitable
      */
-    public boolean add(Conduitable conduitable){
+    public void add(Conduitable conduitable){
         if(conduitable == null)
-            return false;
+            return;
+
         if(conduitables.contains(conduitable))
-            return false;
-        if(conduitable.hasConduit())
-            return false;
+            return;
+
+        conduitable.leaveConduit();
+        conduitable.leaveBundle();
 
         conduitables.add(conduitable);
         conduitable.setConduit(this);
-        conduitable.setAmbientTemperatureF(conduitable.getAmbientTemperatureF());
-        return true;
+
+        //setting the ambient temperature of this conduitable
+        if(conduitables.size()>0)
+            conduitable.setAmbientTemperatureF(conduitables.get(0).getAmbientTemperatureF());
     }
 
     /**
-     * Removes the conduitable from this conduit.
+     * Removes the given conduitable from this conduit.
      * @param conduitable The conduitable object to be removed.
-     * @return True if the given conduitable was removed in this call. False if any of the following conditions exist:
-     * - The given conduitable is null.
-     * - The given conduitable is registered with this conduit.
      * @see Conduitable
      */
-    public boolean remove(Conduitable conduitable){
+    public void remove(Conduitable conduitable){
         if(conduitable == null)
-            return false;
-        if(conduitables.remove(conduitable)) {
+            return;
+
+        if(conduitables.remove(conduitable))
             conduitable.leaveConduit();
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -142,6 +143,10 @@ public class Conduit {
         return conductorsNumber;
     }
 
+    /**
+     * Returns the number of current-carrying conductors inside this conduit.
+     * @return The number of current-carrying conductors inside this conduit.
+     */
     public int getCurrentCarryingNumber(){
         int currentCarrying = 0;
         for(Conduitable conduitable: conduitables)
