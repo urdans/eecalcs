@@ -1,7 +1,7 @@
 package eecalcs.conductors;
 
 /**
- * Defines the metal conductor types
+ Defines the metal conductor types
  */
 public enum Metal {
 	COPPER("CU"),
@@ -15,21 +15,21 @@ public enum Metal {
 			symbols[i] = values()[i].getSymbol();
 	}
 
-	private Metal(String name){
+	Metal(String name){
 		this.symbol = name;
 	}
 
 	/**
-	 * Returns the string name that this enum represents.
-	 * @return The string name.
+	 Returns the string name that this enum represents.
+	 @return The string name.
 	 */
 	public String getSymbol() {
 		return symbol;
 	}
 
 	/**
-	 * Returns an array of the string names that the enum values represent
-	 * @return An array of strings
+	 Returns an array of the string names that the enum values represent.
+	 @return An array of strings
 	 */
 	public static String[] getSymbols(){
 		return symbols;

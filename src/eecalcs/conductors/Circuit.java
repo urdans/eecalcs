@@ -107,6 +107,24 @@ public class Circuit extends Conductor {
 		return super.getAreaCM() * numberOfSets;
 	}*/
 }
+    /*future 110.14(C) to be implemented outside like this:
+    if getFactor == 1 then
+        if LoadAmpacity <= 100 and unknownRating then
+            getAmpacity(conductorSize, metal, TempRating.T60)
+        else
+            getAmpacity(conductorSize, metal, TempRating.T75)
+     */
+/*
+future Circuits should return a string composed of several lines (separated by returns and line feed), of the form:
+     <p>&emsp;&emsp; First line, circuit description:  "POOL HEATER"
+     <p>&emsp;&emsp; Second line, configuration:       "(3) #8 AWG THHN (AL) + #10 AWG THHN (CU)(NEU) + #12 AWG THHN (CU)(GND) IN 2" EMT CONDUIT" or
+     <p>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;           "(3) SETS OF (4) 250 KCMIL THHW (CU) + #1/0 AWG THHW (CU)(GND) IN 4" EMT CONDUIT" or
+     <p>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;           "MC CABLE (CU): (3) #8 AWG (HOTS) + #10 AWG (NEU) + 12 AWG (GND) IN FREE AIR or
+     <p>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;           2" EMT CONDUIT or IN CABLE TRAY"
+     <p>&emsp;&emsp; Third line, circuit ratings:      "208 VOLTS 3ⱷ 3W 125 AMPS DPH-24,26,28"
+
+ */
+
 
 /*quede aqui
 * All classes have been refactored to the perfection except class Circuit which the more I think about it the more I believe should not
@@ -185,3 +203,106 @@ The circuit object represents the set of electrical equipment composed of:
 	-A set of conductors inside the conduit.
 	-An overcurrent protection device.
  */
+/*TODO
+   Some ideas:
+		* Class Circuit should inherit from Conductor
+		Class Feeder, Branch and Service should inherit from class Circuit
+ Class Load is for generic loads. Other load types should inherit from class Load and get specialized.
+  Class Conductor:
+ ----------------
+ The independent properties of a conductor are:
+ -size
+ -metal (CU or AL)
+ -insulation (if any)
+ -length (one way length)
+  Class Circuit:
+ -----------------------
+ The resistance and reactance of the conductor will depend on the raceway type and arrangement:
+ -If conductors are in free air or tray
+ -If they are inside a conduit and then, the metal of the conduit
+ -The number of conductors inside the raceway that are not in parallel (this should affect the resistance and the reactance of the
+ conductor but I haven't found a formulae or method that correlates these characteristics)
+ -The number of conductors inside the conduit that are in parallel (same note as before; table 9 is based on the assumption the system
+ voltage is three phase, 75°C, 60Hz, three single conductors in conduit; so, unless more information is found, I will always use the
+ values of table 9 but will leave room for improvement once the method that considers different scenarios is found).
+  -The ampacity of the conductor will depend mainly on all the above listed variables but also on the location of the conductor, like when
+ it is in the rooftop (and the distance from the floor)
+   Class Feeder, Service, Branch and Tap:
+ --------------------------------------
+ -These classes are similar. They differ in the fact that the branch circuit directly feeds a load, while a feeder has a OCPD on each end.
+ A special Feeder is the Service class.
+ SOme of the properties of these classes are:
+ -Voltage
+ -Phases,
+ -Frequency
+  The user must put the class CircuitConductor in the context of any of the classes Feeder, Service or Branch.
+  For instance, the Branch class has a load object. The Feeder has a load intent. One or more branch circuits will always be connected to a
+ feeder through an OCPD.
+  Branch circuits can be multiwire
+ Loads can be continuous or non continuous.
+  Other classes must be designed, like for fuses, breakers, loads, motors, appliances, whatever, lights, AC equipment, panel, switchboard,
+ etc, etc.
+
+ */
+/*
+The class encapsulates only static data and static methods. This class is to be used in composition by the
+class Conductor.
+Class Circuit should inherit from Conductor
+Class Feeder, Branch and Service should inherit from class Circuit
+Class Load is for generic loads. Other load types should inherit from class Load and get specialized.
+
+This class groups all the properties related to a conductor of a defined size. The class is able to build and return any conductor with
+all these properties (as defined in NEC2014) and also build a conductor object (as defined below) that encapsulates only the
+properties that pertain to a particular set of conditions.
+
+Other classes should be defined separately; Composition will be preferred above inheritance, unless abstraction is necessary (which will
+probably be the case for the class load and its descendant)
+
+A conductor is an entity that encapsulates all the properties of a single conductor, when it is isolated, that is, the
+represented characteristics don't depend upon other conditions, like ambient temperature, number of conductor per raceway, type of
+raceway, voltage type (AC or DC), number of phases, special locations, load types, etc.
+
+Class Conductor:
+----------------
+The independent properties of a conductor are:
+-size
+-metal (CU or AL)
+-insulation (if any)
+-length (one way length)
+
+Class Circuit:
+-----------------------
+The resistance and reactance of the conductor will depend on the raceway type and arrangement:
+-If conductors are in free air or tray
+-If they are inside a conduit and then, the metal of the conduit
+-The number of conductors inside the raceway that are not in parallel (this should affect the resistance and the reactance of the
+conductor but I haven't found a formulae or method that correlates these characteristics)
+-The number of conductors inside the conduit that are in parallel (same note as before; table 9 is based on the assumption the system
+voltage is three phase, 75°C, 60Hz, three single conductors in conduit; so, unless more information is found, I will always use the
+values of table 9 but will leave room for improvement once the method that considers different scenarios is found).
+
+-The ampacity of the conductor will depend mainly on all the above listed variables but also on the location of the conductor, like when
+it is in the rooftop (and the distance from the floor)
+
+
+Class Feeder, Service, Branch and Tap:
+--------------------------------------
+-These classes are similar. They differ in the fact that the branch circuit directly feeds a load, while a feeder has a OCPD on each end.
+A special Feeder is the Service class.
+SOme of the properties of these classes are:
+-Voltage
+-Phases,
+-Frequency
+
+The user must put the class CircuitConductor in the context of any of the classes Feeder, Service or Branch.
+
+For instance, the Branch class has a load object. The Feeder has a load intent. One or more branch circuits will always be connected to a
+feeder through an OCPD.
+
+Branch circuits can be multiwire
+Loads can be continuous or non continuous.
+
+Other classes must be designed, like for fuses, breakers, loads, motors, appliances, whatever, lights, AC equipment, panel, switchboard,
+etc, etc.
+
+*/

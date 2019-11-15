@@ -1,7 +1,7 @@
 package eecalcs.conductors;
 
 /**
- * Contains only static strings with the insulation valid types
+ Contains only static strings with the insulation valid types
  */
 public enum Insul{
 	TW("TW"),
@@ -36,21 +36,23 @@ public enum Insul{
 			names[i] = values()[i].getName();
 	}
 
-	private Insul(String name){
+	Insul(String name){
 		this.name = name;
 	}
 
 	/**
-	 * Returns the string name that this enum represents.
-	 * @return The string name.
+	 Returns the string name that this enum represents.
+
+	 @return The string name.
 	 */
 	public String getName() {
 		return name;
 	}
 
 	/**
-	 * Returns an array of the string names that the enum values represent
-	 * @return An array of strings
+	 Returns an array of the string names that the enum values represent.
+
+	 @return An array of strings.
 	 */
 	public static String[] getNames(){
 		return names;

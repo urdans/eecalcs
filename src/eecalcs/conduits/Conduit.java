@@ -6,9 +6,8 @@ import eecalcs.conductors.ConductorProperties;
 import eecalcs.conductors.Conduitable;
 import tools.EEToolsException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 
 /**
  * This class represents an electrical conduit object.
@@ -39,6 +38,7 @@ public class Conduit {
     private List<Circuit> circuits = new ArrayList<>();
     private List<Conductor> conductors = new ArrayList<>();
     private List<Conduitable> conduitables = new ArrayList<>();
+    private double roofTopDistance = -1.0; //means no rooftop condition
 
     /**
      * Returns the list of all conduitable objects that are inside this conduit (for instance, conductors and cables).
@@ -106,6 +106,17 @@ public class Conduit {
     }
 
     /**
+     * Removes all conduitables from this conduit. After a call to this method, this conduit will be empty.
+     */
+    public void empty() {
+/*        Conduitable[] conduitableArray = new Conduitable[conduitables.size()];
+        conduitableArray = conduitables.toArray(conduitableArray);
+        for(Conduitable conduitable: conduitableArray) conduitable.leaveConduit();*/
+        Object[] c = conduitables.toArray();
+        for(Object o:c) ((Conduitable) o).leaveConduit();
+    }
+
+    /**
      * Asks if this conduit already contains the given conduitable.
      * @param conduitable The conduitable to check if it is already contained by this conduit.
      * @return True if this conduit contains it, false otherwise.
@@ -132,15 +143,16 @@ public class Conduit {
     }
 
     /**
-     * Returns the number of conductor inside this conduit, including the ones within any circuit. Cables always count as one conductor. The returned
+     * Returns the number of conductor inside this conduit. Cables always count as one conductor. The returned
      * number is used to compute the percentage of filling area in this conduit.
      * @return The number of conductors.
      */
     public int getConductorsNumber(){
-        int conductorsNumber = 0;
+/*        int conductorsNumber = 0;
         for(Conduitable conduitable: conduitables)
             conductorsNumber += conduitable.getConductorCount();
-        return conductorsNumber;
+        return conductorsNumber;*/
+        return conduitables.size();
     }
 
     /**
@@ -226,11 +238,55 @@ public class Conduit {
         return nipple == Nipple.Yes;
     }
 
+    /**
+     Marks this conduit has a nipple, that is, its length is 24" or less.
+
+     @param nipple The nipple value as defined in {@link Nipple}.
+     */
     public void setNipple(Nipple nipple) {
         this.nipple = nipple;
         if(isNipple())
             allowedFillPercentage = 60;
         else
             allowedFillPercentage = 53;
+    }
+
+    /**
+     Sets the rooftop condition for this conduit.
+
+     @param roofTopDistance The distance in inches above roof to bottom of this
+     conduit. If a negative value is indicated, the behavior of this method is
+     the same as when calling resetRoofTop, which eliminates the roof top
+     condition from this conduit.
+     */
+    public void setRoofTopDistance(double roofTopDistance){
+        this.roofTopDistance = roofTopDistance;
+    }
+
+    /**
+     Resets the rooftop condition for this conduit, that is, no roof top
+     condition.
+     */
+    public void resetRoofTop(){
+        setRoofTopDistance(-1);
+    }
+
+    /**
+     Asks if this conduit is in a rooftop condition as defined by
+     <b>310.15(B)(3)(c)</b>.
+
+     @return True if this conduit has a rooftop condition, false otherwise.
+     */
+    public boolean isRooftopCondition(){
+        return (roofTopDistance > 0 && roofTopDistance <= 36) ;
+    }
+
+    /**
+     Returns the rooftop distance of this conduit.
+
+     @return The rooftop distance of this conduit.
+     */
+    public double getRoofTopDistance(){
+        return roofTopDistance;
     }
 }

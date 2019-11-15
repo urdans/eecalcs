@@ -1,4 +1,4 @@
-//package main;
+package main;
 
 import eecalcs.conductors.*;
 import eecalcs.conduits.*;
@@ -15,7 +15,7 @@ import java.util.List;
 //import Size;
 public class Main {
 
-	public static void main(String[] args) throws CloneNotSupportedException {
+	public static void main(String[] args) {
 		//testing cloning a cable
 		Cable cab1 = new Cable(SystemAC.Voltage.v120_1ph, SystemAC.Wires.W2, 1.23);
 		cab1.setJacketed(true);
@@ -23,7 +23,7 @@ public class Main {
 		cab1.setMetal(Metal.ALUMINUM);
 		cab1.setPhaseConductorSize(Size.AWG_1);
 		System.out.println("cab1: " + cab1.getDescription()+" "+cab1.getLength());
-		Cable cab2 = (Cable)cab1.clone();
+		Cable cab2 = cab1.clone();
 		System.out.println("cab2: " + cab2.getDescription()+" "+cab2.getLength());
 		cab2.setPhaseConductorSize(Size.AWG_2);
 		cab2.setGroundingConductorSize(Size.AWG_8);
@@ -185,7 +185,9 @@ public class Main {
 				conductor1.getTemperatureRating()));
 		System.out.println("       Correction factor: " + Factors.getTemperatureCorrectionF(conductor1.getAmbientTemperatureF(),
 				conductor1.getTemperatureRating()));
-		System.out.println("       Adjustment factor: " + Factors.getAdjustmentFactor(conductor1.getConduit()));
+		System.out.println("       Adjustment factor: " + Factors.getAdjustmentFactor(conductor1.getConduit().getCurrentCarryingNumber(),
+				conductor1.getConduit().isNipple()));
+		//todo I should use here conductor1.getAdjustmentFactor()
 		System.out.println("          Final Ampacity: " + df.format(conductor1.getAmpacity())/*String.format("%.2f", conductor1.getAmpacity())*/ + " AMPS");
 
 		System.out.println("**************** CABLES ****************");
@@ -203,11 +205,11 @@ public class Main {
 		System.out.println("                   Metal: " + cable1.getMetal());
 		System.out.println("                  Length: " + cable1.getLength() + " FT");
 		System.out.println("             Has conduit: " + cable1.hasConduit());
-		System.out.println("          Rated ampacity: " + cable1.getAmpacity()/(Factors.getTemperatureCorrectionF(cable1.getAmbientTemperatureF(),
-				cable1.getTemperatureRating())*Factors.getAdjustmentFactor(cable1.getConduit())));
+		/*System.out.println("          Rated ampacity: " + cable1.getAmpacity()/(Factors.getTemperatureCorrectionF(cable1.getAmbientTemperatureF(),
+				cable1.getTemperatureRating())*Factors.getAdjustmentFactor(cable1.getConduit())));*/
 		System.out.println("       Correction factor: " + Factors.getTemperatureCorrectionF(cable1.getAmbientTemperatureF(),
 				cable1.getTemperatureRating()));
-		System.out.println("       Adjustment factor: " + Factors.getAdjustmentFactor(cable1.getConduit()));
+		/*System.out.println("       Adjustment factor: " + Factors.getAdjustmentFactor(cable1.getConduit()));*/
 		System.out.println("          Final Ampacity: " + df.format(cable1.getAmpacity())/*String.format("%.2f", cable1.getAmpacity())*/ + " AMPS");
 		System.out.println("**************** CONTAINER CONDUIT ****************");
 		if(conductor1.hasConduit()) {

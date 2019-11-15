@@ -12,27 +12,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 //@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class CableTest {
-    Cable cable;
+    private Cable cable;
 
     @Test
     void getInsulatedAreaIn2() {
-        System.out.println("╔═════════════════════╗");
-        System.out.println("║ getInsulatedAreaIn2 ║");
-        System.out.println("╚═════════════════════╝");
+        Tools.printTitle("CableTest.getInsulatedAreaIn2");
         double diameter = 2;
         cable = new Cable(SystemAC.Voltage.v277_1ph, SystemAC.Wires.W4, diameter);
         assertEquals(diameter*diameter*0.25*Math.PI, cable.getInsulatedAreaIn2());
         diameter = 0.5; cable.setOuterDiameter(diameter);
         assertEquals(diameter*diameter*0.25*Math.PI, cable.getInsulatedAreaIn2());
-        diameter = 0; ; cable.setOuterDiameter(diameter);
+        diameter = 0; cable.setOuterDiameter(diameter);
         assertEquals(0.25*0.25*0.25*Math.PI, cable.getInsulatedAreaIn2());
     }
 
     @Test
     void getCurrentCarryingCount() {
-        System.out.println("╔═════════════════════════╗");
-        System.out.println("║ getCurrentCarryingCount ║");
-        System.out.println("╚═════════════════════════╝");
+        Tools.printTitle("CableTest.getCurrentCarryingCount");
         cable = new Cable(SystemAC.Voltage.v480_3ph, SystemAC.Wires.W4, 1);
         assertEquals(3, cable.getCurrentCarryingCount());
         cable.setNeutralCarryingConductor(true);
@@ -56,26 +52,32 @@ class CableTest {
 
     @Test
     void getAmpacity() {
-        System.out.println("╔═════════════╗");
-        System.out.println("║ getAmpacity ║");
-        System.out.println("╚═════════════╝");
+        Tools.printTitle("CableTest.getAmpacity");
         cable = new Cable(SystemAC.Voltage.v277_1ph, SystemAC.Wires.W4, 1);
         cable.setNeutralConductorSize(Size.KCMIL_300);
         assertEquals(285, cable.getAmpacity());
+
         cable.setAmbientTemperatureF(100);
         assertEquals(285*0.88, cable.getAmpacity());
+
         cable.setRoofTopDistance(38);
         assertEquals(285*0.88, cable.getAmpacity());
+
         cable.setRoofTopDistance(36);
         assertEquals(285*0.67, cable.getAmpacity());
+
         cable.setRoofTopDistance(6);
         assertEquals(285*0.67, cable.getAmpacity());
+
         cable.setRoofTopDistance(2);
         assertEquals(285*0.58, cable.getAmpacity());
+
         cable.setRoofTopDistance(0.25);
         assertEquals(285*0, cable.getAmpacity());
+
         cable.resetRoofTop();
         assertEquals(285*0.88, cable.getAmpacity());
+
         Conduit conduit = new Conduit(Type.ENT, Conduit.Nipple.No);
         conduit.add(cable);
         conduit.add(new Conductor());
@@ -83,55 +85,194 @@ class CableTest {
         conduit.add(new Conductor());
         conduit.add(new Conductor());
         conduit.add(new Conductor());
-        cable.setAmbientTemperatureF(100);
-        cable.setRoofTopDistance(20);
-        System.out.println("Number of CCC: " + conduit.getCurrentCarryingNumber());
-        System.out.println("Ambient temperature: " + cable.getAmbientTemperatureF());
-        assertEquals(285*0.67*0.7, cable.getAmpacity());
-        Conduitable fithConductor = conduit.getConduitables().get(5);
+        cable.setAmbientTemperatureF(95);
+        cable.setRoofTopDistance(20);//this has no effect since the cable is inside a conduit.
+        assertFalse(cable.isRooftopCondition());
+        assertEquals(TempRating.T75, cable.getTemperatureRating());
+        assertEquals(7, conduit.getCurrentCarryingNumber());
+        //this ignores the rooftop condition since the conduit is not in that condition.
+        assertEquals(285*0.94*0.7, cable.getAmpacity(), 0.01);
+
+        conduit.setRoofTopDistance(10);
+        assertEquals(285*0.67*0.7, cable.getAmpacity(), 0.01);
+
+        conduit.resetRoofTop();
+        assertEquals(285*0.94*0.7, cable.getAmpacity(), 0.01);
+
+        cable.leaveConduit();
+        assertEquals(285*0.75*1, cable.getAmpacity(), 0.01);
+        assertEquals(5, conduit.getCurrentCarryingNumber());
+
+        cable.setConduit(conduit);
+        assertEquals(7, conduit.getCurrentCarryingNumber());
+
+        conduit.setRoofTopDistance(20);
+        Conduitable fithConductor = conduit.getConduitables().get(4);
         conduit.remove(fithConductor);
-        assertEquals(285*0.67*0.8, cable.getAmpacity());
-        /*todo test ampacity for when nipple, no adjustment is done*/
+        assertEquals(6, conduit.getCurrentCarryingNumber());
+        assertEquals(285*0.75*0.8, cable.getAmpacity(), 0.01);
+
         conduit.setNipple(Conduit.Nipple.Yes);
+        assertEquals(285*0.75*1, cable.getAmpacity(), 0.01);
+
         cable.setMetal(Metal.ALUMINUM);
         cable.setInsulation(Insul.THHN);
-        System.out.println("Number of CCC: " + conduit.getCurrentCarryingNumber());
-        System.out.println("Ambient temperature: " + cable.getAmbientTemperatureF());
+        assertEquals(6, conduit.getCurrentCarryingNumber());
+
         cable.resetRoofTop();
-        assertEquals(260*0.91*1, cable.getAmpacity());
+        conduit.resetRoofTop();
+        assertEquals(260*0.96*1, cable.getAmpacity());
+
         conduit.add(fithConductor);
         conduit.setNipple(Conduit.Nipple.No);
-        assertEquals(260*0.91*0.7, cable.getAmpacity(),0.01);
+        assertEquals(260*0.96*0.7, cable.getAmpacity(),0.01);
+
         cable.setType(Cable.Type.MC);
         conduit.remove(cable);
-        cable.setBundlingExceeds20(true);
-        cable.setBundlingDistanceExceeds24(true);
-        assertEquals(260*0.91*0.60, cable.getAmpacity(),0.01);
-        cable.setBundlingExceeds20(false);
+        assertEquals(260*0.96*1, cable.getAmpacity(),0.01);
+
         cable.setPhaseConductorSize(Size.AWG_12);
         cable.setMetal(Metal.COPPER);
-        assertEquals(30*0.91*1.0, cable.getAmpacity());
+        assertEquals(30*0.96*1.0, cable.getAmpacity());
 
-        cable.setBundlingDistanceExceeds24(false);
         cable.setType(Cable.Type.NM);
         cable.setAmbientTemperatureF(65);
         cable.setInsulation(Insul.RHW);
         cable.setJacketed(true);
         assertEquals(25*1.11*1.0, cable.getAmpacity());
-        cable.setBundlingExceeds20(true);
-        cable.setBundlingDistanceExceeds24(true);
-        assertEquals(25*1.11*1.0, cable.getAmpacity());//because it's not in a conduit
-        cable.setJacketed(false);
-        cable.setPhaseConductorSize(Size.AWG_12);
-        assertEquals(25*1.11*1.0, cable.getAmpacity());//because it's #12awg
-        /*todo test ampacity for when cable is MC and not jacketed and when jacketed*/
+        assertFalse(cable.isJacketed());
+
+        cable.setType(Cable.Type.AC);
+        cable.setJacketed(true);
+        assertTrue(cable.isJacketed());
+
+        conduit.empty();
+        cable.setConduit(conduit);
+        assertEquals(2, conduit.getCurrentCarryingNumber());
+        assertEquals(25*1.11*1.0, cable.getAmpacity());
+
+        conduit.add(cable.clone());
+        assertEquals(4, conduit.getCurrentCarryingNumber());
+        assertEquals(25*1.11*0.8, cable.getAmpacity());
+
+        conduit.add(cable.clone());
+        conduit.add(cable.clone());
+        conduit.add(cable.clone());
+        conduit.add(cable.clone());
+        conduit.add(cable.clone());
+        conduit.add(cable.clone());
+        conduit.add(cable.clone());
+        conduit.add(cable.clone());
+        conduit.add(cable.clone());
+        assertEquals(22, conduit.getCurrentCarryingNumber());
+        assertEquals(25*1.11*0.45, cable.getAmpacity(), 0.01);
+
+        conduit.empty();
+        assertEquals(0, conduit.getCurrentCarryingNumber());
+        assertEquals(25*1.11*1.0, cable.getAmpacity());
+
+        Bundle bundle = new Bundle(cable, 5, 10);
+        assertEquals(10, bundle.getCurrentCarryingNumber());
+
+        cable.setBundle(bundle);
+        assertEquals(12, bundle.getCurrentCarryingNumber());
+        assertTrue(cable.isJacketed());
+        assertTrue(((Cable)bundle.getConduitables().get(4)).isJacketed());
+        assertEquals(65, cable.getAmbientTemperatureF());
+        assertEquals(65, bundle.getConduitables().get(4).getAmbientTemperatureF());
+        assertEquals(1, Factors.getAdjustmentFactor(bundle.getCurrentCarryingNumber(), bundle.getDistance()));
+        assertEquals(1.11, Factors.getTemperatureCorrectionF(cable.getAmbientTemperatureF(), cable.getTemperatureRating()));
+        assertEquals(1, cable.getAdjustmentFactor());
+        assertEquals(25*1.11*1, cable.getAmpacity());
+
+        bundle.getConduitables().forEach(conduitable -> ((Cable)conduitable).setJacketed(true));
+        assertTrue(cable.isJacketed());
+        assertEquals(Size.AWG_12, cable.getPhaseConductorSize());
+        assertEquals(Metal.COPPER, cable.getMetal());
+        assertEquals(2, cable.getCurrentCarryingCount());
+        assertEquals(12, bundle.getCurrentCarryingNumber());
+        assertFalse(bundle.complyWith310_15_B_3_a_4());
+        assertEquals(25*1.11*1, cable.getAmpacity());
+        bundle.setDistance(25);
+        assertEquals(25*1.11*0.5, cable.getAmpacity());
+
+
+        bundle.getConduitables().forEach(conduitable -> ((Cable)conduitable).setJacketed(false));
+        assertTrue(bundle.complyWith310_15_B_3_a_4());
+        assertEquals(25*1.11*1, cable.getAmpacity());
+
+        bundle.add(cable.clone());
+        bundle.add(cable.clone());
+        bundle.add(cable.clone());
+        bundle.add(cable.clone());
+        bundle.add(cable.clone());
+        assertEquals(22, bundle.getCurrentCarryingNumber());
+        assertFalse(bundle.complyWith310_15_B_3_a_4());
+        assertTrue(bundle.complyWith310_15_B_3_a_5());
+        assertEquals(25*1.11*0.6, cable.getAmpacity(), 0.01);
+
+        cable.setType(Cable.Type.MC);
+        assertEquals(25*1.11*0.6, cable.getAmpacity(), 0.01);
+
+        cable.setType(Cable.Type.NMS);
+        assertEquals(25*1.11*0.45, cable.getAmpacity(), 0.01);
+
+        //Running the example of the NEC2014 Handbook, page 262
+        bundle.empty();
+        cable.setAmbientTemperatureF(86);
+        assertEquals(86, cable.getAmbientTemperatureF());
+
+        cable.setType(Cable.Type.MC);
+        cable.setInsulation(Insul.THHN);
+        cable.setSystem(SystemAC.Voltage.v480_1ph, SystemAC.Wires.W3);
+        assertEquals(3, cable.getCurrentCarryingCount());
+
+        bundle.add(cable.clone());
+        bundle.add(cable.clone());
+        bundle.add(cable.clone());
+        bundle.add(cable.clone());
+        bundle.add(cable.clone());
+        bundle.add(cable.clone());
+        bundle.add(cable);
+        assertEquals(21, bundle.getCurrentCarryingNumber());
+        assertTrue(bundle.complyWith310_15_B_3_a_5());
+        assertEquals(86, cable.getAmbientTemperatureF());
+        assertEquals(1, Factors.getTemperatureCorrectionF(cable.getAmbientTemperatureF(), cable.getTemperatureRating()));
+        assertEquals(30*1*0.60, cable.getAmpacity(), 0.01);
+
+        cable.leaveBundle();
+        assertEquals(30*1*1, cable.getAmpacity(), 0.01);
+
+        bundle.empty();
+        assertEquals(0, bundle.getCurrentCarryingNumber());
+
+    }
+
+    @Test
+    void setNeutralConductorSize(){
+        Tools.printTitle("CableTest.setNeutralConductorSize");
+        cable = new Cable(SystemAC.Voltage.v277_1ph, SystemAC.Wires.W4, 1);
+        assertEquals(Size.AWG_12, cable.getGroundingConductorSize());
+
+        cable.setNeutralConductorSize(Size.KCMIL_300);
+        assertEquals(Size.AWG_12, cable.getGroundingConductorSize());
+        assertEquals(Size.KCMIL_300, cable.getPhaseConductorSize());
+        assertEquals(Size.KCMIL_300, cable.getNeutralConductorSize());
+
+        cable.setSystem(SystemAC.Voltage.v480_3ph, SystemAC.Wires.W4);
+        assertEquals(Size.KCMIL_300, cable.getPhaseConductorSize());
+        assertEquals(Size.KCMIL_300, cable.getNeutralConductorSize());
+        assertEquals(Size.AWG_12, cable.getGroundingConductorSize());
+
+        cable.setGroundingConductorSize(Size.KCMIL_250);
+        assertEquals(Size.KCMIL_300, cable.getPhaseConductorSize());
+        assertEquals(Size.KCMIL_300, cable.getNeutralConductorSize());
+        assertEquals(Size.KCMIL_250, cable.getGroundingConductorSize());
     }
 
     @Test
     void getPhaseConductorSize() {
-        System.out.println("╔═══════════════════════╗");
-        System.out.println("║ getPhaseConductorSize ║");
-        System.out.println("╚═══════════════════════╝");
+        Tools.printTitle("CableTest.getPhaseConductorSize");
         cable = new Cable(SystemAC.Voltage.v277_1ph, SystemAC.Wires.W4, 1);
         cable.setPhaseConductorSize(Size.KCMIL_250);
         cable.setNeutralConductorSize(Size.KCMIL_300);
@@ -142,16 +283,14 @@ class CableTest {
 
     @Test
     void testClone() {
-        System.out.println("╔═══════════╗");
-        System.out.println("║ testClone ║");
-        System.out.println("╚═══════════╝");
+        Tools.printTitle("CableTest.testClone");
         Cable cable1 = new Cable(SystemAC.Voltage.v208_3ph, SystemAC.Wires.W4, 1.5);
         Conduit conduit = new Conduit(Type.EMT, Conduit.Nipple.Yes);
         conduit.add(cable1);
         cable1.setType(Cable.Type.NMS);
         cable1.setJacketed(true);
-        cable1.setBundlingExceeds20(true);
-        cable1.setBundlingDistanceExceeds24(true);
+//        cable1.setBundlingExceeds20(true);
+//        cable1.setBundlingDistanceExceeds24(true);
         cable1.setRoofTopDistance(20);
         cable1.setNeutralCarryingConductor(true);
         System.out.println("Before changes");
@@ -166,8 +305,8 @@ class CableTest {
 
         cable2.setType(Cable.Type.AC);
         cable2.setJacketed(false);
-        cable2.setBundlingExceeds20(false);
-        cable2.setBundlingDistanceExceeds24(false);
+//        cable2.setBundlingExceeds20(false);
+//        cable2.setBundlingDistanceExceeds24(false);
         cable2.setRoofTopDistance(25);
         cable2.setNeutralCarryingConductor(false);
         cable2.setSystem(SystemAC.Voltage.v277_1ph, SystemAC.Wires.W4); //it should assume it as W2
@@ -188,9 +327,7 @@ class CableTest {
 
     @Test
     void bundleAndConduit(){
-        System.out.println("╔══════════════════╗");
-        System.out.println("║ bundleAndConduit ║");
-        System.out.println("╚══════════════════╝");
+        Tools.printTitle("CableTest.bundleAndConduit");
         Cable cable1 = new Cable();
         Bundle bundle1 = new Bundle(cable1, 5, 60);
         assertEquals(5, bundle1.getConduitables().size());
@@ -219,7 +356,7 @@ class CableTest {
         assertEquals(7, bundle1.getConduitables().size());
         assertTrue(bundle1.getConduitables().contains(cable2));
         assertFalse(bundle2.getConduitables().contains(cable2));
-        assertTrue(cable2.getBundle()==bundle1);
+        assertSame(cable2.getBundle(), bundle1);
         assertEquals(3, bundle2.getConduitables().size());
 
         //moving cable1 to bundle2
@@ -228,7 +365,7 @@ class CableTest {
         assertEquals(4, bundle2.getConduitables().size());
         assertTrue(bundle2.getConduitables().contains(cable1));
         assertFalse(bundle1.getConduitables().contains(cable1));
-        assertTrue(cable1.getBundle()==bundle2);
+        assertSame(cable1.getBundle(), bundle2);
 
         Conduit conduit1 = new Conduit(Type.PVC40, Conduit.Nipple.No);
         //moving cable1 to conduit1
@@ -237,8 +374,8 @@ class CableTest {
         assertFalse(bundle2.getConduitables().contains(cable1));
         assertTrue(cable1.hasConduit());
         assertFalse(cable1.hasBundle());
-        assertTrue(cable1.getBundle()==null);
-        assertTrue(cable1.getConduit()==conduit1);
+        assertNull(cable1.getBundle());
+        assertSame(cable1.getConduit(), conduit1);
 
         //moving cable2 to conduit1
         cable2.setConduit(conduit1);
@@ -249,8 +386,8 @@ class CableTest {
         assertEquals(3, bundle2.getConduitables().size());
         assertTrue(cable2.hasConduit());
         assertFalse(cable2.hasBundle());
-        assertTrue(cable2.getBundle()==null);
-        assertTrue(cable2.getConduit()==conduit1);
+        assertNull(cable2.getBundle());
+        assertSame(cable2.getConduit(), conduit1);
 
         //putting cable1, cable2 and cable3 (first of bundle1) in free air.
         Cable cable3 = (Cable) bundle1.getConduitables().get(0);
@@ -261,14 +398,14 @@ class CableTest {
         assertFalse(conduit1.getConduitables().contains(cable1));
         assertFalse(conduit1.getConduitables().contains(cable2));
 
-        assertTrue(cable1.getBundle()==null);
-        assertTrue(cable1.getConduit()==null);
+        assertNull(cable1.getBundle());
+        assertNull(cable1.getConduit());
 
-        assertTrue(cable2.getBundle()==null);
-        assertTrue(cable2.getConduit()==null);
+        assertNull(cable2.getBundle());
+        assertNull(cable2.getConduit());
 
-        assertTrue(cable3.getBundle()==null);
-        assertTrue(cable3.getConduit()==null);
+        assertNull(cable3.getBundle());
+        assertNull(cable3.getConduit());
 
         assertFalse(bundle1.getConduitables().contains(cable3));
         assertEquals(0, conduit1.getConduitables().size());

@@ -8,76 +8,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
-/*
- * This class encapsulates only static data and methods about properties of conductors as defined in NEC 2014 tables 310.15(B)(16), 8, 9,
- * 5 & 5A.
- *
- *
- * This class is to be used in composition by the class Conductor.
- * Some ideas:
- * * Class Circuit should inherit from Conductor
- * Class Feeder, Branch and Service should inherit from class Circuit
- * Class Load is for generic loads. Other load types should inherit from class Load and get specialized.
- *
- * This class groups all the properties related to a conductor of a defined size. The class is able to build and return any conductor with
- * all these properties (as defined in NEC2014) and also build a conductor object (as defined below) that encapsulates only the
- * properties that pertain to a particular set of conditions.
- *
- * Other classes should be defined separately; Composition will be preferred above inheritance, unless abstraction is necessary (which will
- * probably be the case for the class load and its descendant)
- *
- * A conductor is an entity that encapsulates all the properties of a single conductor, when it is isolated, that is, the
- * represented characteristics don't depend upon other conditions, like ambient temperature, number of conductor per raceway, type of
- * raceway, voltage type (AC or DC), number of phases, special locations, load types, etc.
- *
- * Class Conductor:
- * ----------------
- * The independent properties of a conductor are:
- * -size
- * -metal (CU or AL)
- * -insulation (if any)
- * -length (one way length)
- *
- * Class Circuit:
- * -----------------------
- * The resistance and reactance of the conductor will depend on the raceway type and arrangement:
- * -If conductors are in free air or tray
- * -If they are inside a conduit and then, the metal of the conduit
- * -The number of conductors inside the raceway that are not in parallel (this should affect the resistance and the reactance of the
- * conductor but I haven't found a formulae or method that correlates these characteristics)
- * -The number of conductors inside the conduit that are in parallel (same note as before; table 9 is based on the assumption the system
- * voltage is three phase, 75°C, 60Hz, three single conductors in conduit; so, unless more information is found, I will always use the
- * values of table 9 but will leave room for improvement once the method that considers different scenarios is found).
- *
- * -The ampacity of the conductor will depend mainly on all the above listed variables but also on the location of the conductor, like when
- * it is in the rooftop (and the distance from the floor)
- *
- *
- * Class Feeder, Service, Branch and Tap:
- * --------------------------------------
- * -These classes are similar. They differ in the fact that the branch circuit directly feeds a load, while a feeder has a OCPD on each end.
- * A special Feeder is the Service class.
- * SOme of the properties of these classes are:
- * -Voltage
- * -Phases,
- * -Frequency
- *
- * The user must put the class CircuitConductor in the context of any of the classes Feeder, Service or Branch.
- *
- * For instance, the Branch class has a load object. The Feeder has a load intent. One or more branch circuits will always be connected to a
- * feeder through an OCPD.
- *
- * Branch circuits can be multiwire
- * Loads can be continuous or non continuous.
- *
- * Other classes must be designed, like for fuses, breakers, loads, motors, appliances, whatever, lights, AC equipment, panel, switchboard,
- * etc, etc.
- */
-
 /**
- *  This class encapsulates static data and methods about properties of conductors as defined in NEC 2014 tables 310.15(B)(16), 8,
- *  9, 5 and 5A.
+ This class encapsulates static data and methods about properties of conductors
+ as defined in NEC 2014 tables 310.15(B)(16), 8, 9, 5 and 5A.
+ <p>
+ This class groups all the properties related to a conductor of a defined size,
+ when it is isolated, that is, the represented characteristics don't depend upon
+ other conditions, like ambient temperature, number of conductor per raceway,
+ type of raceway, voltage type (AC or DC), number of phases, special locations,
+ load types, etc.
  */
 public class ConductorProperties {
 	private static Properties[] table;
@@ -563,20 +502,26 @@ public class ConductorProperties {
 	private ConductorProperties(){}
 
 	/**
-	 * Returns a Properties object for the given conductor size.
-	 * @param conductorSize The size of the conductor for which the properties object is being requested.
-	 * @return A Properties object for the given conductor size.
-	 * @see Size
+	 Returns a Properties object for the given conductor size.
+
+	 @param conductorSize The size of the conductor for which the properties
+	 object is being requested.
+	 @return A Properties object for the given conductor size.
+	 @see Size
 	 */
 	private static Properties bySize(Size conductorSize){
 		return table[conductorSize.ordinal()];
 	}
 
 	/**
-	 * Returns the area of an insulated conductor (conductor + insulation) of the given size and  insulation.
-	 * @param conductorSize The size of the conductor as defined by {@link Size}
-	 * @param insulation The insulation type of the conductor as defined by {@link Insul}
-	 * @return The area of the requested insulated conductor, in square inches or zero if the conductor doesn't have an area as defined in NEC table 5.
+	 Returns the area of an insulated conductor (conductor + insulation) of the
+	 given size and  insulation.
+
+	 @param conductorSize The size of the conductor as defined by {@link Size}
+	 @param insulation The insulation type of the conductor as defined by
+	 {@link Insul}
+	 @return The area of the requested insulated conductor, in square inches or
+	 zero if the conductor doesn't have an area as defined in NEC table 5.
 	 */
 	public static double getInsulatedAreaIn2(Size conductorSize, Insul insulation){
 		if(hasInsulatedArea(conductorSize, insulation))
@@ -585,11 +530,14 @@ public class ConductorProperties {
 	}
 
 	/**
-	 * Returns the area in square inches of a compact conductor (Table 5A) of size conductorSize
-	 * and of insulation insulationName
-	 * @param conductorSize The size of the conductor as defined by {@link Size}
-	 * @param insulation The insulation type of the conductor as defined by {@link Insul}
-	 * @return The area of the compact conductor or zero if any of the parameter is invalid or the area is not defined in table 5.
+	 Returns the area in square inches of a compact conductor (Table 5A) of
+	 the given size and of insulation.
+
+	 @param conductorSize The size of the conductor as defined by {@link Size}
+	 @param insulation The insulation type of the conductor as defined
+	 by {@link Insul}
+	 @return The area of the compact conductor or zero if any of the parameter
+	 is invalid or the area is not defined in table 5.
 	 */
 	public static double getCompactAreaIn2(Size conductorSize, Insul insulation){
 		if(hasCompactArea(conductorSize, insulation))
@@ -598,9 +546,12 @@ public class ConductorProperties {
 	}
 
 	/**
-	 * Returns the area in square inches of the requested bare compact conductor size (Table 5A).
-	 * @param conductorSize The size of the conductor as defined by {@link Size}.
-	 * @return The area of the bare compact conductor or zero if the area is not defined in table 5A.
+	 Returns the area in square inches of the requested bare compact conductor
+	 size (Table 5A).
+
+	 @param conductorSize The size of the conductor as defined by {@link Size}.
+	 @return The area of the bare compact conductor or zero if the area is not
+	 defined in table 5A.
 	 */
 	public static double getCompactBareAreaIn2(Size conductorSize){
 		if(hasCompactBareArea(conductorSize))
@@ -609,40 +560,49 @@ public class ConductorProperties {
 	}
 
 	/**
-	 * Returns true if an insulated conductor of size conductorSize and insulation type insulationName has its area defined in table 5.
-	 * @param conductorSize The size of the conductor as defined by {@link Size}.
-	 * @param insulation The insulation type of the conductor as defined by {@link Insul}.
-	 * @return True if the area is defined in table 5, false otherwise or parameters are not valid.
+	 Returns true if an insulated conductor of the given size and insulation
+	 type has its area defined in table 5.
+
+	 @param conductorSize The size of the conductor as defined by {@link Size}.
+	 @param insulation The insulation type of the conductor as defined
+	 by {@link Insul}.
+	 @return True if the area is defined in table 5, false otherwise or
+	 parameters are null.
 	 */
 	public static boolean hasInsulatedArea(Size conductorSize, Insul insulation){
-		return insulatedDimensions.get(insulation).containsKey(conductorSize);
+		return insulatedDimensions.containsKey(insulation) && insulatedDimensions.get(insulation).containsKey(conductorSize);
 	}
 
 	/**
-	 * Returns true if the compact conductor of the given size and insulation has its area defined in table 5A.
-	 * @param conductorSize The size of the conductor as defined by {@link Size}.
-	 * @param insulation The insulation type of the conductor as defined by {@link Insul}.
-	 * @return True if the area is defined in table 5A, false otherwise.
+	Returns true if the compact conductor of the given size and insulation has
+	 its area defined in table 5A.
+
+	@param conductorSize The size of the conductor as defined by {@link Size}.
+	@param insulation The insulation type of the conductor as defined
+	by {@link Insul}.
+	@return True if the area is defined in table 5A, false otherwise.
 	 */
 	public static boolean hasCompactArea(Size conductorSize, Insul insulation){
-		if(compactDimensions.containsKey(insulation))
-			return compactDimensions.get(insulation).containsKey(conductorSize);
-		return false;
+		return compactDimensions.containsKey(insulation) && compactDimensions.get(insulation).containsKey(conductorSize);
 	}
 
 	/**
-	 * Returns true if a compact bare conductor of size conductorSize has its area defined in table 5A
-	 * @param conductorSize The size of the conductor as defined by {@link Size}
-	 * @return True if the area is defined in table 5A, false otherwise or parameter is not valid
+	 Returns true if a compact bare conductor of the given has its area defined
+	 in table 5A.
+
+	 @param conductorSize The size of the conductor as defined by {@link Size}
+	 @return True if the area is defined in table 5A, false otherwise or
+	 parameter is null.
 	 */
 	public static boolean hasCompactBareArea(Size conductorSize){
 		return compactBareDimensions.containsKey(conductorSize);
 	}
 
 	/**
-	 * Asks for the temperature rating of the given insulation.
-	 * @param insulation The requested insulation.
-	 * @return The temperature rating of this insulation in degrees Celsius.
+	 Asks for the temperature rating of the given insulation.
+
+	 @param insulation The requested insulation.
+	 @return The temperature rating of this insulation in degrees Celsius.
 	 */
 	public static TempRating getTempRating(Insul insulation){
 		for(TempRating tempRating: TempRating.values()){
@@ -655,57 +615,74 @@ public class ConductorProperties {
 	}
 
 	/**
-	 * Compares two conductor sizes.
-	 * @param sizeLeft The size of the left side conductor to be compared as defined by {@link Size}
-	 * @param sizeRight The size of the right side conductor to be compared  as defined by {@link Size}
-	 * @return -1 if sizeLeft is smaller than sizeRight, 0 if both are equals of 1 if sizeLeft is bigger than sizeRight
+	 Compares two conductor sizes.
+
+	 @param sizeLeft The size of the left side conductor to be compared as
+	 defined by {@link Size}.
+	 @param sizeRight The size of the right side conductor to be compared  as
+	 defined by {@link Size}.
+	 @return -1 if sizeLeft is smaller than sizeRight, 0 if both are equals of 1
+	 if sizeLeft is bigger than sizeRight.
 	 */
 	public static int compareSizes(Size sizeLeft, Size sizeRight){
 		return sizeLeft.ordinal()-sizeRight.ordinal();
 	}
 
 	/**
-	 * Returns the reactance property of this conductor under the given magnetic conduit condition.
-	 * @param conductorSize The size of the conductor as defined by {@link Size}.
-	 * @param magneticConduit Indicates if the conduit is magnetic or not.
-	 * @return The reactance of this conductor in ohms per 1000 feet.
+	Returns the reactance property of this conductor under the given magnetic
+	conduit condition.
+
+	@param conductorSize The size of the conductor as defined by {@link Size}.
+	@param magneticConduit Indicates if the conduit is magnetic or not.
+	@return The reactance of this conductor in ohms per 1000 feet.
 	 */
 	public static double getReactance(Size conductorSize, boolean magneticConduit){
-		if(magneticConduit) return bySize(conductorSize).magXL;
+		if(conductorSize == null)
+			return 0;
+		if(magneticConduit)
+			return bySize(conductorSize).magXL;
 		return bySize(conductorSize).nonMagXL;
 	}
 
 	/**
-	 * Returns the total reactance of this conductor under the given magnetic conduit condition, for the given length and number of
-	 * parallel conductors.
-	 * @param conductorSize The size of the conductor as defined by {@link Size}.
-	 * @param magneticConduit Indicates if the conduit is magnetic or not.
-	 * @param oneWayLength The length in feet of this conductor.
-	 * @param numberOfSets The number of conductors in parallel.
-	 * @return The total reactance under the specified conditions.
+	 Returns the total reactance of this conductor under the given magnetic
+	 conduit condition, for the given length and number of parallel conductors.
+
+	 @param conductorSize The size of the conductor as defined by {@link Size}.
+	 @param magneticConduit Indicates if the conduit is magnetic or not.
+	 @param oneWayLength The length in feet of this conductor.
+	 @param numberOfSets The number of conductors in parallel.
+	 @return The total reactance under the specified conditions.
 	 */
 	public static double getReactance(Size conductorSize, boolean magneticConduit, double oneWayLength, int numberOfSets){
 		return getReactance(conductorSize, magneticConduit) * 0.001 * oneWayLength / numberOfSets;
 	}
 
 	/**
-	 * Returns the metal area of the given conductor, in Circular Mils.
-	 * @param conductorSize The size of the conductor as defined by {@link Size}.
-	 * @return The area in Circular Mils.
+	 Returns the metal area of the given conductor, in Circular Mils.
+
+	 @param conductorSize The size of the conductor as defined by {@link Size}.
+	 @return The area in Circular Mils.
 	 */
 	public static int getAreaCM(Size conductorSize) {
+		if(conductorSize == null)
+			return 0;
 		return bySize(conductorSize).areaCM;
 	}
 
 	/**
-	 * Returns the DC resistance of this conductor size for the given metal. If the specified metal is aluminum, the
-	 * copperCoated parameter is ignored.
-	 * @param conductorSize The size of the conductor as defined by {@link Size}
-	 * @param metal The metal of the conductor as defined by  {@link Metal}.
-	 * @param copperCoated Indicates for a copper conductor if it is coated or not.
-	 * @return The DC resistance of this conductor in ohms per 1000 feet.
+	 Returns the DC resistance of this conductor size for the given metal. If
+	 the specified metal is aluminum, the copperCoated parameter is ignored.
+
+	 @param conductorSize The size of the conductor as defined by {@link Size}
+	 @param metal The metal of the conductor as defined by  {@link Metal}.
+	 @param copperCoated Indicates for a copper conductor if it is coated or
+	 not.
+	 @return The DC resistance of this conductor in ohms per 1000 feet.
 	 */
 	public static double getDCResistance(Size conductorSize, Metal metal, Coating copperCoated) {
+		if(conductorSize == null || metal == null || copperCoated == null)
+			return 0;
 		if(metal == Metal.COPPER) {
 			if (copperCoated.isCoated())
 				return bySize(conductorSize).CuResDCCoated;
@@ -715,27 +692,38 @@ public class ConductorProperties {
 	}
 
 	/**
-	 * Returns the DC resistance of this conductor size for the given metal, length, sets, etc. If the specified metal is aluminum, the
-	 * copperCoated parameter is ignored.
-	 * @param conductorSize The size of the conductor as defined by {@link Size}.
-	 * @param metal The metal of the conductor as defined by  {@link Metal}.
-	 * @param length The length of the conductor.
-	 * @param numberOfSets The number of conductors in parallel.
-	 * @param copperCoated Indicates for a copper conductor if it is coated or not.
-	 * @return The DC resistance in ohms of this conductor size under the given conditions.
+	 Returns the DC resistance of this conductor size for the given metal,
+	 length, sets, etc. If the specified metal is aluminum, the copperCoated
+	 parameter is ignored.
+
+	 @param conductorSize The size of the conductor as defined by {@link Size}.
+	 @param metal The metal of the conductor as defined by  {@link Metal}.
+	 @param length The length of the conductor.
+	 @param numberOfSets The number of conductors in parallel.
+	 @param copperCoated Indicates for a copper conductor if it is coated or
+	 not.
+	 @return The DC resistance in ohms of this conductor size under the given
+	 conditions.
 	 */
 	public static double getDCResistance(Size conductorSize, Metal metal, double length, int numberOfSets, Coating copperCoated) {
+		if(conductorSize == null || metal == null || copperCoated == null || numberOfSets == 0)
+			return 0;
 		return getDCResistance(conductorSize, metal, copperCoated) * 0.001 * length / numberOfSets;
 	}
 
 	/**
-	 * Returns the AC resistance of this conductor size for the given metal and conduit material.
-	 * @param conductorSize The size of the conductor as defined by {@link Size}.
-	 * @param metal The metal of the conductor as defined by {@link Metal}.
-	 * @param conduitMaterial The material type of the conduit as specified in {@link Material}.
-	 * @return The AC resistance in ohms per 1000 feet.
+	 Returns the AC resistance of this conductor size for the given metal and
+	 conduit material.
+
+	 @param conductorSize The size of the conductor as defined by {@link Size}.
+	 @param metal The metal of the conductor as defined by {@link Metal}.
+	 @param conduitMaterial The material type of the conduit as specified
+	 in {@link Material}.
+	 @return The AC resistance in ohms per 1000 feet.
 	 */
 	public static double getACResistance(Size conductorSize, Metal metal, Material conduitMaterial) {
+		if(conductorSize == null || metal == null || conduitMaterial == null)
+			return 0;
 		if(metal == Metal.COPPER) {
 			if(conduitMaterial == Material.PVC)
 				return bySize(conductorSize).CuResInPVCCond;
@@ -755,24 +743,31 @@ public class ConductorProperties {
 	}
 
 	/**
-	 * Returns the AC resistance of this conductor size for the given metal, conduit material, length and number of sets.
-	 * @param conductorSize The size of the conductor as defined by {@link Size}
-	 * @param metal The metal of the conductor as defined by {@link Metal}.
-	 * @param conduitMaterial The material type of the conduit as specified in {@link Material}.
-	 * @param length The length of the conductor in feet.
-	 * @param numberOfSets The number of sets (conductors in parallel per phase)
-	 * @return The AC resistance in ohms of this conductor size under the given conditions.
+	 Returns the AC resistance of this conductor size for the given metal,
+	 conduit material, length and number of sets.
+
+	 @param conductorSize The size of the conductor as defined by {@link Size}
+	 @param metal The metal of the conductor as defined by {@link Metal}.
+	 @param conduitMaterial The material type of the conduit as specified
+	 in {@link Material}.
+	 @param length The length of the conductor in feet.
+	 @param numberOfSets The number of sets (conductors in parallel per phase).
+	 @return The AC resistance in ohms of this conductor size under the given
+	 conditions.
 	 */
 	public static double getACResistance(Size conductorSize, Metal metal, Material conduitMaterial, double length, int numberOfSets) {
 		return getACResistance(conductorSize, metal, conduitMaterial) * 0.001 * length / numberOfSets;
 	}
 
 	/**
-	 * Returns the ampacity of this conductor size for the given metal and temperature rating.
-	 * @param conductorSize The size of the conductor as defined by {@link Size}
-	 * @param metal The metal of the conductor as defined in {@link Metal}.
-	 * @param temperatureRating The temperature rating as defined in {@link TempRating}
-	 * @return The ampacity of this conductor size in amperes.
+	 Returns the ampacity of this conductor size for the given metal and
+	 temperature rating.
+
+	 @param conductorSize The size of the conductor as defined by {@link Size}
+	 @param metal The metal of the conductor as defined in {@link Metal}.
+	 @param temperatureRating The temperature rating as defined
+	 in {@link TempRating}
+	 @return The ampacity of this conductor size in amperes.
 	 */
 	public static double getAmpacity(Size conductorSize, Metal metal, TempRating temperatureRating) {
 		if(metal == Metal.COPPER) {
@@ -795,13 +790,19 @@ public class ConductorProperties {
 	}
 
 	/**
-	 * Returns the minimum allowed size a the conductor rated for the given temperature rating and good for the given allowed ampacity.
-	 * @param allowedAmpacity The allowed ampacity. This is the ampacity obtained once all conditions of use have been accounted for, that is, once the
-	 *                        temperature correction factor, the adjustment factor and any other restriction have been applied.
-	 * @param metal The metal of the conductor as defined in {@link Metal}.
-	 * @param tempRating The temperature rating of the conductor as defined in {@link TempRating}
-	 * @return The minimum size of the conductor good for that allowed ampacity and temperature rating or null if a conductor for that allowed ampacity could
-	 * not be found.
+	 Returns the minimum allowed size of a conductor of the given metal and
+	 temperature rating, for the given ampacity, as per table 310.15(B)(3)(16).
+
+	 @param allowedAmpacity The allowed ampacity. This is the ampacity obtained
+	 once all conditions of use have been accounted for, that is, once the
+	 temperature correction factor, the adjustment factor and any other
+	 restriction have been applied.
+	 @param metal The metal of the conductor as defined in {@link Metal}.
+	 @param tempRating The temperature rating of the conductor as defined
+	 in {@link TempRating}
+	 @return The minimum size of the conductor good for that allowed ampacity
+	 and temperature rating or null if a conductor for that allowed ampacity
+	 could not be found.
 	 */
 	public static Size getAllowedSize(double allowedAmpacity, Metal metal, TempRating tempRating){
 		for(Properties properties: table){
@@ -838,22 +839,27 @@ public class ConductorProperties {
 				}
 			}
 		}
-		return null; //this will only happen when the allowed ampacity is higher than any of the ampacity of a 2000 KCMIL conductor.
+		//this will only happen when the allowed ampacity is higher than any of
+		//the ampacity of a 2000 KCMIL conductor.
+		return null;
 	}
 
 	/**
-	 * Asks if the given size string name is valid.
-	 * @param fullName The size string name requested.
-	 * @return True if valid, false otherwise.
+	 Asks if the given size string name is valid.
+
+	 @param fullName The size string name requested.
+	 @return True if valid, false otherwise.
 	 */
 	public static boolean isValidFullName(String fullName){
 		return getSizeByStringFullName(fullName) != null;
 	}
 
 	/**
-	 * Returns the enum size of the requested size string name.
-	 * @param fullName The size string name requested.
-	 * @return The enum Size if there is a match with the given string; null otherwise.
+	 Returns the enum size of the requested size string name.
+
+	 @param fullName The size string name requested.
+	 @return The enum Size if there is a match with the given string,
+	 null otherwise.
 	 */
 	public static Size getSizeByStringFullName(String fullName){
 		fullName = fullName.trim();
@@ -865,18 +871,21 @@ public class ConductorProperties {
 	}
 
 	/**
-	 * Asks if the given insulation string name is valid.
-	 * @param insulation The string size name requested.
-	 * @return True if valid, false otherwise.
+	 Asks if the given insulation string name is valid.
+
+	 @param insulation The string size name requested.
+	 @return True if valid, false otherwise.
 	 */
 	public static boolean isValidInsulStringName(String insulation){
 		return getInsulByStringName(insulation) != null;
 	}
 
 	/**
-	 * Returns the enum Insul of the requested insulation string name.
-	 * @param insulation The insulation string name requested.
-	 * @return The enum Insul if there is a match with the given string; null otherwise.
+	 Returns the enum Insul of the requested insulation string name.
+
+	 @param insulation The insulation string name requested.
+	 @return The enum Insul if there is a match with the given string,
+	 null otherwise.
 	 */
 	public static Insul getInsulByStringName(String insulation){
 		insulation = insulation.trim();
@@ -893,9 +902,15 @@ public class ConductorProperties {
 
 
 /*RELEASE NOTES
-As a general rule, when a class computes things whose results are predictable, the class should not raise any exceptions nor manage
-any error messages. Simply, it must return empty string values, or singular int or double numbers, or null, but also should provide the
-caller with helper methods for validation of the input data, like validating that a conductor size is correct before calling any function
-that uses size as parameter. However, the validating helper methods are not necessary since the computed return value of the methods can
-indicated that some input was wrong or simply the value is not listed for the input variables.
+As a general rule, when a class computes things whose results are predictable,
+(like using formulas or accessing data in tables), the class should not raise
+any exception nor manage any error message. Simply, it must return empty string
+values, or zero for int or double numbers, or null for objects. The class should
+however provide the caller with helper methods for validation of the input data,
+before other methods that use that input data is called. For example, a helper
+method that tells if a given string containing the size of a conductor is valid,
+can be called before calling the method that uses that string and return some
+value. If the helper method is not used, the result of the second call will be
+unexpected (zero, negative, null, empty, etc.). This unexpected result must be
+interpreted as a bad input.
 */

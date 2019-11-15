@@ -10,17 +10,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 class FactorsTest {
-    static Conduit conduit;
-
-    static void init(){
-        conduit = new Conduit(Type.EMT, Conduit.Nipple.No);
-    }
+    private static Conduit conduit;
 
     @Test
     void getTemperatureCorrectionF() {
-        System.out.println("╔═══════════════════════════╗");
-        System.out.println("║ getTemperatureCorrectionF ║");
-        System.out.println("╚═══════════════════════════╝");
+        Tools.printTitle("FactorsTest.getTemperatureCorrectionF");
         assertEquals(0.91, Factors.getTemperatureCorrectionF(100, TempRating.T90));
         assertEquals(0.29, Factors.getTemperatureCorrectionF(185, TempRating.T90));
         assertEquals(0.0,  Factors.getTemperatureCorrectionF(185, TempRating.T60));
@@ -32,9 +26,8 @@ class FactorsTest {
 
     @Test
     void getAdjustmentFactor() {
-        System.out.println("╔═════════════════════╗");
-        System.out.println("║ getAdjustmentFactor ║");
-        System.out.println("╚═════════════════════╝");
-        assertEquals(1.0, Factors.getAdjustmentFactor(conduit));
+        conduit = new Conduit(Type.EMT, Conduit.Nipple.No);
+        Tools.printTitle("FactorsTest.getAdjustmentFactor");
+        assertEquals(1.0, Factors.getAdjustmentFactor(conduit.getCurrentCarryingNumber(), conduit.isNipple()));
     }
 }
