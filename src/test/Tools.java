@@ -1,7 +1,7 @@
-package test.java;
+package test;
 
 public class Tools {
-    static void printTitle(String title) {
+    public static void printTitle(String title) {
         String top = new String(new char[title.length()+2]).replace("\0", "-");
         String line1 = "/" + top + "\\";
         String line2 = "| " + title + " |";

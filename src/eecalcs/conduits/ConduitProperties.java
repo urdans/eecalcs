@@ -5,7 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Encapsulates constants, static data and methods about electrical conduits as found in NEC 2014 table 4
+ Encapsulates constants, static data and methods about electrical conduits as
+ found in NEC 2014 table 4.
  */
 public class ConduitProperties {
 	public static final boolean Magnetic = true;
@@ -231,10 +232,14 @@ public class ConduitProperties {
 	}
 
 	/**
-	 * Returns the conduit material corresponding to the given index.
-	 * @param conduitTypeIndex The index of the conduit material. 0 = PVC, 1 = aluminum and other = steel.
-	 * @return The requested material if the given index correspond to a material, null otherwise.
-	 * @see Material
+	 Returns the conduit material corresponding to the given index.
+
+	 @param conduitTypeIndex The index of the conduit material.
+	 <br> 0 = PVC, 1 = aluminum and other value = steel.
+
+	 @return The requested material if the given index correspond to a material,
+	 null otherwise.
+	 @see Material
 	 */
 	public static Material getConduitMaterialPerIndex(int conduitTypeIndex){
 		if(conduitTypeIndex < Material.values().length)
@@ -243,38 +248,49 @@ public class ConduitProperties {
 	}
 
 	/**
-	 * Asks if the given conduit string type is valid, that is, if it's registered in the conduit type string list
-	 * @param conduitType The requested conduit string type
-	 * @return True if it's a valid conduit type, false otherwise
+	 Asks if the given conduit string type is valid, that is, if it's registered
+	 in the conduit type string list.
+
+	 @param conduitType The requested conduit string type.
+	 @return True if it's a valid conduit type, false otherwise.
 	 */
 	public static boolean isValidType(String conduitType){
 		return getTypeByString(conduitType) != null;
 	}
 
 	/**
-	 * Asks if the giving string name correspond to a valid trade size.
-	 * @param tradeSize The requested string name.
-	 * @return True if the given string correspond to a valid trade size; false otherwise.
+	 Asks if the giving string name correspond to a valid trade size. Proper
+	 string names are described in the {@link eecalcs.conductors.Size Size}
+	 enum.
+
+	 @param tradeSize The requested string name.
+	 @return True if the given string correspond to a valid trade size; false
+	 otherwise.
 	 */
 	public static boolean isValidTrade(String tradeSize){
 		return getTradeSizeByString(tradeSize) != null;
 	}
 
 	/**
-	 * Asks if the given conduit type and trade size has an internal area, that is if the type and trade size have an entry in NEC 2014 Table 4.
-	 * @param conduitType The type of conduit.
-	 * @param tradeSize The trade size of the conduit.
-	 * @return True if the requested conduit type and trade size have an internal area in table 4.
+	 Asks if the given conduit type and trade size has an internal area, that
+	 is, if the type and trade size have an entry in NEC 2014 Table 4.
+
+	 @param conduitType The type of conduit.
+	 @param tradeSize The trade size of the conduit.
+	 @return True if the requested conduit type and trade size have an internal
+	 area in table 4.
 	 */
 	public static boolean hasArea(Type conduitType, Trade tradeSize){
 		return dimensions.get(conduitType).containsKey(tradeSize);
 	}
 
 	/**
-	 * Gets the area of the given conduit type and trade size.
-	 * @param conduitType  The type of conduit.
-	 * @param tradeSize The size of the conduit.
-	 * @return The area in square inches of the conduit or zero if not in NEC 2014 table 4.
+	 Gets the area of the given conduit type and trade size.
+
+	 @param conduitType  The type of conduit.
+	 @param tradeSize The size of the conduit.
+	 @return The area in square inches of the conduit or zero if not in NEC 2014
+	 table 4.
 	 */
 	public static double getArea(Type conduitType, Trade tradeSize){
 		if(hasArea(conduitType, tradeSize))
@@ -283,19 +299,22 @@ public class ConduitProperties {
 	}
 
 	/**
-	 * Returns the map of trade-size-and-area pair values corresponding to the given conduit type.
-	 * @param conduitType The conduit type for which the areas are requested.
-	 * @return The map with trade sizes and areas for the requesting conduit type.
+	 Returns the map of trade-size-and-area pair values corresponding to the
+	 given conduit type.
+
+	 @param conduitType The conduit type for which the areas are requested.
+	 @return The map with trade sizes and areas for the requesting conduit type.
 	 */
 	public static Map<Trade, Double> getAreasForType(Type conduitType){
 		return dimensions.get(conduitType);
 	}
 
 	/**
-	 * Returns the conduit type of the given conduit string type.
-	 * @param conduitTypeS The conduit string type.
-	 * @return The conduit type if the given string is valid, null otherwise.
-	 * @see Type
+	 Returns the conduit type of the given conduit string type.
+
+	 @param conduitTypeS The conduit string type.
+	 @return The conduit type if the given string is valid, null otherwise.
+	 @see Type
 	 */
 	public static Type getTypeByString(String conduitTypeS){
 		conduitTypeS = conduitTypeS.trim();
@@ -307,9 +326,11 @@ public class ConduitProperties {
 	}
 
 	/**
-	 * Returns the conduit trade size of the given conduit string trade size.
-	 * @param tradeSizeS The conduit string trade size.
-	 * @return The trade size. If the given string is not valid, the returned value is Trade.INVALID.
+	 Returns the conduit trade size of the given conduit string trade size.
+
+	 @param tradeSizeS The conduit string trade size.
+	 @return The trade size. If the given string is not valid, the returned
+	 value is Trade.INVALID.
 	 */
 	public static Trade getTradeSizeByString(String tradeSizeS){
 		tradeSizeS = tradeSizeS.trim();

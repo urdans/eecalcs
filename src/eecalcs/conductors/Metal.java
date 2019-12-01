@@ -1,7 +1,12 @@
 package eecalcs.conductors;
 
 /**
- Defines the metal conductor types
+ Defines the metal conductor types.
+ <br>
+ <ul>
+ <li><b>COPPER</b>: "CU"</li>
+ <li><b>ALUMINUM</b>: "AL"</li>
+ </ul>
  */
 public enum Metal {
 	COPPER("CU"),

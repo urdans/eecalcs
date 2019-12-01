@@ -1,9 +1,15 @@
 package eecalcs.conductors;
 /**
- * Contains only static booleans constants indicating coating
+ Contains only static booleans constants indicating coating.
+ <br>
+ <ul>
+ <li><b>COATED</b>: true</li>
+ <li><b>UNCOATED</b>: false</li>
+ </ul>
  */
 public enum Coating {
-	COATED(true), UNCOATED(false);
+	COATED(true),
+	UNCOATED(false);
 	private boolean coating;
 
 	Coating(boolean coating){

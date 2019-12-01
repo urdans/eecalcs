@@ -65,9 +65,9 @@ import tools.Listener;
  The voltage system is used only to determined the presence of a neutral
  conductor and if it is initially a CCC.
  <p>
- As cables can be used as the conductors in a Circuit object, the size of its
+ As cables can be used as the conductors in a CircuitOld object, the size of its
  conductors can be adjusted by the circuit based on the circuit
- characteristics. Refer to the {@link Circuit} class for more information.
+ characteristics. Refer to the {@link CircuitOld} class for more information.
  */
 public class Cable implements Conduitable, Listener{
     private Type cableType = Type.MC;
@@ -79,7 +79,14 @@ public class Cable implements Conduitable, Listener{
     private Conductor phaseCConductor;
     private Conductor neutralConductor;
     private Conductor groundingConductor = new Conductor();
-    private double outerDiameter = 0.25;
+    private double outerDiameter = 0.5;
+    /*TODO *************************
+    *  URGENT: the outer diameter of a cable should adjust automatically to a minimum value once its phase conductors or neutral or ground
+    *  changes its size. A new property must be included to indicates if this diameter is implicit (estimated) or explicit (indicated by the user).
+    *  Investigate on internet, how is the outer diameter of cables AC/MC/NM/etc as per the size of its conductors.
+    *  ADDITIONALLY, once the phase conductor is sized, the neutral size should size automatically following certain rules like what is available in the
+    *  market. Same should apply for grounding conductors. TO THINK ABOUT IT!!!!!!!!!! */
+
     private Conduit conduit;
     private double roofTopDistance = -1.0; //means no rooftop condition
     private Bundle bundle;
@@ -165,12 +172,13 @@ public class Cable implements Conduitable, Listener{
      * <p>Voltage system 120V 1ph 2 wires.
      * <p>One conductor for phase A, one for neutral and one for ground.
      * <p>The neutral is CCC
-     * <p>Outer diameter = 0.25"
+     * <p>Outer diameter = 0.539"
      * <p>No conduit, no bundle.
      * <p>No roof top condition
      */
     public Cable(){
         phaseAConductor.setRole(Conductor.Role.HOT);
+        neutralConductor = phaseAConductor.clone();
         groundingConductor.setRole(Conductor.Role.GND);
     }
 
@@ -276,8 +284,8 @@ public class Cable implements Conduitable, Listener{
      @param outerDiameter The outer diameter in inches.
      */
     public void setOuterDiameter(double outerDiameter) {
-        if(outerDiameter < 0.25)
-            outerDiameter = 0.25;
+        if(outerDiameter < 0.5)
+            outerDiameter = 0.5;
         this.outerDiameter = outerDiameter;
     }
 
@@ -431,7 +439,7 @@ public class Cable implements Conduitable, Listener{
      applied to the ampacity for the temperature rating of the conductor, if the
      corrected and adjusted ampacity does not exceed the ampacity for the
      temperature rating of the terminals in accordance with 110.14(C), is not
-     accounted for in this method. It is accounted for at the {@link Circuit}
+     accounted for in this method. It is accounted for at the {@link CircuitOld}
      class level.
      <p><br>
      If no correction factor is required ({@link #getCorrectionFactor()} returns 1), the
@@ -489,7 +497,7 @@ public class Cable implements Conduitable, Listener{
      This method alone does not calculate the allowed ampacity because the load
      amps is not known at this level.
      However, the method {@link #getCorrectionFactor()} will provide the (0.91*0.8) value
-     (from the example) that the {@link Circuit} class would need as reversed
+     (from the example) that the {@link CircuitOld} class would need as reversed
      coefficient to multiply the load amperes (to get the 144.23 AMPS from the
      example). Then the method
      {@link ConductorProperties#getAllowedSize(double, Metal, TempRating)} can

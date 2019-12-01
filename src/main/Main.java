@@ -9,15 +9,38 @@ import tools.Message;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
 
 //import Size;
 public class Main {
+	private static void nullit(Cable cab){
+		System.out.println("nulling it...");
+		cab = null;
+	}
 
 	public static void main(String[] args) {
+		//testing the use of instance of
+		Conduitable cable = new Cable();
+		Conduitable cable2 = null;
+		if(cable instanceof Cable)
+			System.out.println("cable is an instance of class Cable");
+		if(cable instanceof Conduitable)
+			System.out.println("cable implements Conduitable");
+		if(cable2 instanceof Cable)
+			System.out.println("cable2 is an instance of class Cable");
+		if(cable2 instanceof Conduitable)
+			System.out.println("cable2 implements Conduitable");
 		//testing cloning a cable
 		Cable cab1 = new Cable(SystemAC.Voltage.v120_1ph, SystemAC.Wires.W2, 1.23);
+//
+//		System.out.println(cab1==null);
+//
+//		System.out.println(cab1==null);
+
+
+
+		if(true) return;
+
+
 		cab1.setJacketed(true);
 		cab1.setLength(125);
 		cab1.setMetal(Metal.ALUMINUM);
@@ -30,20 +53,11 @@ public class Main {
 		System.out.println("cab1: " + cab1.getDescription()+" "+cab1.getLength());
 		System.out.println("cab2: " + cab2.getDescription()+" "+cab2.getLength());
 
-/*		if(true)
-			return;*/
-
-
-
-
-
-
 		Trade tradeSize;
 		DecimalFormat df = new DecimalFormat("#.##");
 		df.setRoundingMode(RoundingMode.HALF_UP);
 		df.setMaximumFractionDigits(2);
 		df.setMinimumFractionDigits(2);
-//		df.set
 		//region testing conduit sizes
 		TempRating tr = TempRating.T60;
 		System.out.println(tr + ": " + tr.getValue());
@@ -92,17 +106,10 @@ public class Main {
 		System.out.println("Minimum allowed trade size: " + conduit.getMinimumTrade().getName());
 		System.out.println("              Conduit type: " + conduit.getType().getName());
 		System.out.println("                Is nipple?: " + conduit.isNipple());
-		System.out.println("         Conductors number: " + conduit.getConductorsNumber());
+		System.out.println("         Conductors number: " + conduit.getFillingConductorCount());
 		System.out.println("    Conductor descriptions: ");
 		conduit.getConduitables().forEach(conduitable -> System.out.println("\t\t\t\t\t\t\t" + conduitable.getDescription()));
-		/*{
-			List<String> sizes = new ArrayList<>();
-			for (Conduitable conduitable : conduit.getConduitables()) {
-				if(conduitable instanceof Conductor)
-					sizes.add(((Conductor) conduitable).getSize().getName() + "-" + ((Conductor) conduitable).getInsulation().getName());
-			}
-			System.out.println("                     Sizes: " + String.join(", ", sizes));
-		}*/
+
 		System.out.println("     Calculated trade size: " +	conduit.getTradeSize().getName());
 		System.out.println("     Conduit internal area: " + ConduitProperties.getArea(conduit.getType(), conduit.getTradeSize()));
 		System.out.println("   Allowed fill percentage: " + conduit.getAllowedFillPercentage()+"%");
@@ -122,17 +129,9 @@ public class Main {
 		System.out.println("Minimum allowed trade size: " + conduit.getMinimumTrade().getName());
 		System.out.println("              Conduit type: " + conduit.getType().getName());
 		System.out.println("                Is nipple?: " + conduit.isNipple());
-		System.out.println("         Conductors number: " + conduit.getConductorsNumber());
+		System.out.println("         Conductors number: " + conduit.getFillingConductorCount());
 		System.out.println("    Conductor descriptions: ");
 		conduit.getConduitables().forEach(conduitable -> System.out.println("\t\t\t\t\t\t\t" + conduitable.getDescription()));
-/*		{
-			List<String> sizes = new ArrayList<>();
-			for (Conduitable conduitable : conduit.getConduitables()) {
-				if(conduitable instanceof Conductor)
-					sizes.add(((Conductor) conduitable).getSize().getName() + "-" + ((Conductor) conduitable).getInsulation().getName());
-			}
-			System.out.println("                     Sizes: " + String.join(", ", sizes));
-		}*/
 		System.out.println("     Calculated trade size: " +	tradeSize.getName());
 		System.out.println("     Conduit internal area: " + ConduitProperties.getArea(conduit.getType(), tradeSize));
 		System.out.println("   Allowed fill percentage: " + conduit.getAllowedFillPercentage()+"%");
@@ -183,11 +182,8 @@ public class Main {
 		System.out.println("             Has conduit: " + conductor1.hasConduit());
 		System.out.println("          Rated ampacity: " + ConductorProperties.getAmpacity(conductor1.getSize(), conductor1.getMetal(),
 				conductor1.getTemperatureRating()));
-		System.out.println("       Correction factor: " + Factors.getTemperatureCorrectionF(conductor1.getAmbientTemperatureF(),
-				conductor1.getTemperatureRating()));
-		System.out.println("       Adjustment factor: " + Factors.getAdjustmentFactor(conductor1.getConduit().getCurrentCarryingNumber(),
-				conductor1.getConduit().isNipple()));
-		//todo I should use here conductor1.getAdjustmentFactor()
+		System.out.println("       Correction factor: " + conductor1.getCorrectionFactor());
+		System.out.println("       Adjustment factor: " + conductor1.getAdjustmentFactor());
 		System.out.println("          Final Ampacity: " + df.format(conductor1.getAmpacity())/*String.format("%.2f", conductor1.getAmpacity())*/ + " AMPS");
 
 		System.out.println("**************** CABLES ****************");
@@ -215,7 +211,7 @@ public class Main {
 		if(conductor1.hasConduit()) {
 			System.out.println("       Conduit is nipple: " + conductor1.getConduit().isNipple());
 			System.out.println("            Conduit type: " + conductor1.getConduit().getType().getName());
-			System.out.println("    Number of conductors: " + conductor1.getConduit().getConductorsNumber());
+			System.out.println("    Number of conductors: " + conductor1.getConduit().getFillingConductorCount());
 			System.out.println("           Number of CCC: " + conductor1.getConduit().getCurrentCarryingNumber());
 			conduit.getConduitables().forEach(conduitable -> System.out.println("\t\t\t\t\t\t\t" + conduitable.getDescription()));
 /*			{
@@ -230,7 +226,7 @@ public class Main {
 			System.out.println(" Allowed fill percentage: " + conductor1.getConduit().getAllowedFillPercentage());
 		}//*/
 
-		if(true) return;
+		//if(true) return;
 		//endregion
 
 		//region testing conductor properties
@@ -270,12 +266,12 @@ public class Main {
 		System.out.println("isValidInsulStringName(\"  XHHW-2 \"): " + ConductorProperties.isValidInsulStringName("  XHHW-2 ") );
 		//endregion
 
-/*		System.out.println("Testing creating a circuit out of an existing conductor object");
+/*		System.out.println("Testing creating a circuitOld out of an existing conductor object");
 		Conductor c1 = new Conductor(Size.S10, Metal.ALUMINUM, Insul.TW, 50);
-		Circuit ckt1 = new Circuit(c1);
+		CircuitOld ckt1 = new CircuitOld(c1);
 		ckt1.setConduitMaterial(ConduitProperties.Material.STEEL);
 
-		Circuit ckt2 = new Circuit(ckt1);
+		CircuitOld ckt2 = new CircuitOld(ckt1);
 
 		ckt1.setSize(Size.S8);
 		ckt1.setAmbientTemperatureC(40);
@@ -344,57 +340,57 @@ public class Main {
 
 		//region testing voltage drop
 		Conductor conductor = new Conductor();
-		Circuit circuit = new Circuit(conductor);
-		VDrop vd = new VDrop(circuit);
+		CircuitOld circuitOld = new CircuitOld(conductor);
+		VDrop vd = new VDrop(circuitOld);
 		System.out.println("\n**************** TESTING VOLTAGE DROP METHOD ****************");
 		System.out.println("     Voltage (v): " + vd.getSourceVoltage());
-		System.out.println("  Conductor size: " + vd.getCircuit().getSize());
+		System.out.println("  Conductor size: " + vd.getCircuitOld().getSize());
 		System.out.println("          Phases: " + vd.getPhases());
-		System.out.println("    Conduit type: " + vd.getCircuit().getConduitMaterial());
-		System.out.println("  Conductor type: " + vd.getCircuit().getMetal());
-		System.out.println("  Number of sets: " + vd.getCircuit().getNumberOfSets());
-		System.out.println("     Lenght (ft): " + vd.getCircuit().getLength());
+		System.out.println("    Conduit type: " + vd.getCircuitOld().getConduitMaterial());
+		System.out.println("  Conductor type: " + vd.getCircuitOld().getMetal());
+		System.out.println("  Number of sets: " + vd.getCircuitOld().getNumberOfSets());
+		System.out.println("     Lenght (ft): " + vd.getCircuitOld().getLength());
 		System.out.println("     Current (A): " + vd.getLoadCurrent());
 		System.out.println("    Power factor: " + vd.getPowerFactor());
-		System.out.println("         Coating: " + vd.getCircuit().isCopperCoated());
+		System.out.println("         Coating: " + vd.getCircuitOld().isCopperCoated());
 		System.out.println("==============AC Results==============");
-		System.out.println(" AC Voltage at load: " + String.format("%.2f", vd.getVoltageAtLoadAC()));
-		System.out.println("AC Voltage drop (v): " + String.format("%.2f", vd.getVoltageDropVoltsAC())+"V");
-		System.out.println("AC Voltage drop (%): " + String.format("%.2f", vd.getVoltageDropPercentageAC())+"%");
+		System.out.println(" AC Voltage at load: " + String.format("%.4f", vd.getVoltageAtLoadAC()));
+		System.out.println("AC Voltage drop (v): " + String.format("%.4f", vd.getVoltageDropVoltsAC())+"V");
+		System.out.println("AC Voltage drop (%): " + String.format("%.4f", vd.getVoltageDropPercentageAC())+"%");
 		System.out.println("==============DC Results==============");
-		System.out.println(" DC Voltage at load: " + String.format("%.2f", vd.getVoltageAtLoadDC()));
-		System.out.println("DC Voltage drop (v): " + String.format("%.2f", vd.getVoltageDropVoltsDC())+"V");
-		System.out.println("DC Voltage drop (%): " + String.format("%.2f", vd.getVoltageDropPercentageDC())+"%");
+		System.out.println(" DC Voltage at load: " + String.format("%.4f", vd.getVoltageAtLoadDC()));
+		System.out.println("DC Voltage drop (v): " + String.format("%.4f", vd.getVoltageDropVoltsDC())+"V");
+		System.out.println("DC Voltage drop (%): " + String.format("%.4f", vd.getVoltageDropPercentageDC())+"%");
 
 		System.out.println("\n******* Changing values *******");
 		vd.setSourceVoltage(208);
-		vd.getCircuit().setSize(Size.AWG_1$0);
+		vd.getCircuitOld().setSize(Size.AWG_1$0);
 		vd.setPhases(3);
-		vd.getCircuit().setConduitMaterial(Material.ALUMINUM);
-		//vd.getCircuit().setMetal(Metal.ALUMINUM);
-		vd.getCircuit().setCopperCoated(Coating.COATED);
-		vd.getCircuit().setNumberOfSets(2);
+		vd.getCircuitOld().setConduitMaterial(Material.ALUMINUM);
+		//vd.getCircuitOld().setMetal(Metal.ALUMINUM);
+		vd.getCircuitOld().setCopperCoated(Coating.COATED);
+		vd.getCircuitOld().setNumberOfSets(2);
 		vd.setLoadCurrent(130);
 		vd.setPowerFactor(0.9);
-		vd.getCircuit().setLength(350);
+		vd.getCircuitOld().setLength(350);
 
 		System.out.println("     Voltage (v): " + vd.getSourceVoltage());
-		System.out.println("  Conductor size: " + vd.getCircuit().getSize());
+		System.out.println("  Conductor size: " + vd.getCircuitOld().getSize());
 		System.out.println("          Phases: " + vd.getPhases());
-		System.out.println("    Conduit type: " + vd.getCircuit().getConduitMaterial());
-		System.out.println("  Conductor type: " + vd.getCircuit().getMetal());
-		System.out.println("  Number of sets: " + vd.getCircuit().getNumberOfSets());
-		System.out.println("     Lenght (ft): " + vd.getCircuit().getLength());
+		System.out.println("    Conduit type: " + vd.getCircuitOld().getConduitMaterial());
+		System.out.println("  Conductor type: " + vd.getCircuitOld().getMetal());
+		System.out.println("  Number of sets: " + vd.getCircuitOld().getNumberOfSets());
+		System.out.println("     Lenght (ft): " + vd.getCircuitOld().getLength());
 		System.out.println("     Current (A): " + vd.getLoadCurrent());
 		System.out.println("    Power factor: " + vd.getPowerFactor());
 		System.out.println("==============AC Results==============");
-		System.out.println(" AC Voltage at load: " + String.format("%.2f", vd.getVoltageAtLoadAC()));
-		System.out.println("AC Voltage drop (v): " + String.format("%.2f", vd.getVoltageDropVoltsAC())+"V");
-		System.out.println("AC Voltage drop (%): " + String.format("%.2f", vd.getVoltageDropPercentageAC())+"%");
+		System.out.println(" AC Voltage at load: " + String.format("%.4f", vd.getVoltageAtLoadAC()));
+		System.out.println("AC Voltage drop (v): " + String.format("%.4f", vd.getVoltageDropVoltsAC())+"V");
+		System.out.println("AC Voltage drop (%): " + String.format("%.4f", vd.getVoltageDropPercentageAC())+"%");
 		System.out.println("==============DC Results==============");
-		System.out.println(" DC Voltage at load: " + String.format("%.2f", vd.getVoltageAtLoadDC()));
-		System.out.println("DC Voltage drop (v): " + String.format("%.2f", vd.getVoltageDropVoltsDC())+"V");
-		System.out.println("DC Voltage drop (%): " + String.format("%.2f", vd.getVoltageDropPercentageDC())+"%");
+		System.out.println(" DC Voltage at load: " + String.format("%.4f", vd.getVoltageAtLoadDC()));
+		System.out.println("DC Voltage drop (v): " + String.format("%.4f", vd.getVoltageDropVoltsDC())+"V");
+		System.out.println("DC Voltage drop (%): " + String.format("%.4f", vd.getVoltageDropPercentageDC())+"%");
 
 		if (vd.resultMessages.hasErrors()) {
 			System.out.println("The following errors ocurred:");
@@ -408,50 +404,50 @@ public class Main {
 		System.out.println("\n\n**************** TESTING SIZING CONDUCTOR PER VOLTAGE DROP ****************");
 		System.out.println("         Voltage (v): " + vd.getSourceVoltage());
 		System.out.println("              Phases: " + vd.getPhases());
-		System.out.println("        Conduit type: " + vd.getCircuit().getConduitMaterial());
-		System.out.println("      Conductor type: " + vd.getCircuit().getMetal());
-		System.out.println("      Number of sets: " + vd.getCircuit().getNumberOfSets());
-		System.out.println("         Lenght (ft): " + vd.getCircuit().getLength());
+		System.out.println("        Conduit type: " + vd.getCircuitOld().getConduitMaterial());
+		System.out.println("      Conductor type: " + vd.getCircuitOld().getMetal());
+		System.out.println("      Number of sets: " + vd.getCircuitOld().getNumberOfSets());
+		System.out.println("         Lenght (ft): " + vd.getCircuitOld().getLength());
 		System.out.println("         Current (A): " + vd.getLoadCurrent());
 		System.out.println("        Power factor: " + vd.getPowerFactor());
-		System.out.println("       Cooper coated: " + vd.getCircuit().isCopperCoated());
+		System.out.println("       Cooper coated: " + vd.getCircuitOld().isCopperCoated());
 		System.out.println("Maximum voltage drop: " + vd.getMaxVoltageDropPercent() + "%");
 		System.out.println("============== AC Results==============");
 		System.out.println("        Conductor size: " + vd.getCalculatedSizeAC());
-		System.out.println("   Actual voltage drop: " + String.format("%.2f", vd.getActualVoltageDropPercentageAC()) + "%");
-		System.out.println("        Maximum length: " + String.format("%.0f", vd.getMaxLengthAC()));
+		System.out.println("   Actual voltage drop: " + String.format("%.4f", vd.getActualVoltageDropPercentageAC()) + "%");
+		System.out.println("        Maximum length: " + String.format("%.4f", vd.getMaxLengthAC()));
 		System.out.println("============== DC Results==============");
 		System.out.println("        Conductor size: " + vd.getCalculatedSizeDC());
-		System.out.println("   Actual voltage drop: " + String.format("%.2f", vd.getActualVoltageDropPercentageDC()) + "%");
-		System.out.println("        Maximum length: " + String.format("%.0f", vd.getMaxLengthDC()));
+		System.out.println("   Actual voltage drop: " + String.format("%.4f", vd.getActualVoltageDropPercentageDC()) + "%");
+		System.out.println("        Maximum length: " + String.format("%.4f", vd.getMaxLengthDC()));
 
 		System.out.println("\n******* Changing values *******");
 		vd.setSourceVoltage(480);
 		vd.setPhases(3);
-		vd.getCircuit().setNumberOfSets(2);
+		vd.getCircuitOld().setNumberOfSets(2);
 		vd.setLoadCurrent(500);
-		vd.getCircuit().setLength(250);
+		vd.getCircuitOld().setLength(250);
 		vd.setMaxVoltageDropPercent(2);
 		vd.setPowerFactor(0.85);
 
 		System.out.println("         Voltage (v): " + vd.getSourceVoltage());
 		System.out.println("              Phases: " + vd.getPhases());
-		System.out.println("        Conduit type: " + vd.getCircuit().getConduitMaterial());
-		System.out.println("      Conductor type: " + vd.getCircuit().getMetal());
-		System.out.println("      Number of sets: " + vd.getCircuit().getNumberOfSets());
-		System.out.println("         Lenght (ft): " + vd.getCircuit().getLength());
+		System.out.println("        Conduit type: " + vd.getCircuitOld().getConduitMaterial());
+		System.out.println("      Conductor type: " + vd.getCircuitOld().getMetal());
+		System.out.println("      Number of sets: " + vd.getCircuitOld().getNumberOfSets());
+		System.out.println("         Lenght (ft): " + vd.getCircuitOld().getLength());
 		System.out.println("         Current (A): " + vd.getLoadCurrent());
 		System.out.println("        Power factor: " + vd.getPowerFactor());
-		System.out.println("       Cooper coated: " + vd.getCircuit().isCopperCoated());
+		System.out.println("       Cooper coated: " + vd.getCircuitOld().isCopperCoated());
 		System.out.println("Maximum voltage drop: " + vd.getMaxVoltageDropPercent() + "%");
 		System.out.println("============== AC Results==============");
 		System.out.println("        Conductor size: " + vd.getCalculatedSizeAC());
-		System.out.println("   Actual voltage drop: " + String.format("%.2f", vd.getActualVoltageDropPercentageAC()) + "%");
-		System.out.println("        Maximum length: " + String.format("%.0f", vd.getMaxLengthAC()));
+		System.out.println("   Actual voltage drop: " + String.format("%.4f", vd.getActualVoltageDropPercentageAC()) + "%");
+		System.out.println("        Maximum length: " + String.format("%.4f", vd.getMaxLengthAC()));
 		System.out.println("============== DC Results==============");
 		System.out.println("        Conductor size: " + vd.getCalculatedSizeDC());
-		System.out.println("   Actual voltage drop: " + String.format("%.2f", vd.getActualVoltageDropPercentageDC()) + "%");
-		System.out.println("        Maximum length: " + String.format("%.0f", vd.getMaxLengthDC()));
+		System.out.println("   Actual voltage drop: " + String.format("%.4f", vd.getActualVoltageDropPercentageDC()) + "%");
+		System.out.println("        Maximum length: " + String.format("%.4f", vd.getMaxLengthDC()));
 
 		if (vd.resultMessages.hasMessages()) {
 			System.out.println("The following errors ocurred:");

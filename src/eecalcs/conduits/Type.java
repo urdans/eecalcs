@@ -1,7 +1,25 @@
 package eecalcs.conduits;
 
 /**
- * Enum structure for the type of conduit recognized by the NEC
+ Enum structure for the type of conduit recognized by the NEC.
+ <br><br>
+ <p><b>EMT</b>: Electrical Metallic Tubing;
+ <p><b>ENT</b>: Electrical Nonmetallic Tubing;
+ <p><b>FMC</b>: Flexible Metal Conduit;
+ <p><b>IMC</b>: Intermediate Metal Conduit;
+ <p><b>LFNCA</b>: Liquidtight Flexible Nonmetallic Conduit type A;
+ <p><b>LFNCB</b>: Liquidtight Flexible Nonmetallic Conduit type A;
+ <p><b>LFMC</b>: Liquidtight Flexible Metal Conduit;
+ <p><b>RMC</b>: Rigid Metal Conduit;
+ <p><b>PVC80</b>: Rigid Polyvinyl Chloride Conduit, schedule 80;
+ <p><b>PVC40</b>: Rigid Polyvinyl Chloride Conduit, schedule 40;
+ <p><b>HDPE</b>: High Density Polyethylene Conduit;
+ <p><b>PVCA</b>: Rigid Polyvinyl Chloride Conduit, type A;
+ <p><b>PVCEB</b>: Rigid Polyvinyl Chloride Conduit, type B;
+ <p><b>EMTAL</b>: Electrical Metallic Tubing, Aluminum;
+ <p><b>FMCAL</b>: Flexible Metal Conduit, Aluminum;
+ <p><b>LFMCAL</b>: Liquidtight Flexible Metal Conduit, Aluminum;
+ <p><b>RMCAL</b>: Rigid Metal Conduit, Aluminum;
  */
 public enum Type {
     EMT("EMT"),
@@ -31,7 +49,7 @@ public enum Type {
             names[i] = values()[i].getName();
     }
 
-    private Type(String name){
+    Type(String name){
         this.name = name;
     }
 
@@ -51,3 +69,4 @@ public enum Type {
         return names;
     }
 }
+

@@ -5,6 +5,7 @@ import eecalcs.conduits.Conduit;
 import eecalcs.conduits.Type;
 import eecalcs.systems.TempRating;
 import org.junit.jupiter.api.Test;
+import test.Tools;
 
 import static org.junit.jupiter.api.Assertions.*;
 

@@ -181,8 +181,9 @@ public class Conductor implements Conduitable, Speaker {
 
 	 @param size The size of the conductor as defined by {@link Size}
 	 */
-	public void setSize(Size size) {
+	public Conductor setSize(Size size) {
 		this.size = size;
+		return this;
 	}
 
 	/**
@@ -199,8 +200,9 @@ public class Conductor implements Conduitable, Speaker {
 
 	 @param metal The conductor metal as defined by {@link Metal}
 	 */
-	public void setMetal(Metal metal) {
+	public Conductor setMetal(Metal metal) {
 		this.metal = metal;
+		return this;
 	}
 
 	/**
@@ -218,8 +220,9 @@ public class Conductor implements Conduitable, Speaker {
 	 @param insulation The conductor's insulation type as defined by
 	 {@link Insul}
 	 */
-	public void setInsulation(Insul insulation) {
+	public Conductor setInsulation(Insul insulation) {
 		this.insulation = insulation;
+		return this;
 	}
 
 	/**
@@ -256,7 +259,7 @@ public class Conductor implements Conduitable, Speaker {
 	 applied to the ampacity for the temperature rating of the conductor, if the
 	 corrected and adjusted ampacity does not exceed the ampacity for the
 	 temperature rating of the terminals in accordance with 110.14(C), is not
-	 accounted for in this method. It is accounted for at the {@link Circuit}
+	 accounted for in this method. It is accounted for at the {@link CircuitOld}
 	 class level.
 	 <p><br>
 	 If no correction factor is required ({@link #getCorrectionFactor()} returns 1), the
@@ -314,7 +317,7 @@ public class Conductor implements Conduitable, Speaker {
 	 This method alone does not calculate the allowed ampacity because the load
 	 amps is not known at this level.
 	 However, the method {@link #getCorrectionFactor()} will provide the (0.91*0.8) value
-	 (from the example) that the {@link Circuit} class would need as reversed
+	 (from the example) that the {@link CircuitOld} class would need as reversed
 	 coefficient to multiply the load amperes (to get the 144.23 AMPS from the
 	 example). Then the method
 	 {@link ConductorProperties#getAllowedSize(double, Metal, TempRating)} can
@@ -399,8 +402,9 @@ public class Conductor implements Conduitable, Speaker {
 
 	 @param copperCoated Indicates if the conductor is coated
 	 */
-	public void setCopperCoated(Coating copperCoated) {
+	public Conductor setCopperCoated(Coating copperCoated) {
 		this.copperCoated = copperCoated;
+		return this;
 	}
 
 	/**
@@ -468,8 +472,9 @@ public class Conductor implements Conduitable, Speaker {
 
 	 @param role The role of this conductor. Notice the default role if HOT.
 	 */
-	public void setRole(Role role) {
+	public Conductor setRole(Role role) {
 		this.role = role;
+		return this;
 	}
 
 	@Override

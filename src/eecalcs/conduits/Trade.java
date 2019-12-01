@@ -1,7 +1,23 @@
 package eecalcs.conduits;
 
 /**
- * Enum structure for the conduit trade sizes
+ Enum structure representing the conduit trade sizes.
+ <br>
+ <ul>
+ <li><b>T3$8</b>: "3/8\""</li>
+ <li><b>T1$2</b>: "1/2\""</li>
+ <li><b>T3$4</b>: "3/4\""</li>
+ <li><b>T1</b>: "1\""</li>
+ <li><b>T1_1$4</b>: "1-1/4\""</li>
+ <li><b>T1_1$2</b>: "1-1/2\""</li>
+ <li><b>T2</b>: "2\""</li>
+ <li><b>T2_1$2</b>: "2-1/2\""</li>
+ <li><b>T3</b>: "3\""</li>
+ <li><b>T3_1$2</b>: "3-1/2\""</li>
+ <li><b>T4</b>: "4\""</li>
+ <li><b>T5</b>: "5\""</li>
+ <li><b>T6</b>: "6\""</li>
+ </ul>
  */
 public enum Trade {
     T3$8("3/8\""),
@@ -27,21 +43,23 @@ public enum Trade {
             names[i] = values()[i].getName();
     }
 
-    private Trade(String name){
+    Trade(String name){
         this.name = name;
     }
 
     /**
-     * Returns the string name that this enum represents.
-     * @return The string name.
+     Returns the string name that this enum represents.
+
+     @return The string name.
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Returns an array of the string names that the enum values represent
-     * @return An array of strings
+     Returns an array of the string names that the enum values represent.
+
+     @return An array of strings
      */
     public static String[] getNames(){
         return names;

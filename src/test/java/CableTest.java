@@ -6,6 +6,7 @@ import eecalcs.conduits.Type;
 import eecalcs.systems.SystemAC;
 import eecalcs.systems.TempRating;
 import org.junit.jupiter.api.*;
+import test.Tools;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,12 +24,15 @@ class CableTest {
         diameter = 0.5; cable.setOuterDiameter(diameter);
         assertEquals(diameter*diameter*0.25*Math.PI, cable.getInsulatedAreaIn2());
         diameter = 0; cable.setOuterDiameter(diameter);
-        assertEquals(0.25*0.25*0.25*Math.PI, cable.getInsulatedAreaIn2());
+        assertEquals(0.25*0.5*0.5*Math.PI, cable.getInsulatedAreaIn2());
     }
 
     @Test
     void getCurrentCarryingCount() {
         Tools.printTitle("CableTest.getCurrentCarryingCount");
+        Cable cable2 = new Cable();
+        assertEquals(2, cable2.getCurrentCarryingCount());
+
         cable = new Cable(SystemAC.Voltage.v480_3ph, SystemAC.Wires.W4, 1);
         assertEquals(3, cable.getCurrentCarryingCount());
         cable.setNeutralCarryingConductor(true);

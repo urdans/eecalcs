@@ -1,7 +1,38 @@
 package eecalcs.conductors;
 
 /**
- Contains only static strings with the conductor valid sizes
+ Enums to represent conductor sizes and their string representation.
+ <br>
+ <ul>
+ <li><b>AWG_14</b>: "14 AWG"</li>
+ <li><b>AWG_12</b>: "12 AWG"</li>
+ <li><b>AWG_10</b>: "10 AWG"</li>
+ <li><b>AWG_8</b>: "8 AWG"</li>
+ <li><b>AWG_6</b>: "6 AWG"</li>
+ <li><b>AWG_4</b>: "4 AWG"</li>
+ <li><b>AWG_3</b>: "3 AWG"</li>
+ <li><b>AWG_2</b>: "2 AWG"</li>
+ <li><b>AWG_1</b>: "1 AWG"</li>
+ <li><b>AWG_1$0</b>: "1/0 AWG"</li>
+ <li><b>AWG_2$0</b>: "2/0 AWG"</li>
+ <li><b>AWG_3$0</b>: "3/0 AWG"</li>
+ <li><b>AWG_4$0</b>: "4/0 AWG"</li>
+ <li><b>KCMIL_250</b>: "250 KCMIL"</li>
+ <li><b>KCMIL_300</b>: "300 KCMIL"</li>
+ <li><b>KCMIL_350</b>: "350 KCMIL"</li>
+ <li><b>KCMIL_400</b>: "400 KCMIL"</li>
+ <li><b>KCMIL_500</b>: "500 KCMIL"</li>
+ <li><b>KCMIL_600</b>: "600 KCMIL"</li>
+ <li><b>KCMIL_700</b>: "700 KCMIL"</li>
+ <li><b>KCMIL_750</b>: "750 KCMIL"</li>
+ <li><b>KCMIL_800</b>: "800 KCMIL"</li>
+ <li><b>KCMIL_900</b>: "900 KCMIL"</li>
+ <li><b>KCMIL_1000</b>: "1000 KCMIL"</li>
+ <li><b>KCMIL_1250</b>: "1250 KCMIL"</li>
+ <li><b>KCMIL_1500</b>: "1500 KCMIL"</li>
+ <li><b>KCMIL_1750</b>: "1750 KCMIL"</li>
+ <li><b>KCMIL_2000</b>: "2000 KCMIL"</li>
+ </ul>
  */
 public enum Size {
 	AWG_14("14 AWG"),
