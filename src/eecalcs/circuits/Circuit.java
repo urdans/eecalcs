@@ -4,7 +4,7 @@ import eecalcs.conductors.*;
 import eecalcs.conduits.Conduit;
 import eecalcs.conduits.Trade;
 import eecalcs.conduits.Type;
-import eecalcs.systems.SystemAC;
+import eecalcs.systems.VoltageSystemAC;
 import tools.Message;
 import tools.ResultMessages;
 
@@ -27,7 +27,7 @@ import java.util.List;
  <li><b>Determine rating of the overcurrent protection device (OCPD):</b> based
  on both the properties of the served load and the chosen conductor size.</li>
 
- <li><b>Determine the correct size of the conduit:</b>If this circuit uses a
+ <li><b>Determine the correct size of the conduit:</b> If this circuit uses a
  conduit (or several conduits for more than one set of conductors), its size
  will be determine to accommodate its conductors/cables (cables in conduits are
  permitted by code but are not common).</li>
@@ -161,12 +161,7 @@ import java.util.List;
  ask the resultMessage field for the presence of messages. Refer to
  {@link tools.ResultMessages ResultMessages} for details.<br><br>
  */
-//todo to javadoc
 public class Circuit {
-	//todo I believe this enum is not necessary. check and remove if it's not!
-//	private enum Mode {PRIVATECONDUIT, SHAREDCONDUIT, PRIVATEBUNDLE, SHAREDBUNDLE, FREEAIR/*, ERRORMODE*/}
-//
-//	private Mode mode = Mode.PRIVATECONDUIT;
 	//list of conduitables owned by this circuit.
 	private List<Conduitable> conduitables = new ArrayList<>();
 	//the overcurrent protection device owned by the circuit.
@@ -179,9 +174,9 @@ public class Circuit {
 	private Load load;
 	private int numberOfSets = 1;
 	private int setsPerConduit = 1;
-	private int conductorsPerSet = 3; //meaningful only when using conductors
-	private SystemAC.Voltage systemVoltage;
-	private SystemAC.Wires systemWires;
+	private int numberOfConduits = 1;
+	private int conductorsPerSet; //meaningful only when using conductors
+	private VoltageSystemAC systemVoltage;
 	private Conductor phaseAConductor = new Conductor();
 	private Conductor phaseBConductor;
 	private Conductor phaseCConductor;
@@ -196,6 +191,7 @@ public class Circuit {
 			" be in a shared bundle.",-220);
 	private static Message ERROR230	= new Message("The provided shared conduit is not valid.",-230);
 	private static Message ERROR240	= new Message("The provided shared bundle is not valid.",-240);
+	private static Message ERROR250	= new Message("Changing the number of conduits is only allowed when in private mode.",-250);
 	private static Message WARNN200	= new Message("Insulated conductors are being used in free air. This" +
 			" could be considered a bad practice.", 200);
 	private static Message WARNN205	= new Message("Insulated conductors are being used in a bundle. This" +
@@ -209,11 +205,6 @@ public class Circuit {
 	 @see ResultMessages
 	 */
 	public ResultMessages resultMessages = new ResultMessages();
-
-	//todo remove after tests
-/*	public List<Conduitable> getConduitables(){
-		return conduitables;
-	}*/
 
 	/**
 	 Removes all the conduitables of this circuit from the given conduit.
@@ -236,9 +227,9 @@ public class Circuit {
 	}
 
 	/**
-	 Adds all the conduitable of this circuit to the given conduit.
+	 Moves all the conduitables of this circuit to the given conduit.
 	 */
-	private void addTo(Conduit conduit){
+	private void moveTo(Conduit conduit){
 		if(conduit == null)
 			return;
 		for(Conduitable conduitable: conduitables)
@@ -246,9 +237,9 @@ public class Circuit {
 	}
 
 	/**
-	 Adds all the conduitable of this circuit to the given bundle.
+	 Moves all the conduitables of this circuit to the given bundle.
 	 */
-	private void addTo(Bundle bundle){
+	private void moveTo(Bundle bundle){
 		if(bundle == null)
 			return;
 		for(Conduitable conduitable: conduitables)
@@ -264,7 +255,6 @@ public class Circuit {
 	-numberOfSets, from setNumberOfSets()<br>
 	-conductorsPerSet, from moreConduits(), lessConduits()
 	 */
-	//todo implement setNumberOfSets
 	private void prepareConduitableList(){
 		if(usingCable){
 			if (!conduitables.isEmpty()
@@ -307,58 +297,59 @@ public class Circuit {
 	*/
 	//todo call this method from the calculation methods
 	private void setupModelConductors(){
-		if(load == null || load.getSystemVoltage() == null || load.getWires() == null) {
+		if(load == null || load.getSystemVoltage() == null) {
 			resultMessages.add(ERROR200);
 			return;
 		}
 		resultMessages.remove(ERROR200);
-		if(systemVoltage == load.getSystemVoltage() && systemWires == load.getWires())
+		if(systemVoltage == load.getSystemVoltage())
 			return; //no change
 
 		systemVoltage = load.getSystemVoltage();
-		systemWires = load.getWires();
 		if(usingCable)
-			cable.setSystem(systemVoltage, systemWires);
+			cable.setSystem(systemVoltage);
 		else {
-			if (systemVoltage == SystemAC.Voltage.v120_1ph
-					|| systemVoltage == SystemAC.Voltage.v277_1ph) {
-				//the number of wires is always 2 for this type of system, hence wires is ignored
+			if (systemVoltage == VoltageSystemAC.v120_1ph_2w
+					|| systemVoltage == VoltageSystemAC.v277_1ph_2w) {
 				if (neutralConductor == null)
 					neutralConductor = new Conductor();
-				neutralConductor.setRole(Conductor.Role.NEUCC);
-				neutralConductor.setSize(phaseAConductor.getSize());
+				neutralConductor.setRole(Conductor.Role.NEUCC).setSize(phaseAConductor.getSize());
 				phaseBConductor = null;
 				phaseCConductor = null;
-			} else if (systemVoltage == SystemAC.Voltage.v208_1ph
-					|| systemVoltage == SystemAC.Voltage.v240_1ph
-					|| systemVoltage == SystemAC.Voltage.v480_1ph) {
+			}
+			else if (systemVoltage == VoltageSystemAC.v208_1ph_2w
+					|| systemVoltage == VoltageSystemAC.v240_1ph_2w
+					|| systemVoltage == VoltageSystemAC.v480_1ph_2w) {
 				if (phaseBConductor == null)
 					phaseBConductor = new Conductor();
-				phaseBConductor.setRole(Conductor.Role.HOT);
-				phaseBConductor.setSize(phaseAConductor.getSize());
-				if (systemWires == SystemAC.Wires.W2) {
-					neutralConductor = null;
-				} else {//Any 2-hot system of this voltage, indicated as w3 or w4 will have a neutral and will be assumed as a w3
-					if (neutralConductor == null)
-						neutralConductor = new Conductor();
-					neutralConductor.setRole(Conductor.Role.NEUCC);
-					neutralConductor.setSize(phaseAConductor.getSize());
-				}
+				phaseBConductor.setRole(Conductor.Role.HOT).setSize(phaseAConductor.getSize());
+				neutralConductor = null;
 				phaseCConductor = null;
-			} else {//this account for all 3-phase systems.
+			}
+			else if (systemVoltage == VoltageSystemAC.v208_1ph_3w
+					|| systemVoltage == VoltageSystemAC.v240_1ph_3w
+					|| systemVoltage == VoltageSystemAC.v480_1ph_3w) {
 				if (phaseBConductor == null)
 					phaseBConductor = new Conductor();
-				phaseBConductor.setRole(Conductor.Role.HOT);
-				phaseBConductor.setSize(phaseAConductor.getSize());
+				phaseBConductor.setRole(Conductor.Role.HOT).setSize(phaseAConductor.getSize());
+				if (neutralConductor == null)
+					neutralConductor = new Conductor();
+				neutralConductor.setRole(Conductor.Role.NEUCC).setSize(phaseAConductor.getSize());
+				phaseCConductor = null;
+			}
+			else {//this account for all 3-phase systems.
+				if (phaseBConductor == null)
+					phaseBConductor = new Conductor();
+				phaseBConductor.setRole(Conductor.Role.HOT).setSize(phaseAConductor.getSize());
 				if (phaseCConductor == null)
 					phaseCConductor = new Conductor();
-				phaseCConductor.setRole(Conductor.Role.HOT);
-				phaseCConductor.setSize(phaseAConductor.getSize());
-				if (systemWires == SystemAC.Wires.W4) {
-					neutralConductor = new Conductor();
-					neutralConductor.setRole(Conductor.Role.NEUNCC);
-					neutralConductor.setSize(phaseAConductor.getSize());
-				} else //Any 3-phase system indicated as w2 or w3 will not have a neutral
+				phaseCConductor.setRole(Conductor.Role.HOT).setSize(phaseAConductor.getSize());
+				if (systemVoltage.getWires() == 4) {
+					if (neutralConductor == null)
+						neutralConductor = new Conductor();
+					neutralConductor.setRole(Conductor.Role.NEUNCC).setSize(phaseAConductor.getSize());
+				}
+				else //3 wires
 					neutralConductor = null;
 			}
 			conductorsPerSet = 2 + (phaseBConductor == null ? 0 : 1)
@@ -389,6 +380,55 @@ public class Circuit {
 		resultMessages.remove(ERROR210);
 		resultMessages.remove(ERROR230);
 		resultMessages.remove(ERROR240);
+		resultMessages.remove(ERROR250);
+	}
+
+	/**
+	 Asks if this circuit is in free air mode.
+
+	 @return True if it's in free air, false otherwise.
+	 */
+	private boolean isFreeAirMode(){
+		return (privateConduit.isEmpty()
+				&& privateBundle.isEmpty()
+				&& sharedConduit == null
+				&& sharedBundle == null);
+	}
+
+	/**
+	 Asks if this circuit is in private conduit mode.
+
+	 @return True if it's in private conduit mode.
+	 */
+	private boolean isPrivateConduitMode(){
+		return !privateConduit.isEmpty();
+	}
+
+	/**
+	 Asks if this circuit is in shared conduit mode.
+
+	 @return True if it's in shared conduit mode.
+	 */
+	private boolean isSharedConduitMode(){
+		return sharedConduit != null;
+	}
+
+	/**
+	 Asks if this circuit is in private bundle mode.
+
+	 @return True if it's in private bundle mode.
+	 */
+	private boolean isPrivateBundleMode(){
+		return !privateBundle.isEmpty();
+	}
+
+	/**
+	 Asks if this circuit is in shared bundle mode.
+
+	 @return True if it's in shared bundle mode.
+	 */
+	private boolean isSharedBundleMode(){
+		return sharedBundle != null;
 	}
 
 	/**
@@ -425,7 +465,7 @@ public class Circuit {
 	 */
 	public void setFreeAirMode(){
 		clearModeMsg();
-		addTo(privateConduit);//concentrate all conduitables here
+		moveTo(privateConduit);//concentrate all conduitables here
 		leaveFrom(privateConduit);//then, remove them from here.
 		sharedConduit = null;
 		sharedBundle = null;
@@ -441,7 +481,7 @@ public class Circuit {
 	 */
 	public void setConduitMode(){
 		clearModeMsg();
-		addTo(privateConduit); //removes the conduitables from all other conduits and bundles and put them here.
+		moveTo(privateConduit); //removes the conduitables from all other conduits and bundles and put them here.
 		sharedConduit = null;
 		sharedBundle = null;
 		if(usingCable) //using cables in conduit
@@ -460,14 +500,15 @@ public class Circuit {
 				resultMessages.add(ERROR230);
 			else
 				resultMessages.add(ERROR210);
-			addTo(privateConduit);//concentrate all conduitables here
+			//the circuit goes into free air mode
+			moveTo(privateConduit);//concentrate all conduitables here
 			leaveFrom(privateConduit);//then, remove them from here.
 			sharedConduit = null;
 			sharedBundle = null;
 			return;
 		}
 		sharedConduit = conduit;
-		addTo(sharedConduit);
+		moveTo(sharedConduit);
 		sharedBundle = null;
 		if(usingCable) //using cables in conduit
 			resultMessages.add(WARNN210); //cables in conduit
@@ -478,7 +519,7 @@ public class Circuit {
 	 */
 	public void setBundleMode(){
 		clearModeMsg();
-		addTo(privateBundle); //removes the conduitables from all other conduits and bundles and put them here.
+		moveTo(privateBundle); //removes the conduitables from all other conduits and bundles and put them here.
 		sharedConduit = null;
 		sharedBundle = null;
 		if(!usingCable) //using conductors in bundle
@@ -494,32 +535,62 @@ public class Circuit {
 		clearModeMsg();
 		if(bundle == null) {
 			resultMessages.add(ERROR240);
-			addTo(privateConduit);//concentrate all conduitables here
+			//the circuit goes into free air mode
+			moveTo(privateConduit);//concentrate all conduitables here
 			leaveFrom(privateConduit);//then, remove them from here.
 			sharedConduit = null;
 			sharedBundle = null;
 			return;
 		}
 		sharedBundle = bundle;
-		addTo(sharedBundle);
+		moveTo(sharedBundle);
 		sharedConduit = null;
 		if(!usingCable) //using conductors in bundle
 			resultMessages.add(WARNN205);
 	}
 
 	/**
-	 However, keep in mind that this arrangement of
-	 sets per conduit is lost whenever the number of sets is changed, returning
-	 to the configuration of one set per conduit (the default).
+	 Increments the number of conduits used by this circuit, when in private
+	 conduit mode. The resulting number of conduits depends on the actual number
+	 of sets. The NEC allows to distribute the sets of conductors in parallel in
+	 a way that the impedance of each sets is maintained equal on each set. Keep
+	 in mind that the number of conduits is reset to the same number of sets of
+	 conductors (the default) whenever the number of sets changes or the circuit
+	 mode changes.
 	 */
-	//todo implement and java doc
 	public void moreConduits(){
-
+		if(!isPrivateConduitMode()){
+			resultMessages.add(ERROR250);
+			return;
+		}
+		for(int i = numberOfConduits + 1; i <= numberOfSets; i++)
+			if(numberOfSets % i == 0) {
+				numberOfConduits = i;
+				prepareConduitableList();
+				break;
+			}
 	}
 
-	//todo implement and java doc
+	/**
+	 Decrements the number of conduits used by this circuit, when in private
+	 conduit mode. The resulting number of conduits depends on the actual number
+	 of sets. The NEC allows to distribute the sets of conductors in parallel in
+	 a way that the impedance of each sets is maintained equal on each set. Keep
+	 in mind that the number of conduits is reset to the same number of sets of
+	 conductors (the default) whenever the number of sets changes or the circuit
+	 mode changes.
+	 */
 	public void lessConduits(){
-
+		if(!isPrivateConduitMode()){
+			resultMessages.add(ERROR250);
+			return;
+		}
+		for(int i = numberOfConduits - 1; i != 0; i--)
+			if(numberOfSets % i == 0) {
+				numberOfConduits = i;
+				prepareConduitableList();
+				break;
+			}
 	}
 
 	/**
@@ -545,11 +616,11 @@ public class Circuit {
 
 	/**
 	 Returns a multiline string describing this circuit, as follow:<br>
-	 - First line, the load description.
-	 - Second line, the description of the conductors/cable
-	 - Third line, the description of the conduits
-	 - Four line, the description of the system voltage, phases, wires and OCPD
-	 - Fifth line, the circuit number, including the panel name
+	 <p>- First line, the load description.
+	 <p>- Second line, the description of the conductors/cable
+	 <p>- Third line, the description of the conduits
+	 <p>- Four line, the description of the system voltage, phases, wires and OCPD
+	 <p>- Fifth line, the circuit number, including the panel name
 
 	 @return The string describing this circuit.
 	 */
@@ -557,6 +628,54 @@ public class Circuit {
 	public String getDescription(){
 		return null;
 	}
+
+
+	/**
+	 Sets the number of sets (of conductors or cables) in parallel. If the given
+	 number of sets is different from the actual value, the new quantity is
+	 assigned and the number of conduits is reset to match this quantity. To
+	 change the number of conduits call the methods {@link #moreConduits()} or
+	 {@link #lessConduits()}. The default behavior of this class is having one
+	 set of conductors per conduit, unless the said methods are called.
+
+
+	 @param numberOfSets The new number of sets.
+	 */
+	public void setNumberOfSets(int numberOfSets){
+		if(this.numberOfSets == numberOfSets)
+			return;
+		this.numberOfSets = numberOfSets;
+		numberOfConduits = numberOfSets;
+		setsPerConduit = 1;
+		prepareConduitableList();
+	}
+
+	/**
+	 Returns the number of sets (of conductors or cables) in parallel of this
+	 circuit.
+
+	 @return The number of sets in parallel.
+	 */
+	public int getNumberOfSets(){
+		return numberOfSets;
+	}
+
+	/**
+	 Returns the actual number of conduits. Notice that the number or conduits
+	 changes by changing the number of sets, or  by calling
+	 {@link #moreConduits()} or {@link #lessConduits()} while in private conduit
+	 mode. Other methods that changes the number of conduits are the methods
+	 {@link #setConduitMode()}, {@link #setConduitMode(Conduit)},
+	{@link #setBundleMode()} or {@link #setBundleMode(Bundle)}.
+
+	 @return The actual number of conduits used in private conduit mode.
+	 */
+	public int getNumberOfConduits(){
+		return numberOfConduits;
+	}
+
+
+
 
 /*
 todo:

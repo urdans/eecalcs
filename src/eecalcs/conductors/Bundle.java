@@ -103,6 +103,15 @@ public class Bundle {
     }
 
     /**
+     Asks if this bundle is empty (contains no conduitable)
+
+     @return True if empty.
+     */
+    public boolean isEmpty(){
+        return conduitables.isEmpty();
+    }
+
+    /**
      Asks if this bundle already contains the given conduitable.
 
      @param conduitable The conduitable to check if it is already contained by

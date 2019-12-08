@@ -1,7 +1,7 @@
 package eecalcs.conductors;
 
 import eecalcs.conduits.Conduit;
-import eecalcs.systems.SystemAC;
+import eecalcs.systems.VoltageSystemAC;
 import eecalcs.systems.TempRating;
 import tools.Listener;
 
@@ -72,8 +72,7 @@ import tools.Listener;
 public class Cable implements Conduitable, Listener{
     private Type cableType = Type.MC;
     private boolean jacketed = false;
-    private SystemAC.Voltage voltage = SystemAC.Voltage.v120_1ph;
-    private SystemAC.Wires wires = SystemAC.Wires.W2;
+    private VoltageSystemAC voltageSystemAC = VoltageSystemAC.v120_1ph_2w;
     private Conductor phaseAConductor = new Conductor();
     private Conductor phaseBConductor;
     private Conductor phaseCConductor;
@@ -150,16 +149,15 @@ public class Cable implements Conduitable, Listener{
      metal and insulation. Refer to {@link Conductor#Conductor()} default
      constructor for details.
 
-     @param voltage The voltage system intended to be used with this cable. It
-     will define the existence of a neutral.
-     @param wires The number of wires of the prior voltage system parameter.
+     @param voltageSystemAC The voltage system intended to be used with this
+     cable. It will define the existence of a neutral.
      @param outerDiameter The outer diameter of this cable in inches. If the
      cable sectional shape if not a circle, the longest diameter must be passed
      in. Also, if this parameter is less than 0.25 inches, a value of 0.25
      inches is assumed.
      */
-    public Cable(SystemAC.Voltage voltage, SystemAC.Wires wires, double outerDiameter){
-        setSystem(voltage, wires);
+    public Cable(VoltageSystemAC voltageSystemAC, double outerDiameter){
+        setSystem(voltageSystemAC);
         phaseAConductor.setRole(Conductor.Role.HOT);
         groundingConductor.setRole(Conductor.Role.GND);
         setOuterDiameter(outerDiameter);
@@ -192,8 +190,7 @@ public class Cable implements Conduitable, Listener{
         Cable cable = new Cable();
         cable.cableType = this.cableType;
         cable.jacketed = this.jacketed;
-        cable.voltage = this.voltage;
-        cable.wires = this.wires;
+        cable.voltageSystemAC = this.voltageSystemAC;
         cable.phaseAConductor = this.phaseAConductor.clone();
         cable.phaseBConductor = this.phaseBConductor == null ? null : phaseBConductor.clone();
         cable.phaseCConductor = this.phaseCConductor == null ? null : phaseCConductor.clone();
@@ -212,7 +209,7 @@ public class Cable implements Conduitable, Listener{
      */
     @Override
     public String toString(){
-        return cableType+", "+jacketed+", "+voltage+", "+wires+", "+phaseAConductor+", "+phaseBConductor+", "+phaseCConductor+", "+
+        return cableType+", "+jacketed+", "+ voltageSystemAC +", "+phaseAConductor+", "+phaseBConductor+", "+phaseCConductor+", "+
                 neutralConductor+", "+groundingConductor+", "+outerDiameter+", "+conduit+", "+roofTopDistance;
     }
 
@@ -332,57 +329,52 @@ public class Cable implements Conduitable, Listener{
      particular, the size of the neutral can be changed to the size of the
      phases; its role can be changed as well.
 
-     @param voltage The voltage as defined in {@link SystemAC.Voltage}
-     @param wires The wiring system as defined in {@link SystemAC.Wires}
+     @param voltage The voltage as defined in {@link VoltageSystemAC}
      */
-    public void setSystem(SystemAC.Voltage voltage, SystemAC.Wires wires){
-        this.voltage = voltage;
-        this.wires = wires;
-        if(voltage == SystemAC.Voltage.v120_1ph | voltage == SystemAC.Voltage.v277_1ph) {
-            //the number of wires is always 2 for this type of system, hence wires is ignored
-            this.wires = SystemAC.Wires.W2;
+    public void setSystem(VoltageSystemAC voltage){
+        this.voltageSystemAC = voltage;
+        if(voltage == VoltageSystemAC.v120_1ph_2w
+                || voltage == VoltageSystemAC.v277_1ph_2w) {
             if(neutralConductor == null)
                 neutralConductor = new Conductor();
-            neutralConductor.setRole(Conductor.Role.NEUCC);
-            neutralConductor.setSize(phaseAConductor.getSize());
+            neutralConductor.setRole(Conductor.Role.NEUCC).setSize(phaseAConductor.getSize());
             phaseBConductor = null;
             phaseCConductor = null;
         }
-        else if(voltage == SystemAC.Voltage.v208_1ph | voltage == SystemAC.Voltage.v240_1ph | voltage == SystemAC.Voltage.v480_1ph){
-            if(phaseBConductor == null)
+        else if(voltage == VoltageSystemAC.v208_1ph_2w
+                || voltage == VoltageSystemAC.v240_1ph_2w
+                || voltage == VoltageSystemAC.v480_1ph_2w) {
+            if (phaseBConductor == null)
                 phaseBConductor = new Conductor();
-            phaseBConductor.setRole(Conductor.Role.HOT);
-            phaseBConductor.setSize(phaseAConductor.getSize());
-            if(wires == SystemAC.Wires.W2){
-                neutralConductor = null;
-            }
-            else {//Any 2-hot system of this voltage, indicated as w3 or w4 will have a neutral and will be assumed as a w3
-                this.wires = SystemAC.Wires.W3;
-                if(neutralConductor == null)
-                    neutralConductor = new Conductor();
-                neutralConductor.setRole(Conductor.Role.NEUCC);
-                neutralConductor.setSize(phaseAConductor.getSize());
-            }
+            phaseBConductor.setRole(Conductor.Role.HOT).setSize(phaseAConductor.getSize());
+            neutralConductor = null;
+            phaseCConductor = null;
+        }
+        else if(voltage == VoltageSystemAC.v208_1ph_3w
+                || voltage == VoltageSystemAC.v240_1ph_3w
+                || voltage == VoltageSystemAC.v480_1ph_3w) {
+            if (phaseBConductor == null)
+                phaseBConductor = new Conductor();
+            phaseBConductor.setRole(Conductor.Role.HOT).setSize(phaseAConductor.getSize());
+            if(neutralConductor == null)
+                neutralConductor = new Conductor();
+            neutralConductor.setRole(Conductor.Role.NEUCC).setSize(phaseAConductor.getSize());
             phaseCConductor = null;
         }
         else {//this account for all 3-phase systems.
             if(phaseBConductor == null)
                 phaseBConductor = new Conductor();
-            phaseBConductor.setRole(Conductor.Role.HOT);
-            phaseBConductor.setSize(phaseAConductor.getSize());
+            phaseBConductor.setRole(Conductor.Role.HOT).setSize(phaseAConductor.getSize());
             if(phaseCConductor == null)
                 phaseCConductor = new Conductor();
-            phaseCConductor.setRole(Conductor.Role.HOT);
-            phaseCConductor.setSize(phaseAConductor.getSize());
-            if(wires == SystemAC.Wires.W4){
-                neutralConductor = new Conductor();
-                neutralConductor.setRole(Conductor.Role.NEUNCC);
-                neutralConductor.setSize(phaseAConductor.getSize());
+            phaseCConductor.setRole(Conductor.Role.HOT).setSize(phaseAConductor.getSize());
+            if(voltage.getWires() == 4){
+                if(neutralConductor == null)
+                    neutralConductor = new Conductor();
+                neutralConductor.setRole(Conductor.Role.NEUNCC).setSize(phaseAConductor.getSize());
             }
-            else {//Any 3-phase system indicated as w2 or w3 will not have a neutral
+            else //3 wires, no neutral
                 neutralConductor = null;
-                this.wires = SystemAC.Wires.W3;
-            }
         }
     }
 
@@ -632,7 +624,8 @@ public class Cable implements Conduitable, Listener{
             phaseBConductor.setSize(size);
         if(phaseCConductor != null)
             phaseCConductor.setSize(size);
-        if(voltage == SystemAC.Voltage.v120_1ph | voltage == SystemAC.Voltage.v277_1ph)
+        if(voltageSystemAC == VoltageSystemAC.v120_1ph_2w
+                || voltageSystemAC == VoltageSystemAC.v277_1ph_2w)
             neutralConductor.setSize(size);
     }
 
@@ -657,7 +650,8 @@ public class Cable implements Conduitable, Listener{
     public void setNeutralConductorSize(Size size) {
         if(neutralConductor != null) {
             neutralConductor.setSize(size);
-            if(voltage == SystemAC.Voltage.v120_1ph | voltage == SystemAC.Voltage.v277_1ph)
+            if(voltageSystemAC == VoltageSystemAC.v120_1ph_2w
+                    || voltageSystemAC == VoltageSystemAC.v277_1ph_2w)
                 phaseAConductor.setSize(size);
         }
     }
@@ -905,18 +899,9 @@ public class Cable implements Conduitable, Listener{
      Returns the voltage system of this cable.
 
      @return The voltage system of this cable.
-     @see eecalcs.systems.SystemAC.Voltage
+     @see VoltageSystemAC
      */
-    public SystemAC.Voltage getVoltage() {
-        return voltage;
-    }
-
-    /**
-     Returns the wire system of this cable.
-
-     @return The wire system of this cable.
-     */
-    public SystemAC.Wires getWires() {
-        return wires;
+    public VoltageSystemAC getVoltageSystemAC() {
+        return voltageSystemAC;
     }
 }

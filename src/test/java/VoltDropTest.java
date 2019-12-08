@@ -2,7 +2,7 @@ package test.java;
 
 import eecalcs.conductors.*;
 import eecalcs.conduits.Material;
-import eecalcs.systems.SystemAC;
+import eecalcs.systems.VoltageSystemAC;
 import eecalcs.voltagedrop.VoltDrop;
 import org.junit.jupiter.api.Test;
 import test.Tools;
@@ -14,7 +14,7 @@ class VoltDropTest {
     VoltDrop voltDrop = new VoltDrop(conductor);
 
     void change1(){
-        voltDrop.setSourceVoltage(SystemAC.Voltage.v208_3ph);
+        voltDrop.setSourceVoltage(VoltageSystemAC.v208_3ph_3w);
         voltDrop.setConduitMaterial(Material.ALUMINUM);
         voltDrop.setSets(2);
         voltDrop.setLoadCurrent(130);
@@ -26,7 +26,7 @@ class VoltDropTest {
     }
 
     void change2(){
-        voltDrop.setSourceVoltage(SystemAC.Voltage.v480_3ph);
+        voltDrop.setSourceVoltage(VoltageSystemAC.v480_3ph_4w);
         voltDrop.setConduitMaterial(Material.ALUMINUM);
         voltDrop.setSets(2);
         voltDrop.setLoadCurrent(460);
@@ -164,7 +164,7 @@ class VoltDropTest {
         assertEquals(0, voltDrop2.getACVoltageDrop(), 0.0001);
         assertTrue(voltDrop2.resultMessages.containsMessage(-1));
 
-        voltDrop2.setSourceVoltage(SystemAC.Voltage.v277_1ph);
+        voltDrop2.setSourceVoltage(VoltageSystemAC.v277_1ph_2w);
         assertEquals(0.3999, voltDrop2.getACVoltageDrop(), 0.0001);
         assertFalse(voltDrop2.resultMessages.containsMessage(-1));
 
@@ -230,7 +230,7 @@ class VoltDropTest {
         assertEquals(7.2719, voltDrop2.getACVoltageDrop(), 0.0001);
         assertFalse(voltDrop2.resultMessages.containsMessage(-2));
 
-        voltDrop2.setSourceVoltage(SystemAC.Voltage.v277_1ph);
+        voltDrop2.setSourceVoltage(VoltageSystemAC.v277_1ph_2w);
         assertFalse(voltDrop2.resultMessages.hasErrors());
         assertEquals(7.2991, voltDrop2.getACVoltageDrop(), 0.0001);
         assertEquals(100*7.2991/277, voltDrop2.getACVoltageDropPercentage(), 0.0001);

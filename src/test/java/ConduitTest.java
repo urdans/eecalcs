@@ -4,7 +4,7 @@ import eecalcs.conductors.*;
 import eecalcs.conduits.Conduit;
 import eecalcs.conduits.Trade;
 import eecalcs.conduits.Type;
-import eecalcs.systems.SystemAC;
+import eecalcs.systems.VoltageSystemAC;
 import org.junit.jupiter.api.Test;
 import test.Tools;
 
@@ -25,7 +25,7 @@ class ConduitTest {
 
     void change2(){
         conductor2 = new Conductor(Size.AWG_4, Metal.ALUMINUM, Insul.XHHW2, 125);
-        cable2 = new Cable(SystemAC.Voltage.v480_3ph, SystemAC.Wires.W4, 1.0);
+        cable2 = new Cable(VoltageSystemAC.v480_3ph_4w, 1.0);
         conduit.add(conductor.clone());
         conduit.add(conductor2);
         conduit.add(cable2);

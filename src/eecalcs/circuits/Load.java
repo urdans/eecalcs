@@ -1,6 +1,6 @@
 package eecalcs.circuits;
 
-import eecalcs.systems.SystemAC;
+import eecalcs.systems.VoltageSystemAC;
 
 /**
  This class represents a generic load.
@@ -47,8 +47,7 @@ import eecalcs.systems.SystemAC;
 
  */
 public class Load {
-    private SystemAC.Voltage systemVoltage = SystemAC.Voltage.v120_1ph;
-    private SystemAC.Wires wires = SystemAC.Wires.W2;
+    private VoltageSystemAC systemVoltage = VoltageSystemAC.v120_1ph_2w;
     private double voltAmperes = 120 * 10;
     private double watts;
     private double current;
@@ -61,38 +60,27 @@ public class Load {
         watts = voltAmperes * powerFactor;
     }
 
-    public Load(SystemAC.Voltage systemVoltage, double voltAmperes, SystemAC.Wires wires) {
+    public Load(VoltageSystemAC systemVoltage, double voltAmperes) {
         this.systemVoltage = systemVoltage;
         this.voltAmperes = voltAmperes;
-        this.wires = wires;
         computeCurrentAndWatts();
     }
 
     /**
      Constructs a Load object with the following default values:<br>
-     - System AC voltage = 120v, 1 phase<br>
-     - Wires = W2<br>
+     - System AC voltage = 120v, 1 phase, 2 wires<br>
      - Power S = 1200 va<br>
      */
     public Load(){
         computeCurrentAndWatts();
     }
 
-    public SystemAC.Voltage getSystemVoltage() {
+    public VoltageSystemAC getSystemVoltage() {
         return systemVoltage;
     }
 
-    public void setSystemVoltage(SystemAC.Voltage systemVoltage) {
+    public void setSystemVoltage(VoltageSystemAC systemVoltage) {
         this.systemVoltage = systemVoltage;
-        computeCurrentAndWatts();
-    }
-
-    public SystemAC.Wires getWires(){
-        return wires;
-    }
-
-    public void setWires(SystemAC.Wires wires){
-        this.wires = wires;
         computeCurrentAndWatts();
     }
 

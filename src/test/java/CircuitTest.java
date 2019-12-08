@@ -8,8 +8,7 @@ import eecalcs.conductors.Cable;
 import eecalcs.conductors.Conductor;
 import eecalcs.conductors.Conduitable;
 import eecalcs.conduits.Conduit;
-import eecalcs.conduits.Type;
-import eecalcs.systems.SystemAC;
+import eecalcs.systems.VoltageSystemAC;
 import org.junit.jupiter.api.Test;
 import test.Tools;
 
@@ -24,45 +23,172 @@ import static org.junit.jupiter.api.Assertions.*;
 class CircuitTest {
     Load load = new Load();
     Circuit circuit = new Circuit(load);
-    CircuitData circuitData = new CircuitData(circuit);
+    CircuitData circuitData;
+    {
+        try {
+            circuitData = new CircuitData(circuit);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Test
     void setupModelConductors() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
         Tools.printTitle("CircuitTest.setupModelConductors");
 
-        assertNotNull(circuitData.load);
+        assertEquals(0, circuit.resultMessages.getMessages().size());
+        assertNotNull(circuitData.ocdp);
+        assertEquals(load, circuitData.load);
+        assertNotNull(circuitData.privateConduit);
+        assertNull(circuitData.sharedConduit);
+        assertNotNull(circuitData.privateBundle);
+        assertNull(circuitData.sharedBundle);
         assertNotNull(circuitData.phaseAConductor);
         assertNull(circuitData.phaseBConductor);
         assertNull(circuitData.phaseCConductor);
         assertNotNull(circuitData.neutralConductor);
         assertNotNull(circuitData.groundingConductor);
         assertNotNull(circuitData.cable);
-        assertEquals(0, circuit.resultMessages.getMessages().size());
-        assertEquals(SystemAC.Voltage.v120_1ph, circuitData.systemVoltage);
-        assertEquals(SystemAC.Wires.W2, circuitData.systemWires);
+        assertEquals(VoltageSystemAC.v120_1ph_2w, circuitData.systemVoltage);
         assertFalse(circuitData.usingCable);
+        assertEquals(1, circuitData.numberOfSets);
+        assertEquals(1, circuitData.setsPerConduit);
         assertEquals(3, circuitData.conductorsPerSet);
         assertEquals(3, circuitData.conduitables.size());
 
-        circuitData.load.setSystemVoltage(SystemAC.Voltage.v480_3ph);
+        circuitData.load.setSystemVoltage(VoltageSystemAC.v480_3ph_3w);
+        circuitData.setupModelConductors();
+        assertEquals(0, circuit.resultMessages.getMessages().size());
+        assertNotNull(circuitData.phaseAConductor);
+        assertNotNull(circuitData.phaseBConductor);
+        assertNotNull(circuitData.phaseCConductor);
+        assertNull(circuitData.neutralConductor);
+        assertNotNull(circuitData.groundingConductor);
+        assertEquals(4, circuitData.conductorsPerSet);
+        assertEquals(4, circuitData.conduitables.size());
 
+        load.setSystemVoltage(VoltageSystemAC.v480_3ph_4w);
+        circuitData.setupModelConductors();
+        assertEquals(0, circuit.resultMessages.getMessages().size());
+        assertNotNull(circuitData.phaseAConductor);
+        assertNotNull(circuitData.phaseBConductor);
+        assertNotNull(circuitData.phaseCConductor);
+        assertNotNull(circuitData.neutralConductor);
+        assertNotNull(circuitData.groundingConductor);
+        assertEquals(5, circuitData.conductorsPerSet);
+        assertEquals(5, circuitData.conduitables.size());
 
-//        Method setupModelConductors = circuit.getClass().getDeclaredMethod("setupModelConductors", null);
-//        setupModelConductors.setAccessible(true);
-//
-//
-//
-//        setupModelConductors.invoke(circuit, null);
-//
-//        assertNotNull(circuitData.getState().phaseAConductor);
+        load.setSystemVoltage(VoltageSystemAC.v240_1ph_3w);
+        circuitData.setupModelConductors();
+        assertEquals(0, circuit.resultMessages.getMessages().size());
+        assertNotNull(circuitData.phaseAConductor);
+        assertNotNull(circuitData.phaseBConductor);
+        assertNull(circuitData.phaseCConductor);
+        assertNotNull(circuitData.neutralConductor);
+        assertNotNull(circuitData.groundingConductor);
+        assertEquals(4, circuitData.conductorsPerSet);
+        assertEquals(4, circuitData.conduitables.size());
+    }
 
+    @Test
+    void setNumberOfSets() throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
+        Tools.printTitle("CircuitTest.setNumberOfSets");
+        load.setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuitData.setupModelConductors();
+        assertEquals(1, circuitData.setsPerConduit);
+        assertEquals(1, circuitData.numberOfSets);
+        circuit.setNumberOfSets(2); //this keeps the number of sets per conduit to 1
+        circuitData.getState();
+        assertEquals(2, circuitData.numberOfSets);
+        assertEquals(5, circuitData.conductorsPerSet);
+        assertEquals(5, circuitData.conduitables.size());
+
+        load.setSystemVoltage(VoltageSystemAC.v480_1ph_3w);
+        circuitData.setupModelConductors();
+        circuit.setNumberOfSets(3);
+        circuitData.getState();
+        assertEquals(3, circuit.getNumberOfConduits());
+        assertEquals(1, circuitData.setsPerConduit);
+        assertEquals(4, circuitData.conductorsPerSet);
+        assertEquals(4, circuitData.conduitables.size());
+
+        load.setSystemVoltage(VoltageSystemAC.v277_1ph_2w);
+        circuitData.setupModelConductors();
+        circuit.setNumberOfSets(1);
+        circuitData.getState();
+        assertEquals(1, circuit.getNumberOfConduits());
+        assertEquals(1, circuitData.setsPerConduit);
+        assertEquals(3, circuitData.conductorsPerSet);
+        assertEquals(3, circuitData.conduitables.size());
+    }
+
+    @Test
+    void moreConduits() throws IllegalAccessException, NoSuchFieldException, InvocationTargetException {
+        Tools.printTitle("CircuitTest.moreConduits");
+        load.setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        assertEquals(1, circuit.getNumberOfConduits());
+        assertEquals(1, circuit.getNumberOfSets());
+
+        circuit.setNumberOfSets(10); //this keeps the number of sets per conduit to 1
+        circuitData.setNumberOfConduits(1);
+        circuitData.prepareConduitableList();
+        assertEquals(1, circuit.getNumberOfConduits());
+        assertEquals(10, circuit.getNumberOfSets());
+
+        circuit.moreConduits();
+        assertEquals(2, circuit.getNumberOfConduits());
+        assertEquals(10, circuit.getNumberOfSets());
+
+        circuit.moreConduits();
+        assertEquals(5, circuit.getNumberOfConduits());
+        assertEquals(10, circuit.getNumberOfSets());
+
+        circuit.moreConduits();
+        assertEquals(10, circuit.getNumberOfConduits());
+        assertEquals(10, circuit.getNumberOfSets());
+
+        circuit.moreConduits();
+        assertEquals(10, circuit.getNumberOfConduits());
+        assertEquals(10, circuit.getNumberOfSets());
+    }
+
+    @Test
+    void lessConduits(){
+        Tools.printTitle("CircuitTest.lessConduits");
+        load.setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        assertEquals(1, circuit.getNumberOfConduits());
+        assertEquals(1, circuit.getNumberOfSets());
+
+        circuit.setNumberOfSets(10); //this keeps the number of sets per conduit to 1
+        assertEquals(10, circuit.getNumberOfConduits());
+        assertEquals(10, circuit.getNumberOfSets());
+
+        circuit.lessConduits();
+        assertEquals(5, circuit.getNumberOfConduits());
+        assertEquals(10, circuit.getNumberOfSets());
+
+        circuit.lessConduits();
+        assertEquals(2, circuit.getNumberOfConduits());
+        assertEquals(10, circuit.getNumberOfSets());
+
+        circuit.lessConduits();
+        assertEquals(1, circuit.getNumberOfConduits());
+        assertEquals(10, circuit.getNumberOfSets());
+
+        circuit.lessConduits();
+        assertEquals(1, circuit.getNumberOfConduits());
+        assertEquals(10, circuit.getNumberOfSets());
     }
 }
 
 class CircuitData{
     private Circuit circuit;
 
-    public List<Conduitable> conduitables = new ArrayList<>();
+    public List<Conduitable> conduitables;
     public Ocpd ocdp;
     public Conduit privateConduit;
     public Conduit sharedConduit;
@@ -71,9 +197,9 @@ class CircuitData{
     public Load load;
     public int numberOfSets;
     public int setsPerConduit;
+    public int numberOfConduits;
     public int conductorsPerSet;
-    public SystemAC.Voltage systemVoltage;
-    public SystemAC.Wires systemWires;
+    public VoltageSystemAC systemVoltage;
     public Conductor phaseAConductor;
     public Conductor phaseBConductor;
     public Conductor phaseCConductor;
@@ -82,37 +208,58 @@ class CircuitData{
     public Cable cable;
     public boolean usingCable;
 
-    public CircuitData(Circuit circuit){
-        this.circuit = circuit;
-        try {
-            getState();
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-    }
+    private Field conduitablesField;
+    private Field ocdpField;
+    private Field privateConduitField;
+    private Field sharedConduitField;
+    private Field privateBundleField;
+    private Field sharedBundleField;
+    private Field loadField;
+    private Field numberOfSetsField;
+    private Field setsPerConduitField;
+    private Field numberOfConduitsField;
+    private Field conductorsPerSetField;
+    private Field systemVoltageField;
+    private Field phaseAConductorField;
+    private Field phaseBConductorField;
+    private Field phaseCConductorField;
+    private Field neutralConductorField;
+    private Field groundingConductorField;
+    private Field cableField;
+    private Field usingCableField;
 
-    public CircuitData getState() throws NoSuchFieldException, IllegalAccessException {
-        Field conduitablesField = circuit.getClass().getDeclaredField("conduitables");
-        Field ocdpField = circuit.getClass().getDeclaredField("ocdp");
-        Field privateConduitField = circuit.getClass().getDeclaredField("privateConduit");
-        Field sharedConduitField = circuit.getClass().getDeclaredField("sharedConduit");
-        Field privateBundleField = circuit.getClass().getDeclaredField("privateBundle");
-        Field sharedBundleField = circuit.getClass().getDeclaredField("sharedBundle");
-        Field loadField = circuit.getClass().getDeclaredField("load");
-        Field numberOfSetsField = circuit.getClass().getDeclaredField("numberOfSets");
-        Field setsPerConduitField = circuit.getClass().getDeclaredField("setsPerConduit");
-        Field conductorsPerSetField = circuit.getClass().getDeclaredField("conductorsPerSet");
-        Field systemVoltageField = circuit.getClass().getDeclaredField("systemVoltage");
-        Field systemWiresField = circuit.getClass().getDeclaredField("systemWires");
-        Field phaseAConductorField = circuit.getClass().getDeclaredField("phaseAConductor");
-        Field phaseBConductorField = circuit.getClass().getDeclaredField("phaseBConductor");
-        Field phaseCConductorField = circuit.getClass().getDeclaredField("phaseCConductor");
-        Field neutralConductorField = circuit.getClass().getDeclaredField("neutralConductor");
-        Field groundingConductorField = circuit.getClass().getDeclaredField("groundingConductor");
-        Field cableField = circuit.getClass().getDeclaredField("cable");
-        Field usingCableField = circuit.getClass().getDeclaredField("usingCable");
+    private Method setupModelConductors;
+    private Method addTo1;
+    private Method addTo2;
+    private Method clearModeMsg;
+    private Method getSizePerAmpacity;
+    private Method getSizePerVoltageDrop;
+    private Method leaveFrom1;
+    private Method leaveFrom2;
+    private Method prepareConduitableList;
+
+    public CircuitData(Circuit circuit) throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException {
+        this.circuit = circuit;
+
+        conduitablesField = circuit.getClass().getDeclaredField("conduitables");
+        ocdpField = circuit.getClass().getDeclaredField("ocdp");
+        privateConduitField = circuit.getClass().getDeclaredField("privateConduit");
+        sharedConduitField = circuit.getClass().getDeclaredField("sharedConduit");
+        privateBundleField = circuit.getClass().getDeclaredField("privateBundle");
+        sharedBundleField = circuit.getClass().getDeclaredField("sharedBundle");
+        loadField = circuit.getClass().getDeclaredField("load");
+        numberOfSetsField = circuit.getClass().getDeclaredField("numberOfSets");
+        setsPerConduitField = circuit.getClass().getDeclaredField("setsPerConduit");
+        numberOfConduitsField = circuit.getClass().getDeclaredField("numberOfConduits");
+        conductorsPerSetField = circuit.getClass().getDeclaredField("conductorsPerSet");
+        systemVoltageField = circuit.getClass().getDeclaredField("systemVoltage");
+        phaseAConductorField = circuit.getClass().getDeclaredField("phaseAConductor");
+        phaseBConductorField = circuit.getClass().getDeclaredField("phaseBConductor");
+        phaseCConductorField = circuit.getClass().getDeclaredField("phaseCConductor");
+        neutralConductorField = circuit.getClass().getDeclaredField("neutralConductor");
+        groundingConductorField = circuit.getClass().getDeclaredField("groundingConductor");
+        cableField = circuit.getClass().getDeclaredField("cable");
+        usingCableField = circuit.getClass().getDeclaredField("usingCable");
 
         conduitablesField.setAccessible(true);
         ocdpField.setAccessible(true);
@@ -123,9 +270,9 @@ class CircuitData{
         loadField.setAccessible(true);
         numberOfSetsField.setAccessible(true);
         setsPerConduitField.setAccessible(true);
+        numberOfConduitsField.setAccessible(true);
         conductorsPerSetField.setAccessible(true);
         systemVoltageField.setAccessible(true);
-        systemWiresField.setAccessible(true);
         phaseAConductorField.setAccessible(true);
         phaseBConductorField.setAccessible(true);
         phaseCConductorField.setAccessible(true);
@@ -134,6 +281,30 @@ class CircuitData{
         cableField.setAccessible(true);
         usingCableField.setAccessible(true);
 
+        addTo1 = circuit.getClass().getDeclaredMethod("moveTo", Conduit.class);
+        addTo2 = circuit.getClass().getDeclaredMethod("moveTo", Bundle.class);
+        clearModeMsg = circuit.getClass().getDeclaredMethod("clearModeMsg", null);
+        getSizePerAmpacity = circuit.getClass().getDeclaredMethod("getSizePerAmpacity", null);
+        getSizePerVoltageDrop = circuit.getClass().getDeclaredMethod("getSizePerVoltageDrop", null);
+        leaveFrom1 = circuit.getClass().getDeclaredMethod("leaveFrom", Conduit.class);
+        leaveFrom2 = circuit.getClass().getDeclaredMethod("leaveFrom", Bundle.class);
+        prepareConduitableList = circuit.getClass().getDeclaredMethod("prepareConduitableList", null);
+        setupModelConductors = circuit.getClass().getDeclaredMethod("setupModelConductors", null);
+
+        addTo1.setAccessible(true);
+        addTo2.setAccessible(true);
+        clearModeMsg.setAccessible(true);
+        getSizePerAmpacity.setAccessible(true);
+        getSizePerVoltageDrop.setAccessible(true);
+        leaveFrom1.setAccessible(true);
+        leaveFrom2.setAccessible(true);
+        prepareConduitableList.setAccessible(true);
+        setupModelConductors.setAccessible(true);
+
+        getState();
+    }
+
+    public CircuitData getState() throws NoSuchFieldException, IllegalAccessException {
         conduitables = (List<Conduitable>) conduitablesField.get(circuit);
         ocdp = (Ocpd) ocdpField.get(circuit);
         privateConduit = (Conduit) privateConduitField.get(circuit);
@@ -143,9 +314,9 @@ class CircuitData{
         load = (Load) loadField.get(circuit);
         numberOfSets = (int) numberOfSetsField.get(circuit);
         setsPerConduit = (int) setsPerConduitField.get(circuit);
+        numberOfConduits = (int) numberOfConduitsField.get(circuit);
         conductorsPerSet = (int) conductorsPerSetField.get(circuit);
-        systemVoltage = (SystemAC.Voltage) systemVoltageField.get(circuit);
-        systemWires = (SystemAC.Wires) systemWiresField.get(circuit);
+        systemVoltage = (VoltageSystemAC) systemVoltageField.get(circuit);
         phaseAConductor = (Conductor) phaseAConductorField.get(circuit);
         phaseBConductor = (Conductor) phaseBConductorField.get(circuit);
         phaseCConductor = (Conductor) phaseCConductorField.get(circuit);
@@ -153,7 +324,54 @@ class CircuitData{
         groundingConductor = (Conductor) groundingConductorField.get(circuit);
         cable = (Cable) cableField.get(circuit);
         usingCable = (boolean) usingCableField.get(circuit);
-
         return this;
+    }
+
+    public void setupModelConductors() throws InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+        setupModelConductors.invoke(circuit);
+        getState();
+    }
+
+    public void addTo(Conduit conduit) throws InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+        addTo1.invoke(circuit, conduit);
+        getState();
+    }
+
+    public void addTo(Bundle bundle) throws InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+        addTo2.invoke(circuit, bundle);
+        getState();
+    }
+
+    public void clearModeMsg() throws InvocationTargetException, IllegalAccessException {
+        clearModeMsg.invoke(circuit);
+    }
+
+    public void getSizePerAmpacity() throws InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+        getSizePerAmpacity.invoke(circuit);
+        getState();
+    }
+
+    public void getSizePerVoltageDrop() throws InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+        getSizePerVoltageDrop.invoke(circuit);
+        getState();
+    }
+
+    public void leaveFrom1() throws InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+        leaveFrom1.invoke(circuit);
+        getState();
+    }
+
+    public void leaveFrom2() throws InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+        leaveFrom2.invoke(circuit);
+        getState();
+    }
+
+    public void prepareConduitableList() throws InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+        prepareConduitableList.invoke(circuit);
+        getState();
+    }
+
+    public void setNumberOfConduits(int numberOfConduits) throws IllegalAccessException {
+        numberOfConduitsField.set(circuit, numberOfConduits);
     }
 }

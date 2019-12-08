@@ -5,7 +5,7 @@ import eecalcs.conductors.ConductorProperties;
 import eecalcs.conductors.Size;
 import eecalcs.conduits.ConduitProperties;
 import eecalcs.conduits.Material;
-import eecalcs.systems.SystemAC;
+import eecalcs.systems.VoltageSystemAC;
 import org.apache.commons.math3.complex.Complex;
 import tools.Message;
 import tools.ResultMessages;
@@ -31,7 +31,7 @@ import tools.ResultMessages;
  */
 
 public class VoltDrop {
-	private SystemAC.Voltage sourceVoltage = SystemAC.Voltage.v120_1ph;
+	private VoltageSystemAC sourceVoltage = VoltageSystemAC.v120_1ph_2w;
 	private Conductor conductor;
 	private int sets = 1;
 	private double loadCurrent = 10;
@@ -198,9 +198,9 @@ public class VoltDrop {
 	 Notice that no validation is performed while setting this value. The user
 	 must check for the presence of errors or warnings after obtaining a
 	 calculation result of zero or null.
-	 @see SystemAC.Voltage
+	 @see VoltageSystemAC
 	 */
-	public void setSourceVoltage(SystemAC.Voltage sourceVoltage) {
+	public void setSourceVoltage(VoltageSystemAC sourceVoltage) {
 		this.sourceVoltage = sourceVoltage;
 	}
 
@@ -362,7 +362,7 @@ public class VoltDrop {
 	 preset conductor, of the given size.
 	 */
 	private double getGenericACVoltageAtLoad(Size size){
-		double k = sourceVoltage.getPhases().getNumberOfPhases() == 1 ? 2 : sourceVoltage.getFactor();
+		double k = sourceVoltage.getPhases() == 1 ? 2 : sourceVoltage.getFactor();
 		double oneWayACResistance = ConductorProperties.getACResistance(
 				size,
 				conductor.getMetal(),
@@ -416,7 +416,7 @@ public class VoltDrop {
 		double conductorX = ConductorProperties.getReactance(size, ConduitProperties.isMagnetic(conduitMaterial)) * 0.001 / sets;
 		double theta = Math.acos(powerFactor);
 		double Vs2 = Math.pow(sourceVoltage.getVoltage(), 2);
-		double k = sourceVoltage.getPhases().getNumberOfPhases() == 1 ? 2 : sourceVoltage.getFactor();
+		double k = sourceVoltage.getPhases() == 1 ? 2 : sourceVoltage.getFactor();
 		double A = k * loadCurrent * (conductorR * powerFactor + conductorX * Math.sin(theta));
 		double B = k * loadCurrent * (conductorX * powerFactor - conductorR * Math.sin(theta));
 		double C = Vs2 * (1 - Math.pow(1 - maxVoltageDropPercent/100, 2));

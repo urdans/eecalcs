@@ -2,7 +2,7 @@ package main;
 
 import eecalcs.conductors.*;
 import eecalcs.conduits.*;
-import eecalcs.systems.SystemAC;
+import eecalcs.systems.VoltageSystemAC;
 import eecalcs.systems.TempRating;
 import eecalcs.voltagedrop.VDrop;
 import tools.Message;
@@ -18,6 +18,34 @@ public class Main {
 	}
 
 	public static void main(String[] args) {
+		//testing generating integer divider
+		int NumberOfSets = 10;
+		int NumberOfConduits = 10;
+		System.out.println("*******Incrementing the number of conduits*******");
+
+		System.out.println("Number of sets: " + NumberOfSets);
+		System.out.println("Actual number of conduits: " + NumberOfConduits);
+		for(int i = NumberOfConduits + 1; i <=NumberOfSets; i++)
+			if(NumberOfSets % i == 0) {
+				NumberOfConduits = i;
+				break;
+			}
+		System.out.println("Next upper number of conduits: " + NumberOfConduits);
+
+		NumberOfConduits = 1;
+		System.out.println("*******Decrementing the number of conduits*******");
+		System.out.println("Number of sets: " + NumberOfSets);
+		System.out.println("Actual number of conduits: " + NumberOfConduits);
+		for(int i = NumberOfConduits - 1; i != 0; i--)
+			if(NumberOfSets % i == 0) {
+				NumberOfConduits = i;
+				break;
+			}
+		System.out.println("Next down number of conduits: " + NumberOfConduits);
+
+
+		if(true) return;
+
 		//testing the use of instance of
 		Conduitable cable = new Cable();
 		Conduitable cable2 = null;
@@ -30,7 +58,7 @@ public class Main {
 		if(cable2 instanceof Conduitable)
 			System.out.println("cable2 implements Conduitable");
 		//testing cloning a cable
-		Cable cab1 = new Cable(SystemAC.Voltage.v120_1ph, SystemAC.Wires.W2, 1.23);
+		Cable cab1 = new Cable(VoltageSystemAC.v120_1ph_2w, 1.23);
 //
 //		System.out.println(cab1==null);
 //
@@ -93,7 +121,7 @@ public class Main {
 		Conductor conductor2 = new Conductor();
 		Conductor conductor3 = new Conductor();
 		Conductor conductor4 = new Conductor();
-		Cable cable1 = new Cable(SystemAC.Voltage.v120_1ph, SystemAC.Wires.W4, 0.8);
+		Cable cable1 = new Cable(VoltageSystemAC.v120_1ph_2w, 0.8);
 
 		conductor1.setInsulation(Insul.THHW); conductor1.setSize(Size.AWG_1$0);
 		conductor2.setInsulation(Insul.THHW); conductor2.setSize(Size.AWG_1$0);
@@ -188,7 +216,7 @@ public class Main {
 
 		System.out.println("**************** CABLES ****************");
 
-//		Cable cable1 = new Cable(SystemAC.Voltage.v120_1ph, SystemAC.Wires.W4, 0.8);
+//		Cable cable1 = new Cable(VoltageSystemAC.Voltage.v120_1ph, VoltageSystemAC.Wires.W4, 0.8);
 
 		System.out.println("    Cable to be analized: cable1");
 		System.out.println("     Ambient temperature: " + cable1.getAmbientTemperatureF() + " °F");
