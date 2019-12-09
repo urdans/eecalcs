@@ -244,7 +244,7 @@ public class Conductor implements Conduitable, Speaker {
 	}
 
 	/**
-	 Returns the ampacity of this cable (for voltages up to 2000v).
+	 Returns the ampacity of this conductor (for voltages up to 2000v).
 	 <p><br>
 	 The result accounts for the ambient temperature, the insulation of this
 	 conductor, and the number of other conductors or cables that share the

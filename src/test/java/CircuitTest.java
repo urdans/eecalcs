@@ -3,10 +3,7 @@ package test.java;
 import eecalcs.circuits.Circuit;
 import eecalcs.circuits.Load;
 import eecalcs.circuits.Ocpd;
-import eecalcs.conductors.Bundle;
-import eecalcs.conductors.Cable;
-import eecalcs.conductors.Conductor;
-import eecalcs.conductors.Conduitable;
+import eecalcs.conductors.*;
 import eecalcs.conduits.Conduit;
 import eecalcs.systems.VoltageSystemAC;
 import org.junit.jupiter.api.Test;
@@ -182,6 +179,35 @@ class CircuitTest {
         circuit.lessConduits();
         assertEquals(1, circuit.getNumberOfConduits());
         assertEquals(10, circuit.getNumberOfSets());
+    }
+
+    @Test
+    void getCircuitSize(){
+        Tools.printTitle("CircuitTest.getCircuitSize");
+        //voltage drop decides
+        assertEquals(Size.AWG_10, circuit.getCircuitSize());
+
+        circuit.getVoltageDrop().setMaxVoltageDropPercent(3.4);
+        assertEquals(Size.AWG_12, circuit.getCircuitSize());
+
+        circuit.getVoltageDrop().setMaxVoltageDropPercent(5.2);
+        assertEquals(Size.AWG_14, circuit.getCircuitSize());
+
+        //ampacity decides
+        load.setCurrent(160);
+        //circuit.setLength(); //todo to be implemented
+        circuit.getVoltageDrop().setMaxVoltageDropPercent(3);
+        assertEquals(Size.AWG_2$0, circuit.getCircuitSize()); //using insulation for 75C
+
+        load.setCurrent(95);
+        //circuit.setLength();
+        circuit.getVoltageDrop().setMaxVoltageDropPercent(4.0);
+        assertEquals(Size.AWG_2, circuit.getCircuitSize()); //this should use column of 60C because current is under 100A
+        //continue here: make the circuit to select the 60C column for load current under 100A when the temperature rating of the
+        // terminals in use is not known.
+
+
+
     }
 }
 

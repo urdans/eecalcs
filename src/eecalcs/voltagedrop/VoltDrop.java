@@ -190,7 +190,22 @@ public class VoltDrop {
 		this.conductor = conductor;
 	}
 
+	/**
+	 Default constructor for this voltage drop object.
+	 */
+	public VoltDrop(){
+	}
+
 	//----Common setters ang getters
+	/**
+	 Sets the conductor for this voltage drop object.
+
+	 @param conductor The conductor for the voltage drop.
+	 */
+	public void setConductor(Conductor conductor) {
+		this.conductor = conductor;
+	}
+
 	/**
 	 Sets the source system voltage for this VoltDrop object.
 

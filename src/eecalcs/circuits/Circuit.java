@@ -1,10 +1,9 @@
 package eecalcs.circuits;
 
 import eecalcs.conductors.*;
-import eecalcs.conduits.Conduit;
-import eecalcs.conduits.Trade;
-import eecalcs.conduits.Type;
+import eecalcs.conduits.*;
 import eecalcs.systems.VoltageSystemAC;
+import eecalcs.voltagedrop.VoltDrop;
 import tools.Message;
 import tools.ResultMessages;
 
@@ -184,6 +183,10 @@ public class Circuit {
 	private Conductor groundingConductor = new Conductor().setRole(Conductor.Role.GND);
 	private Cable cable = new Cable();
 	private boolean usingCable = false;
+	private VoltDrop voltageDrop = new VoltDrop();
+	//Output values
+	private Size size;
+//	private Trade tradeSize;
 	private static Message ERROR200	= new Message("The provided load is not valid.", -200);
 	private static Message ERROR210	= new Message("More than one set of conductors or cables cannot" +
 			" be in a shared conduit.",-210);
@@ -192,6 +195,8 @@ public class Circuit {
 	private static Message ERROR230	= new Message("The provided shared conduit is not valid.",-230);
 	private static Message ERROR240	= new Message("The provided shared bundle is not valid.",-240);
 	private static Message ERROR250	= new Message("Changing the number of conduits is only allowed when in private mode.",-250);
+	private static Message ERROR260	= new Message("Ampacity of the load is to high. Increment the number of sets.",-260);
+
 	private static Message WARNN200	= new Message("Insulated conductors are being used in free air. This" +
 			" could be considered a bad practice.", 200);
 	private static Message WARNN205	= new Message("Insulated conductors are being used in a bundle. This" +
@@ -293,9 +298,9 @@ public class Circuit {
 	or one cable for this circuit, or to be used as a models for two or more
 	sets for this circuit. This method is called automatically from the
 	calculation methods and checks if the system voltage and wires of the load
-	have changed, in which case it will update the conductors and the cable.
+	have changed, in which case it will update the conductors or the cable
+	models.
 	*/
-	//todo call this method from the calculation methods
 	private void setupModelConductors(){
 		if(load == null || load.getSystemVoltage() == null) {
 			resultMessages.add(ERROR200);
@@ -359,14 +364,76 @@ public class Circuit {
 		prepareConduitableList();
 	}
 
-	//todo to implement and javadoc
+
+	/**
+	 Calculates the size of this circuit cable or conductor under the preset
+	 conditions, that is able to handle its full load current (per ampacity).
+	 This method will increment the number of sets if the load current is too
+	 high to be handled by one conductor. Also, it will set the number of sets
+	 to one if the calculated size is smaller than 1/0 AWG and there are more
+	 than one set of conductors.
+
+	 @return The size of the conductors/cable calculated per ampacity.
+	 */
 	private Size getSizePerAmpacity(){
+		double mca = load.isContinuous() ? load.getCurrent() * 1.25: load.getCurrent();
+		if(usingCable) {
+			for(Size _size : Size.values()){
+				cable.setPhaseConductorSize(_size);
+				if(cable.getAmpacity() * numberOfSets >= mca) {
+					return _size;
+				}
+			}
+			//todo finish implementation
+			//todo this should be better: at this point there are two options: the program stops and return with ERROR260 message or the number of sets is
+			// incremented until the proper conductor size is found. Now, what happen if the calculated conductor size is less than 1/0 and number of sets
+			// is more than one? just set the number of sets to one and recalculate?. Think about it.
+			resultMessages.add(ERROR260);
+		}
+		else{
+			for(Size _size : Size.values()){
+				phaseAConductor.setSize(_size);
+				if(phaseAConductor.getAmpacity() * numberOfSets >= mca) {
+					return _size;
+				}
+			}
+			//todo finish implementation
+			//todo this should be better: at this point there are two options: the program stops and return with ERROR260 message or the number of sets is
+			// incremented until the proper conductor size is found. Now, what happen if the calculated conductor size is less than 1/0 and number of sets
+			// is more than one? just set the number of sets to one and recalculate?. Think about it.
+			resultMessages.add(ERROR260);
+		}
 		return null;
 	}
 
-	//todo to implement and javadoc
+	/**
+	 Calculates the size of this circuit cable or conductor under the preset
+	 conditions, that is able to keep its voltage drop below the maximum allowed
+	 value.
+
+	 @return The size of this circuit conductor/cable calculated per voltage
+	 drop.
+	 */
 	private Size getSizePerVoltageDrop(){
-		return null;
+		Conduit usedConduit = null;
+		if(isPrivateConduitMode() || isSharedConduitMode())
+			usedConduit = isPrivateConduitMode() ? privateConduit : sharedConduit;
+		if(usingCable) {
+			//todo to be implemented
+			return null;
+		}
+		else {
+			voltageDrop.setConductor(phaseAConductor);
+			if(usedConduit == null) //conductors are in free air or bundled
+				voltageDrop.setConduitMaterial(Material.PVC);
+			else
+				voltageDrop.setConduitMaterial(ConduitProperties.getMaterial(usedConduit.getType()));
+			voltageDrop.setLoadCurrent(load.getCurrent());
+			voltageDrop.setPowerFactor(load.getPowerFactor());
+			voltageDrop.setSets(numberOfSets);
+			voltageDrop.setSourceVoltage(load.getSystemVoltage());
+			return voltageDrop.getCalculatedSizeAC();
+		}
 	}
 
 	/**
@@ -432,6 +499,57 @@ public class Circuit {
 	}
 
 	/**
+	 Performs the following steps:
+	 <p>1. Calculates the size of the circuit conductors, considering the
+	 ampacity and the maximum allowed voltage drop as set forth in
+	 <i>voltageDrop.setMaxVoltageDropPercentage()</i>;
+	 <p>2. Calculates the size of the OCPD;
+	 <p>3. Calculates the size of the grounding conductor;
+	 <p>4. Sets the sizes of the hot, neutral and grounding conductors per the
+	 values previously calculated.
+	 */
+	private void calculateCircuitConductors(){
+		setupModelConductors();
+		//1.
+		size = null;
+		if(resultMessages.hasErrors())
+			return;
+		Size sizePerAmpacity = getSizePerAmpacity(); //todo shall return null if something is wrong
+		Size sizePerVoltageDrop = getSizePerVoltageDrop(); //todo shall return null if something is wrong
+		Size circuitSize;
+		if(ConductorProperties.compareSizes(sizePerAmpacity,sizePerVoltageDrop) < 0) //VD size is bigger
+			size = sizePerVoltageDrop;
+		else
+			size = sizePerAmpacity;
+		//2. todo implement
+		//3. todo implement
+		Size groundingSize = Size.AWG_14;
+		//4.
+		if(usingCable){
+			Cable _cable;
+			for(Conduitable conduitable: conduitables) {
+				_cable = (Cable) conduitable;
+				_cable.setPhaseConductorSize(size);
+				_cable.setNeutralConductorSize(size);
+				_cable.setGroundingConductorSize(groundingSize);
+			}
+		}
+		else {
+			Conductor _conductor;
+			for(Conduitable conduitable: conduitables) {
+				_conductor = (Conductor) conduitable;
+				if(_conductor.getRole() == Conductor.Role.HOT
+						|| _conductor.getRole() == Conductor.Role.NEUCC
+						|| _conductor.getRole() == Conductor.Role.NEUNCC
+						|| _conductor.getRole() == Conductor.Role.NCONC)
+					_conductor.setSize(size);
+				else
+					_conductor.setSize(groundingSize);
+			}
+		}
+	}
+
+	/**
 	 Constructs a circuit object for the given load. The default values are as
 	 follow:
 	 <p>- One set of conductors.
@@ -455,6 +573,14 @@ public class Circuit {
 	public Circuit clone(){
 		//todo to be implemented.
 		return null;
+	}
+
+	/**
+	 Returns the voltage drop object used by this circuit for internal
+	 calculations.
+	 */
+	public VoltDrop getVoltageDrop(){
+		return voltageDrop;
 	}
 
 	/**
@@ -595,13 +721,14 @@ public class Circuit {
 
 	/**
 	 Returns the size of the circuit conductors/cables properly calculated per
-	 ampacity and voltage drop.
+	 ampacity and voltage drop. This is the size for hot and neutral conductors
+	 (if any).
 
 	 @return The size of the conductors/cables.
 	 */
-	//todo implement
 	public Size getCircuitSize(){
-		return null;
+		calculateCircuitConductors();
+		return size;
 	}
 
 	/**
@@ -609,9 +736,15 @@ public class Circuit {
 
 	 @return The trade size of the conduit.
 	 */
-	//todo implement
 	public Trade getConduitTradeSize(){
-		return null;
+		if(isFreeAirMode() || isPrivateBundleMode() || isSharedBundleMode())
+			return null;
+		//the circuit here is in shared or public conduit.
+		calculateCircuitConductors();
+		if(isPrivateConduitMode())
+			return privateConduit.getTradeSize();
+		else
+			return sharedConduit.getTradeSize();
 	}
 
 	/**
@@ -628,7 +761,6 @@ public class Circuit {
 	public String getDescription(){
 		return null;
 	}
-
 
 	/**
 	 Sets the number of sets (of conductors or cables) in parallel. If the given
