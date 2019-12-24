@@ -1,12 +1,9 @@
 package eecalcs.conductors;
 
+import eecalcs.circuits.Circuit;
 import eecalcs.conduits.Conduit;
 import eecalcs.systems.TempRating;
-import tools.Listener;
-import tools.Speaker;
-
-import java.util.ArrayList;
-import java.util.List;
+import tools.NotifierDelegate;
 
 /**
  Encapsulates the properties and methods for a single conductor in the context
@@ -21,7 +18,7 @@ import java.util.List;
  <p>This class implements the class Speaker which allows it to forecast messages
  to its registered Listeners.
  */
-public class Conductor implements Conduitable, Speaker {
+public class Conductor implements Conduitable, ShareableConductor {
 
 	/**
 	 Defines the role of a conductor.
@@ -99,7 +96,8 @@ public class Conductor implements Conduitable, Speaker {
 		}
 	}
 
-	private List<Listener> listeners = new ArrayList<>();
+	//private List<Listener> listeners = new ArrayList<>();
+
 	private Size size = Size.AWG_12;
 	private Metal metal = Metal.COPPER;
 	private Insul insulation = Insul.THW;
@@ -109,6 +107,7 @@ public class Conductor implements Conduitable, Speaker {
 	private Role role = Role.HOT;
 	private Conduit conduit;
 	private Bundle bundle;
+	public NotifierDelegate notifier = new NotifierDelegate(this);
 
 	/**
 	 Constructs a conductor with the given characteristics. The other properties
@@ -153,6 +152,16 @@ public class Conductor implements Conduitable, Speaker {
 		return conductorClone;
 	}
 
+	public void copyFrom(Conductor conductor){
+		size = conductor.size;
+		metal = conductor.metal;
+		insulation =conductor.insulation;
+		length = conductor.length;
+		ambientTemperatureF = conductor.ambientTemperatureF;
+		copperCoated = conductor.copperCoated;
+		role = conductor.role;
+	}
+
 	/**
 	 Constructs a default conductor object:
 	 <p>- Size: 12 AWG
@@ -183,6 +192,7 @@ public class Conductor implements Conduitable, Speaker {
 	 */
 	public Conductor setSize(Size size) {
 		this.size = size;
+		notifier.notifyAllListeners();
 		return this;
 	}
 
@@ -202,6 +212,7 @@ public class Conductor implements Conduitable, Speaker {
 	 */
 	public Conductor setMetal(Metal metal) {
 		this.metal = metal;
+		notifier.notifyAllListeners();
 		return this;
 	}
 
@@ -222,6 +233,7 @@ public class Conductor implements Conduitable, Speaker {
 	 */
 	public Conductor setInsulation(Insul insulation) {
 		this.insulation = insulation;
+		notifier.notifyAllListeners();
 		return this;
 	}
 
@@ -236,6 +248,7 @@ public class Conductor implements Conduitable, Speaker {
 
 	public void setLength(double length) {
 		this.length = Math.abs(length);
+		notifier.notifyAllListeners();
 	}
 
 	@Override
@@ -259,7 +272,7 @@ public class Conductor implements Conduitable, Speaker {
 	 applied to the ampacity for the temperature rating of the conductor, if the
 	 corrected and adjusted ampacity does not exceed the ampacity for the
 	 temperature rating of the terminals in accordance with 110.14(C), is not
-	 accounted for in this method. It is accounted for at the {@link CircuitOld}
+	 accounted for in this method. It is accounted for at the {@link Circuit}
 	 class level.
 	 <p><br>
 	 If no correction factor is required ({@link #getCorrectionFactor()} returns 1), the
@@ -277,13 +290,13 @@ public class Conductor implements Conduitable, Speaker {
 	 specified at a different level.
 	 <p><br>
 	 The ampacity of insulated conductor can be calculated, corrected and
-	 adjusted for insulation rated for 75°C or 90°C but that ampacity shall not
+	 adjusted for insulation rated for 75°C or 90°C but that ampacity shall not //todo to correct!
 	 exceed what would be required for a 60°C insulation. This rule appears
 	 several times throughout the code.
 	 <p><br><br>
 	 A concrete example is as follow:
-	 Suppose a load was calculated at 105 AMPS. The installer decides to use
-	 THHW conductors which are rated for 90°C. Let's assume that there are 4
+	 Suppose a load was calculated at 105 AMPS. The installer is going to use a
+	 surplus of THHW copper conductors (90°C). Let's assume that there are 4
 	 current-carrying conductors in the raceway and that the ambient temperature
 	 is 100°C:
 	 <p>&emsp;
@@ -293,9 +306,14 @@ public class Conductor implements Conduitable, Speaker {
 	 - Adjustment factor for four current-carrying conductors
 	 (TABLE 310.15(B)(3)(a)) = 0.8
 	 <p>&emsp;
-	 -Ampacity of a # 1 AWG THHW = 145 AMPS
-	 <p>&emsp;-
-	 Allowed ampacity under specified conditions = 145*0.91*0.8 = 105.56 AMPS
+	 - Looking for 105/(0.91x0.8)=144.2 Amps in column for 90°C, we find that
+	 # 1 AWG THHW  is 145 Amps, so it's good.
+	 <p>&emsp;
+	 -The corrected ampacity of that conductor is 145x0.91x0.8 = 105.6 Amps.
+	 <p>&emsp;
+	 -105.56 Amps is above the load current of 105 Amps, so it's good for the
+	 load.
+	 since
 	 <p>
 	 The # 1 AWG THHW wire is good because the ampacity for the same wire at
 	 60°C is 110AMP.
@@ -316,20 +334,22 @@ public class Conductor implements Conduitable, Speaker {
 	 <p><br>
 	 This method alone does not calculate the allowed ampacity because the load
 	 amps is not known at this level.
-	 However, the method {@link #getCorrectionFactor()} will provide the (0.91*0.8) value
-	 (from the example) that the {@link CircuitOld} class would need as reversed
+	 However, the methods {@link #getCorrectionFactor()} and
+	 {@link #getAdjustmentFactor()} will provide the 0.91 & 0.8 value
+	 (from the example) that the {@link Circuit} class would need as reversed
 	 coefficient to multiply the load amperes (to get the 144.23 AMPS from the
 	 example). Then the method
-	 {@link ConductorProperties#getAllowedSize(double, Metal, TempRating)} can
+	 {@link ConductorProperties#getSizeByAmperes(double, Metal, TempRating)} can
 	 provide the proper size of the conductor.
-	 p><br>
+	 <br>
 
 	 @return The ampacity in amperes.
 	 */
 	public double getAmpacity(){
-		return ConductorProperties.getAmpacity(size, metal, ConductorProperties.getTempRating(insulation))
-				* getCorrectionFactor()
-				* getAdjustmentFactor();
+		double amp = ConductorProperties.getAmpacity(size, metal, ConductorProperties.getTempRating(insulation));
+		double cf = getCorrectionFactor();
+		double af = getAdjustmentFactor();
+		return amp * cf * af;
 	}
 
 	/**
@@ -370,9 +390,17 @@ public class Conductor implements Conduitable, Speaker {
 
 	public void setAmbientTemperatureF(int ambientTemperatureF) {
 		if(conduit != null)
-			conduit.getConduitables().forEach(conduitable -> conduitable.setAmbientTemperatureFSilently(ambientTemperatureF));
+			conduit.getConduitables().forEach(conduitable -> {
+				conduitable.notifierEnabled(false);
+				conduitable.setAmbientTemperatureFSilently(ambientTemperatureF);
+				conduitable.notifierEnabled(true);
+			});
 		else if(bundle != null)
-			bundle.getConduitables().forEach(conduitable -> conduitable.setAmbientTemperatureFSilently(ambientTemperatureF));
+			bundle.getConduitables().forEach(conduitable -> {
+				conduitable.notifierEnabled(false);
+				conduitable.setAmbientTemperatureFSilently(ambientTemperatureF);
+				conduitable.notifierEnabled(true);
+			});
 		else
 			setAmbientTemperatureFSilently(ambientTemperatureF);
 	}
@@ -380,6 +408,7 @@ public class Conductor implements Conduitable, Speaker {
 	@Override
 	public void setAmbientTemperatureFSilently(int ambientTemperatureF) {
 		this.ambientTemperatureF = ambientTemperatureF;
+		notifier.notifyAllListeners();
 	}
 
 	/**
@@ -404,6 +433,7 @@ public class Conductor implements Conduitable, Speaker {
 	 */
 	public Conductor setCopperCoated(Coating copperCoated) {
 		this.copperCoated = copperCoated;
+		notifier.notifyAllListeners();
 		return this;
 	}
 
@@ -427,6 +457,7 @@ public class Conductor implements Conduitable, Speaker {
 		leaveConduit();
 		conduit.add(this);
 		this.conduit = conduit;
+//		notifyAllListeners();
 	}
 
 	@Override
@@ -435,6 +466,7 @@ public class Conductor implements Conduitable, Speaker {
 			return;
 		conduit.remove(this);
 		conduit = null;
+//		notifyAllListeners();
 	}
 
 	@Override
@@ -474,6 +506,7 @@ public class Conductor implements Conduitable, Speaker {
 	 */
 	public Conductor setRole(Role role) {
 		this.role = role;
+		notifier.notifyAllListeners();
 		return this;
 	}
 
@@ -484,7 +517,7 @@ public class Conductor implements Conduitable, Speaker {
 		return 1; //this considers hot and neutral as current carrying conductor.
 	}
 
-	@Override
+/*	@Override
 	public void addListener(Listener listener) {
 		if(listeners.contains(listener))
 			return;
@@ -500,12 +533,17 @@ public class Conductor implements Conduitable, Speaker {
 	public void notifyAllListeners() {
 		for(Listener listener: listeners)
 			listener.notify(this);
-	}
+	}*/
 
 	@Override
 	public String getDescription() {
 		//"#12 AWG THW (CU)(HOT)"
 		return "#" + size.getName() + " " + insulation.getName()+ " (" + getMetal().getSymbol() + ")(" + role + ")";
+	}
+
+	@Override
+	public void notifierEnabled(boolean flag) {
+		notifier.enabled(flag);
 	}
 
 	@Override
@@ -518,6 +556,7 @@ public class Conductor implements Conduitable, Speaker {
 		leaveBundle();
 		bundle.add(this);
 		this.bundle = bundle;
+//		notifyAllListeners();
 	}
 
 	@Override
@@ -526,6 +565,7 @@ public class Conductor implements Conduitable, Speaker {
 			return;
 		bundle.remove(this);
 		bundle = null;
+//		notifyAllListeners();
 	}
 
 	@Override
@@ -537,4 +577,14 @@ public class Conductor implements Conduitable, Speaker {
 	public boolean hasBundle() {
 		return bundle != null;
 	}
+
+/*	@Override
+	public void notify(Speaker speaker){
+		if(action != null)
+			action.perform();
+	}*/
+
+/*	public void setAction(Action action){
+		this.action = action;
+	}*/
 }

@@ -12,11 +12,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class ConductorPropertiesTest {
 
     @Test
-    void getAllowedSize() {
-        Tools.printTitle("ConductorPropertiesTest.getAllowedSize");
-        assertEquals(Size.AWG_1, ConductorProperties.getAllowedSize(144.23, Metal.COPPER, TempRating.T90));
-        assertEquals(Size.AWG_1$0, ConductorProperties.getAllowedSize(144.23, Metal.COPPER, TempRating.T75));
-        assertEquals(Size.AWG_3$0, ConductorProperties.getAllowedSize(144.23, Metal.ALUMINUM, TempRating.T75));
+    void getSizeByAmperes() {
+        Tools.printTitle("ConductorPropertiesTest.getSizeByAmperes");
+        assertEquals(Size.AWG_1, ConductorProperties.getSizeByAmperes(144.23, Metal.COPPER, TempRating.T90));
+        assertEquals(Size.AWG_1$0, ConductorProperties.getSizeByAmperes(144.23, Metal.COPPER, TempRating.T75));
+        assertEquals(Size.AWG_3$0, ConductorProperties.getSizeByAmperes(144.23, Metal.ALUMINUM, TempRating.T75));
     }
 
     @Test

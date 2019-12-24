@@ -1,7 +1,6 @@
 package tools;
 
+@FunctionalInterface
 public interface Listener {
-    default void notify(Speaker speaker){
-        return;
-    }
+    void notify(Object /*Speaker*/ speaker);
 }

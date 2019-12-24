@@ -77,7 +77,7 @@ class VoltDropTest {
         assertEquals(Size.AWG_1$0, voltDrop.getCalculatedSizeAC());
 
         change2();
-        assertEquals(Size.AWG_3$0, voltDrop.getCalculatedSizeAC());
+        assertEquals(Size.AWG_4$0, voltDrop.getCalculatedSizeAC());
     }
 
     @Test
@@ -101,7 +101,7 @@ class VoltDropTest {
         assertEquals(407.1041, voltDrop.getMaxLengthAC(), 0.0001);
 
         change2();
-        assertEquals(262.4533, voltDrop.getMaxLengthAC(), 0.0001);
+        assertEquals(306.7943, voltDrop.getMaxLengthAC(), 0.0001);
     }
 
     @Test
@@ -125,7 +125,7 @@ class VoltDropTest {
         assertEquals(2.5793, voltDrop.getActualVoltageDropPercentageAC(), 0.0001);
 
         change2();
-        assertEquals(1.9051, voltDrop.getActualVoltageDropPercentageAC(), 0.0001);
+        assertEquals(1.6298, voltDrop.getActualVoltageDropPercentageAC(), 0.0001);
     }
 
     @Test

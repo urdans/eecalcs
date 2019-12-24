@@ -760,7 +760,7 @@ public class ConductorProperties {
 	}
 
 	/**
-	 Returns the ampacity of this conductor size for the given metal and
+	 Returns the ampacity of the given conductor size for the given metal and
 	 temperature rating.
 
 	 @param conductorSize The size of the conductor as defined by {@link Size}
@@ -791,7 +791,10 @@ public class ConductorProperties {
 
 	/**
 	 Returns the minimum allowed size of a conductor of the given metal and
-	 temperature rating, for the given ampacity, as per table 310.15(B)(3)(16).
+	 temperature rating, for the given amperes, as per table 310.15(B)(3)(16).
+	 The returned size does not account for any correction or adjustment factor,
+	 that is, the ambient temperature is 86°F and no more than 3 current-
+	 carrying conductors in a raceway.
 
 	 @param allowedAmpacity The allowed ampacity. This is the ampacity obtained
 	 once all conditions of use have been accounted for, that is, once the
@@ -804,39 +807,37 @@ public class ConductorProperties {
 	 and temperature rating or null if a conductor for that allowed ampacity
 	 could not be found.
 	 */
-	public static Size getAllowedSize(double allowedAmpacity, Metal metal, TempRating tempRating){
-		for(Properties properties: table){
-			if(metal == Metal.COPPER){
-				switch (tempRating){
-					case T60:
-						if(properties.CuAmp60 >= allowedAmpacity)
-							return properties.size;
-						break;
-					case T75:
-						if(properties.CuAmp75 >= allowedAmpacity)
-							return properties.size;
-						break;
-					case T90:
-						if(properties.CuAmp90 >= allowedAmpacity)
-							return properties.size;
-						break;
-				}
+	public static Size getSizeByAmperes(double allowedAmpacity, Metal metal, TempRating tempRating){
+		if(allowedAmpacity <= 0 || metal == null || tempRating == null )
+			return null;
+		if(metal == Metal.COPPER) {
+			if (tempRating == TempRating.T60) {
+				for (Properties properties : table)
+					if (properties.CuAmp60 >= allowedAmpacity)
+						return properties.size;
+			} else if (tempRating == TempRating.T75) {
+				for (Properties properties : table)
+					if (properties.CuAmp75 >= allowedAmpacity)
+						return properties.size;
+			} else {
+				for (Properties properties : table)
+					if (properties.CuAmp90 >= allowedAmpacity)
+						return properties.size;
 			}
-			else if(metal == Metal.ALUMINUM){
-				switch (tempRating){
-					case T60:
-						if(properties.AlAmp60 >= allowedAmpacity)
-							return properties.size;
-						break;
-					case T75:
-						if(properties.AlAmp75 >= allowedAmpacity)
-							return properties.size;
-						break;
-					case T90:
-						if(properties.AlAmp90 >= allowedAmpacity)
-							return properties.size;
-						break;
-				}
+		}
+		else if(metal == Metal.ALUMINUM) {
+			if (tempRating == TempRating.T60) {
+				for (Properties properties : table)
+					if (properties.AlAmp60 >= allowedAmpacity)
+						return properties.size;
+			} else if (tempRating == TempRating.T75) {
+				for (Properties properties : table)
+					if (properties.AlAmp75 >= allowedAmpacity)
+						return properties.size;
+			} else {
+				for (Properties properties : table)
+					if (properties.AlAmp90 >= allowedAmpacity)
+						return properties.size;
 			}
 		}
 		//this will only happen when the allowed ampacity is higher than any of

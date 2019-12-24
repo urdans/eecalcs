@@ -3,7 +3,7 @@ package eecalcs.conductors;
 import eecalcs.conduits.Conduit;
 import eecalcs.systems.VoltageSystemAC;
 import eecalcs.systems.TempRating;
-import tools.Listener;
+import tools.NotifierDelegate;
 
 /**
  This class encapsulates the properties of a cable.
@@ -69,7 +69,7 @@ import tools.Listener;
  conductors can be adjusted by the circuit based on the circuit
  characteristics. Refer to the {@link CircuitOld} class for more information.
  */
-public class Cable implements Conduitable, Listener{
+public class Cable implements Conduitable{
     private Type cableType = Type.MC;
     private boolean jacketed = false;
     private VoltageSystemAC voltageSystemAC = VoltageSystemAC.v120_1ph_2w;
@@ -79,6 +79,9 @@ public class Cable implements Conduitable, Listener{
     private Conductor neutralConductor;
     private Conductor groundingConductor = new Conductor();
     private double outerDiameter = 0.5;
+    private boolean neutralCarryingConductor = false;
+    public NotifierDelegate notifier = new NotifierDelegate(this);
+
     /*TODO *************************
     *  URGENT: the outer diameter of a cable should adjust automatically to a minimum value once its phase conductors or neutral or ground
     *  changes its size. A new property must be included to indicates if this diameter is implicit (estimated) or explicit (indicated by the user).
@@ -264,6 +267,7 @@ public class Cable implements Conduitable, Listener{
             this.jacketed = jacketed;
         else
             this.jacketed = false;
+        notifier.notifyAllListeners();
     }
 
     /**
@@ -284,6 +288,7 @@ public class Cable implements Conduitable, Listener{
         if(outerDiameter < 0.5)
             outerDiameter = 0.5;
         this.outerDiameter = outerDiameter;
+        notifier.notifyAllListeners();
     }
 
     /**
@@ -299,16 +304,20 @@ public class Cable implements Conduitable, Listener{
      Sets the neutral conductor of this cable (if present) as a current-carrying
      conductor for 3-phase 4-wire systems.
 
-     @param neutralCarryingConductor True if the neutral is a current-carrying
+     @param flag True if the neutral is a current-carrying
      conductor, false otherwise.
      */
-    public void setNeutralCarryingConductor(boolean neutralCarryingConductor){
+    public void setNeutralCarryingConductor(boolean flag){
         if(neutralConductor != null){
-            if(neutralCarryingConductor)
+            if(flag)
                 neutralConductor.setRole(Conductor.Role.NEUCC);
-            else
-                neutralConductor.setRole(Conductor.Role.NEUNCC);
+            else {
+                if(voltageSystemAC != VoltageSystemAC.v120_1ph_2w &&
+                        voltageSystemAC != VoltageSystemAC.v277_1ph_2w)
+                    neutralConductor.setRole(Conductor.Role.NEUNCC);
+            }
         }
+        notifier.notifyAllListeners();
     }
 
     /**
@@ -371,11 +380,14 @@ public class Cable implements Conduitable, Listener{
             if(voltage.getWires() == 4){
                 if(neutralConductor == null)
                     neutralConductor = new Conductor();
-                neutralConductor.setRole(Conductor.Role.NEUNCC).setSize(phaseAConductor.getSize());
+                Conductor.Role role = neutralCarryingConductor ?
+                        Conductor.Role.NEUCC : Conductor.Role.NEUNCC;
+                neutralConductor.setRole(role).setSize(phaseAConductor.getSize());
             }
             else //3 wires, no neutral
                 neutralConductor = null;
         }
+        notifier.notifyAllListeners();
     }
 
     /**
@@ -492,7 +504,7 @@ public class Cable implements Conduitable, Listener{
      (from the example) that the {@link CircuitOld} class would need as reversed
      coefficient to multiply the load amperes (to get the 144.23 AMPS from the
      example). Then the method
-     {@link ConductorProperties#getAllowedSize(double, Metal, TempRating)} can
+     {@link ConductorProperties#getSizeByAmperes(double, Metal, TempRating)} can
      provide the proper size of the conductor.
      p><br>
      Adjustment factor exceptions apply to AC and MC cable under the conditions
@@ -627,6 +639,7 @@ public class Cable implements Conduitable, Listener{
         if(voltageSystemAC == VoltageSystemAC.v120_1ph_2w
                 || voltageSystemAC == VoltageSystemAC.v277_1ph_2w)
             neutralConductor.setSize(size);
+        notifier.notifyAllListeners();
     }
 
     /**
@@ -654,6 +667,7 @@ public class Cable implements Conduitable, Listener{
                     || voltageSystemAC == VoltageSystemAC.v277_1ph_2w)
                 phaseAConductor.setSize(size);
         }
+        notifier.notifyAllListeners();
     }
 
     /**
@@ -672,6 +686,7 @@ public class Cable implements Conduitable, Listener{
      */
     public void setGroundingConductorSize(Size size) {
         groundingConductor.setSize(size);
+        notifier.notifyAllListeners();
     }
 
     /**
@@ -699,6 +714,7 @@ public class Cable implements Conduitable, Listener{
         if(neutralConductor != null)
             neutralConductor.setMetal(metal);
         groundingConductor.setMetal(metal);
+        notifier.notifyAllListeners();
     }
 
     /**
@@ -726,6 +742,7 @@ public class Cable implements Conduitable, Listener{
         if(neutralConductor != null)
             neutralConductor.setInsulation(insul);
         groundingConductor.setInsulation(insul);
+        notifier.notifyAllListeners();
     }
 
     /**
@@ -746,6 +763,7 @@ public class Cable implements Conduitable, Listener{
         if(neutralConductor != null)
             neutralConductor.setLength(length);
         groundingConductor.setLength(length);
+        notifier.notifyAllListeners();
     }
 
     @Override
@@ -755,9 +773,17 @@ public class Cable implements Conduitable, Listener{
 
     public void setAmbientTemperatureF(int ambientTemperatureF){
         if(conduit != null)
-            conduit.getConduitables().forEach(conduitable -> conduitable.setAmbientTemperatureFSilently(ambientTemperatureF));
+            conduit.getConduitables().forEach(conduitable -> {
+                conduitable.notifierEnabled(false);
+                conduitable.setAmbientTemperatureFSilently(ambientTemperatureF);
+                conduitable.notifierEnabled(true);
+            });
         else if(bundle != null)
-            bundle.getConduitables().forEach(conduitable -> conduitable.setAmbientTemperatureFSilently(ambientTemperatureF));
+            bundle.getConduitables().forEach(conduitable -> {
+                conduitable.notifierEnabled(false);
+                conduitable.setAmbientTemperatureFSilently(ambientTemperatureF);
+                conduitable.notifierEnabled(true);
+            });
         else
             setAmbientTemperatureFSilently(ambientTemperatureF);
     }
@@ -772,6 +798,7 @@ public class Cable implements Conduitable, Listener{
         if(neutralConductor != null)
             neutralConductor.setAmbientTemperatureFSilently(ambientTemperatureF);
         groundingConductor.setAmbientTemperatureFSilently(ambientTemperatureF);
+        notifier.notifyAllListeners();
     }
 
     /**
@@ -799,6 +826,7 @@ public class Cable implements Conduitable, Listener{
         if(neutralConductor != null)
             neutralConductor.setCopperCoated(coating);
         groundingConductor.setCopperCoated(coating);
+        notifier.notifyAllListeners();
     }
 
     /**
@@ -822,6 +850,11 @@ public class Cable implements Conduitable, Listener{
         return  s1 + s2 + s3;
     }
 
+    @Override
+    public void notifierEnabled(boolean flag) {
+        notifier.enabled(flag);
+    }
+
     /**
      Sets the rooftop condition for this cable.
 
@@ -832,6 +865,7 @@ public class Cable implements Conduitable, Listener{
      */
     public void setRoofTopDistance(double roofTopDistance){
         this.roofTopDistance = roofTopDistance;
+        notifier.notifyAllListeners();
     }
 
     /**
@@ -893,6 +927,7 @@ public class Cable implements Conduitable, Listener{
         if((this.cableType == Type.AC | this.cableType == Type.MC) & cableType != Type.AC & cableType != Type.MC)
             jacketed = false;
         this.cableType = cableType;
+        notifier.notifyAllListeners();
     }
 
     /**

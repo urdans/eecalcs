@@ -1,6 +1,7 @@
 package eecalcs.circuits;
 
 import eecalcs.systems.VoltageSystemAC;
+import tools.NotifierDelegate;
 
 /**
  This class represents a generic load.
@@ -46,7 +47,8 @@ import eecalcs.systems.VoltageSystemAC;
 
 
  */
-public class Load {
+//todo to javadoc
+public class Load /*implements Speaker*/ {
     private VoltageSystemAC systemVoltage = VoltageSystemAC.v120_1ph_2w;
     private double voltAmperes = 120 * 10;
     private double watts;
@@ -54,6 +56,9 @@ public class Load {
     private double powerFactor = 1.0;
     private boolean continuous = false;
     private String description = "Generic load";
+
+    public NotifierDelegate notifier = new NotifierDelegate(this);
+
     //todo what about the load is mostly non linear?
     private void computeCurrentAndWatts(){
         current = voltAmperes/(systemVoltage.getVoltage() * systemVoltage.getFactor());
@@ -75,6 +80,18 @@ public class Load {
         computeCurrentAndWatts();
     }
 
+    @Override
+    public Load clone(){
+        Load load = new Load();
+        load.voltAmperes = voltAmperes;
+        load.watts = watts;
+        load.current = current;
+        load.powerFactor = powerFactor;
+        load.continuous = continuous;
+        load.description = description;
+        return load;
+    }
+
     public VoltageSystemAC getSystemVoltage() {
         return systemVoltage;
     }
@@ -82,6 +99,7 @@ public class Load {
     public void setSystemVoltage(VoltageSystemAC systemVoltage) {
         this.systemVoltage = systemVoltage;
         computeCurrentAndWatts();
+        notifier.notifyAllListeners();
     }
 
     public double getVoltAmperes() {
@@ -91,6 +109,7 @@ public class Load {
     public void setVoltAmperes(double voltAmperes) {
         this.voltAmperes = voltAmperes;
         computeCurrentAndWatts();
+        notifier.notifyAllListeners();
     }
 
     public double getWatts() {
@@ -101,6 +120,7 @@ public class Load {
         this.watts = watts;
         voltAmperes = watts / powerFactor;
         current = watts/(systemVoltage.getVoltage()*systemVoltage.getFactor()*powerFactor);
+        notifier.notifyAllListeners();
     }
 
     public double getCurrent() {
@@ -111,6 +131,7 @@ public class Load {
         this.current = current;
         voltAmperes = systemVoltage.getVoltage() * current * systemVoltage.getFactor();
         watts = voltAmperes * powerFactor;
+        notifier.notifyAllListeners();
     }
 
     public double getPowerFactor() {
@@ -120,6 +141,7 @@ public class Load {
     public void setPowerFactor(double powerFactor) {
         this.powerFactor = powerFactor;
         computeCurrentAndWatts();
+        notifier.notifyAllListeners();
     }
 
     public boolean isContinuous() {
@@ -128,6 +150,7 @@ public class Load {
 
     public void setContinuous(boolean continuous) {
         this.continuous = continuous;
+        notifier.notifyAllListeners();
     }
 
     public String getDescription() {
@@ -136,5 +159,32 @@ public class Load {
 
     public void setDescription(String description) {
         this.description = description;
+        notifier.notifyAllListeners();
     }
+
+    /**
+     Returns the minimum current ampacity of the load. For this load, it
+     accounts only for continuousness.
+
+     @return
+     */
+    //todo learn more about mca and if this value depends only on the load and not on other external factors
+    public double getMCA(){
+        return continuous ? 1.25 * current : current;
+    }
+
+/*    @Override
+    public void notifyAllListeners() {
+
+    }
+
+    @Override
+    public void addListener(Listener listener) {
+
+    }
+
+    @Override
+    public void removeListener(Listener listener) {
+
+    }*/
 }

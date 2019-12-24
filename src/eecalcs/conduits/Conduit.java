@@ -24,7 +24,7 @@ import java.util.*;
  is updated accordingly.
 
  */
-public class Conduit {
+public class Conduit implements ShareableConduit {
     /**
      Indicates if a conduit is a nipple or not  (nipple=length less than 24").
      <br>
@@ -93,6 +93,14 @@ public class Conduit {
     public Conduit(Type type, Nipple nipple) {
         this.type = type;
         setNipple(nipple);
+    }
+
+    /**
+     Creates a default conduit, type PVC40, non nipple.
+     */
+    public Conduit() {
+        this.type = Type.PVC40;
+        setNipple(Nipple.No);
     }
 
     /**

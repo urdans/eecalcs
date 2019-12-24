@@ -8,23 +8,25 @@ import java.util.List;
  a group of insulated conductors, or a group made of a mix of both, that are
  installed in free air (not in a conduit) next to each other (paralleled)
  without maintaining space (staked, bundled, supported on bridled rings or
- simply tied together, along a defined distance).
+ simply tied together), along a defined distance.
  <p><br>
- When cables are bundled, the heat produced by the current (joule effect) does
- not dissipate as easy as when they are separated. For this reason, the ampacity
- of the cable must be adjusted. The procedure to adjust the ampacity is
- described in <b>NEC-310.15(B)(3)</b>.
+ When cables or conductors are bundled, the heat produced by the current (joule
+ effect) does not dissipate as easy as when they are separated. For this reason,
+ the ampacity of the cable must be adjusted. The procedure to adjust the
+ ampacity is described in <b>NEC-310.15(B)(3)</b>.
  <p>
  A bundle of insulated conductors are not common. The NEC does not prohibit it
  and rules 310.15(B)(a)(4) and (5) mention conductors as possible members of a
  bundle, therefore recognizing they can also form bundles. But, because of its
  rareness (insulated conductors not in raceway), it is subject to AHJ approval.
  <p><br>
- This class provides the methods to set up a bundle of cables and to calculate
- its ampacity adjustment factor.
+ This class provides the methods to set up a bundle of cables or conductors
+ and to calculate its ampacity adjustment factor.
  */
 public class Bundle {
     private List<Conduitable> conduitables = new ArrayList<>();
+    /** Distance in inches of the bundling (not the length of the
+    cable/conductors)*/
     private double distance;
 
     /**

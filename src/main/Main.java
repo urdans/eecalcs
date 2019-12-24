@@ -18,6 +18,7 @@ public class Main {
 	}
 
 	public static void main(String[] args) {
+
 		//testing generating integer divider
 		int NumberOfSets = 10;
 		int NumberOfConduits = 10;

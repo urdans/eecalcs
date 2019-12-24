@@ -193,4 +193,44 @@ class ConductorTest {
         assertTrue(conductor1.hasConduit());
         assertFalse(conductor1.hasBundle());
     }
+
+    @Test
+    void copyFrom(){
+        Tools.printTitle("ConductorTest.copyFrom");
+        Conductor conductor2 = new Conductor(Size.KCMIL_350, Metal.ALUMINUM, Insul.TBS, 1.1234);
+        conductor2.setAmbientTemperatureF(321);
+        conductor2.setCopperCoated(Coating.COATED);
+        conductor2.setRole(Conductor.Role.NCONC);
+        conductor = new Conductor();
+        assertEquals(Size.AWG_12, conductor.getSize());
+
+        conductor.copyFrom(conductor2);
+        assertEquals(Size.KCMIL_350, conductor.getSize());
+        assertEquals(Metal.ALUMINUM, conductor.getMetal());
+        assertEquals(Insul.TBS, conductor.getInsulation());
+        assertEquals(1.1234, conductor.getLength());
+        assertEquals(321, conductor.getAmbientTemperatureF());
+        assertEquals(Coating.COATED, conductor.getCopperCoating());
+        assertEquals(Conductor.Role.NCONC, conductor.getRole());
+    }
+
+    @Test
+    void listenToSpeaker(){
+        Tools.printTitle("ConductorTest.listenToSpeaker");
+        Conductor phaseA = new Conductor();
+        phaseA.setRole(Conductor.Role.HOT);
+        Conductor phaseB = phaseA.clone();
+        phaseA.setInsulation(Insul.TBS);
+        assertEquals(Insul.THW, phaseB.getInsulation());
+
+        phaseA.notifier.addListener(speaker -> {
+            if(speaker instanceof Conductor)
+                phaseB.copyFrom((Conductor) speaker);
+        });
+
+        phaseA.setSize(Size.KCMIL_2000);
+        assertEquals(Size.KCMIL_2000, phaseB.getSize());
+        assertEquals(Insul.TBS, phaseB.getInsulation());
+
+    }
 }

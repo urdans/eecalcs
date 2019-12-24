@@ -50,6 +50,8 @@ public class VoltDrop {
 	private static Message ERROR08	= new Message("Voltage drop for determining conductor sizing must be between 0.5% and 25%",-8);
 	private static Message ERROR09	= new Message("Invalid conductor object.",-9);
 	private static Message ERROR20	= new Message("Load current exceeds maximum allowed ampacity of the set.",-20);
+	//todo as this rule is only applicable to insulated conductors, cables in paralleled could be allowed by code.
+
 	private static Message ERROR21	= new Message("Paralleled power conductors in sizes smaller than 1/0 AWG are not permitted. NEC-310" +
 			".10(H)(1)",-21);
 	private static Message ERROR30	= new Message("No length can achieve that voltage drop under the given conditions.", -30);
@@ -383,12 +385,14 @@ public class VoltDrop {
 				conductor.getMetal(),
 				conduitMaterial,
 				conductor.getLength(),
-				sets);
+				sets
+		);
 		double oneWayConductorReactance = ConductorProperties.getReactance(
 				size,
 				ConduitProperties.isMagnetic(conduitMaterial),
 				conductor.getLength(),
-				sets);
+				sets
+		);
 		Complex totalConductorImpedanceComplex = new Complex(k * oneWayACResistance, k * oneWayConductorReactance);
 		Complex sourceVoltageComplex = new Complex(sourceVoltage.getVoltage(), 0);
 		Complex loadCurrentComplex = new Complex(loadCurrent * powerFactor, -loadCurrent * Math.sin(Math.acos(powerFactor)));
@@ -405,6 +409,15 @@ public class VoltDrop {
  	*/
 	private Size computeSizeAC(){
 		for(Size size : Size.values()) {
+			if(loadCurrent >
+				sets *
+				ConductorProperties.getAmpacity(
+					size,
+					conductor.getMetal(),
+					conductor.getTemperatureRating()
+				))
+				continue;
+
 			actualVoltageDropPercentageAC = 100 * (sourceVoltage.getVoltage() - getGenericACVoltageAtLoad(size)) / sourceVoltage.getVoltage();
 			if(actualVoltageDropPercentageAC <= maxVoltageDropPercent){
 				maxLengthAC = computeMaxLengthAC(size);
@@ -436,8 +449,10 @@ public class VoltDrop {
 		double B = k * loadCurrent * (conductorX * powerFactor - conductorR * Math.sin(theta));
 		double C = Vs2 * (1 - Math.pow(1 - maxVoltageDropPercent/100, 2));
 		double Rad = 4 * Vs2 * A * A - 4 * (A * A + B * B) * C;
-		if(Rad<0) return Rad;
-		//double len2 = (2 * sourceVoltage * A + Math.sqrt(Rad))/(2 * (A * A + B * B));
+		if(Rad<0)
+			//return Rad;
+			Rad = 0;
+		//double len2 = (2 * sourceVoltage.getVoltage() * A + Math.sqrt(Rad))/(2 * (A * A + B * B));
 		//len1 is always the smallest value between the two lengths and produces a voltage drop across the conductor that is less that the
 		//voltage source, that is len1 is always the correct value, unless it's a negative number.
 		double len1 = (2 * sourceVoltage.getVoltage() * A - Math.sqrt(Rad))/(2 * (A * A + B * B));

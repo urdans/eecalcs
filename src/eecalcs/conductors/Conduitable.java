@@ -139,4 +139,12 @@ public interface Conduitable {
      @return The description string as explained above
      */
     String getDescription();
+
+    /**
+     Enables or disables the notification broadcast when the conduitable state
+     changes.
+
+     @param flag true to enable the broadcasting, false otherwise.
+     */
+    void notifierEnabled(boolean flag);
 }
