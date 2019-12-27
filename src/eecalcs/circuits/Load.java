@@ -48,7 +48,7 @@ import tools.NotifierDelegate;
 
  */
 //todo to javadoc
-public class Load /*implements Speaker*/ {
+public class Load {
     private VoltageSystemAC systemVoltage = VoltageSystemAC.v120_1ph_2w;
     private double voltAmperes = 120 * 10;
     private double watts;
@@ -97,6 +97,9 @@ public class Load /*implements Speaker*/ {
     }
 
     public void setSystemVoltage(VoltageSystemAC systemVoltage) {
+        if(this.systemVoltage == systemVoltage)
+            return;
+        notifier.info.setInfo("systemVoltage", this.systemVoltage, systemVoltage);
         this.systemVoltage = systemVoltage;
         computeCurrentAndWatts();
         notifier.notifyAllListeners();
@@ -107,6 +110,8 @@ public class Load /*implements Speaker*/ {
     }
 
     public void setVoltAmperes(double voltAmperes) {
+        if(this.voltAmperes == voltAmperes)
+            return;
         this.voltAmperes = voltAmperes;
         computeCurrentAndWatts();
         notifier.notifyAllListeners();
@@ -117,6 +122,8 @@ public class Load /*implements Speaker*/ {
     }
 
     public void setWatts(double watts) {
+        if(this.watts == watts)
+            return;
         this.watts = watts;
         voltAmperes = watts / powerFactor;
         current = watts/(systemVoltage.getVoltage()*systemVoltage.getFactor()*powerFactor);
@@ -128,6 +135,8 @@ public class Load /*implements Speaker*/ {
     }
 
     public void setCurrent(double current) {
+        if(this.current == current)
+            return;
         this.current = current;
         voltAmperes = systemVoltage.getVoltage() * current * systemVoltage.getFactor();
         watts = voltAmperes * powerFactor;
@@ -139,6 +148,8 @@ public class Load /*implements Speaker*/ {
     }
 
     public void setPowerFactor(double powerFactor) {
+        if(this.powerFactor == powerFactor)
+            return;
         this.powerFactor = powerFactor;
         computeCurrentAndWatts();
         notifier.notifyAllListeners();
@@ -149,6 +160,9 @@ public class Load /*implements Speaker*/ {
     }
 
     public void setContinuous(boolean continuous) {
+        if(this.continuous == continuous)
+            return;
+        notifier.info.setInfo("continuous", this.continuous, continuous);
         this.continuous = continuous;
         notifier.notifyAllListeners();
     }
@@ -158,6 +172,10 @@ public class Load /*implements Speaker*/ {
     }
 
     public void setDescription(String description) {
+        if(this.description.equals(description))
+            return;
+        notifier.info.setInfo("description", this.description, description);
+
         this.description = description;
         notifier.notifyAllListeners();
     }
@@ -166,25 +184,11 @@ public class Load /*implements Speaker*/ {
      Returns the minimum current ampacity of the load. For this load, it
      accounts only for continuousness.
 
-     @return
+     @return The MCA of te load in amperes.
      */
     //todo learn more about mca and if this value depends only on the load and not on other external factors
     public double getMCA(){
         return continuous ? 1.25 * current : current;
     }
 
-/*    @Override
-    public void notifyAllListeners() {
-
-    }
-
-    @Override
-    public void addListener(Listener listener) {
-
-    }
-
-    @Override
-    public void removeListener(Listener listener) {
-
-    }*/
 }

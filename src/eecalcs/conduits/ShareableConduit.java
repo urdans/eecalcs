@@ -17,13 +17,13 @@ public interface ShareableConduit {
     /** Refer to {@link Conduit#isEmpty()} */
     boolean isEmpty();
 
-    /** Refer to {@link Conduit#hasConduitable(Conduitable)} ()} */
+    /** Refer to {@link Conduit#hasConduitable(Conduitable)} */
     boolean hasConduitable(Conduitable conduitable);
 
     /** Refer to {@link Conduit#getMinimumTrade()} */
     Trade getMinimumTrade();
 
-    /** Refer to {@link Conduit#setMinimumTrade(Trade)} ()} */
+    /** Refer to {@link Conduit#setMinimumTrade(Trade)} */
     void setMinimumTrade(Trade minimumTrade);
 
     /** Refer to {@link Conduit#getFillingConductorCount()} */
@@ -41,16 +41,16 @@ public interface ShareableConduit {
     /** Refer to {@link Conduit#getType()} */
     Type getType();
 
-    /** Refer to {@link Conduit#setType(Type)} ()} */
+    /** Refer to {@link Conduit#setType(Type)} */
     void setType(Type type);
 
     /** Refer to {@link Conduit#isNipple()} */
     boolean isNipple();
 
-    /** Refer to {@link Conduit#setNipple(Conduit.Nipple)} ()} */
+    /** Refer to {@link Conduit#setNipple(Conduit.Nipple)} */
     void setNipple(Conduit.Nipple nipple);
 
-    /** Refer to {@link Conduit#setRoofTopDistance(double)} ()} */
+    /** Refer to {@link Conduit#setRoofTopDistance(double)} */
     void setRoofTopDistance(double roofTopDistance);
 
     /** Refer to {@link Conduit#resetRoofTop()} */
@@ -61,4 +61,7 @@ public interface ShareableConduit {
 
     /** Refer to {@link Conduit#getRoofTopDistance()} */
     double getRoofTopDistance();
+
+    /** Refer to {@link Conduit#getTradeSize()} */
+    Trade getTradeSize();
 }

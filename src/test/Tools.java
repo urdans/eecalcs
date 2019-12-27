@@ -11,7 +11,7 @@ public class Tools {
         System.out.println(line3);
     }
 
-    public static void print(String msg) {
+    public static void println(Object msg) {
         System.out.println(msg);
     }
 }

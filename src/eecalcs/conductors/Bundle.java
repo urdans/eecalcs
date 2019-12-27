@@ -23,11 +23,11 @@ import java.util.List;
  This class provides the methods to set up a bundle of cables or conductors
  and to calculate its ampacity adjustment factor.
  */
-public class Bundle {
+public class Bundle implements ShareableBundle{
     private List<Conduitable> conduitables = new ArrayList<>();
     /** Distance in inches of the bundling (not the length of the
     cable/conductors)*/
-    private double distance;
+    private double distance = 0;
 
     /**
      Constructs a cable bundle. The cable bundle will contain the given number
@@ -50,6 +50,17 @@ public class Bundle {
         for(int i = 0; i < number; i++)
             add(cable.clone());
     }
+
+    /**
+     Constructs a default bundle that contains no cables or conductors and the
+     distance of the bundle is 0 inches. Conductors and cables can later be
+     added and removed. The distance will define the core requirement of the NEC
+     310.15(B)(3)(a), where a bundle distance longer than 24 inches will
+     required adjustment factors. A bundle distance less or equal to 24 inches
+     behaves like conductors in free air.
+
+     */
+    public Bundle(){}
 
     /**
      Add conduitable to this bundle. If the conduitable already has a conduit,
@@ -148,8 +159,8 @@ public class Bundle {
     }
 
     /**
-     Asks if all the cables in the bundle comply with the the conditions
-     prescribed in <b>310.15(B)(3)(a)(4)</b>, as follow*:
+     Asks if all the cables/conductor in the bundle comply with the the
+     conditions prescribed in <b>310.15(B)(3)(a)(4)</b>, as follow*:
      <i><ol type="a">
      <li>The cables ar MC or AC type.</li>
      <li>The cables do not have an overall outer jacket.</li>
@@ -180,7 +191,7 @@ public class Bundle {
             if(conduitable instanceof Cable){ //testing on cables only
                 Cable cable = (Cable) conduitable;
                 //testing condition a.
-                if(cable.getType() != Cable.Type.AC && cable.getType() != Cable.Type.MC )
+                if(cable.getType() != CableType.AC && cable.getType() != CableType.MC )
                     return false;
                 //testing condition b.
                 if(cable.isJacketed())
@@ -237,7 +248,7 @@ public class Bundle {
             if(conduitable instanceof Cable){
                 Cable cable = (Cable) conduitable;
                 //testing condition a.
-                if(cable.getType() != Cable.Type.AC && cable.getType() != Cable.Type.MC )
+                if(cable.getType() != CableType.AC && cable.getType() != CableType.MC )
                     return false;
                 //testing condition b.
                 if(cable.isJacketed())

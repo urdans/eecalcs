@@ -3,19 +3,21 @@ package tools;
 import java.util.ArrayList;
 import java.util.List;
 //todo javadoc
-public class NotifierDelegate /*implements Speaker*/ {
+public class NotifierDelegate {
     private List<Listener> listeners = new ArrayList<>();
-    private Object owner;
+    private Object sender;
     private boolean enable = true;
+    public FieldInfoChangeEvent info =  new FieldInfoChangeEvent();
 
-    public NotifierDelegate(Object owner){
-        this.owner = owner;
+    public NotifierDelegate(Object sender){
+        this.sender = sender;
     }
 
     public void notifyAllListeners() {
         if(enable)
             for(Listener listener: listeners)
-                listener.notify(owner);
+                listener.notify(sender);
+            info.clearInfo();
     }
 
     public void addListener(Listener listener) {
@@ -31,5 +33,4 @@ public class NotifierDelegate /*implements Speaker*/ {
     public void enabled(boolean flag){
         enable = flag;
     }
-
 }

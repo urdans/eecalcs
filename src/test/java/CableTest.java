@@ -35,23 +35,31 @@ class CableTest {
 
         cable = new Cable(VoltageSystemAC.v480_3ph_4w, 1);
         assertEquals(3, cable.getCurrentCarryingCount());
+
         cable.setNeutralCarryingConductor(true);
         assertEquals(4, cable.getCurrentCarryingCount());
+
         cable.setNeutralCarryingConductor(false);
         assertEquals(3, cable.getCurrentCarryingCount());
+
         cable.setNeutralCarryingConductor(true);
         cable.setSystem(VoltageSystemAC.v240_3ph_3w);
         assertEquals(3, cable.getCurrentCarryingCount());
+
         cable.setSystem(VoltageSystemAC.v208_3ph_4w);
-        assertEquals(3, cable.getCurrentCarryingCount());
+        assertEquals(4, cable.getCurrentCarryingCount());
+
         cable.setSystem(VoltageSystemAC.v240_1ph_2w);
         assertEquals(2, cable.getCurrentCarryingCount());
+
         cable.setSystem(VoltageSystemAC.v240_1ph_3w);
         assertEquals(3, cable.getCurrentCarryingCount());
+
         cable.setSystem(VoltageSystemAC.v120_1ph_2w);
         assertEquals(2, cable.getCurrentCarryingCount());
+
         cable.setSystem(VoltageSystemAC.v240_3ph_4w);
-        assertEquals(3, cable.getCurrentCarryingCount());
+        assertEquals(4, cable.getCurrentCarryingCount());
     }
 
     @Test
@@ -131,7 +139,7 @@ class CableTest {
         conduit.setNipple(Conduit.Nipple.No);
         assertEquals(260*0.96*0.7, cable.getAmpacity(),0.01);
 
-        cable.setType(Cable.Type.MC);
+        cable.setType(CableType.MC);
         conduit.remove(cable);
         assertEquals(260*0.96*1, cable.getAmpacity(),0.01);
 
@@ -139,14 +147,14 @@ class CableTest {
         cable.setMetal(Metal.COPPER);
         assertEquals(30*0.96*1.0, cable.getAmpacity());
 
-        cable.setType(Cable.Type.NM);
+        cable.setType(CableType.NM);
         cable.setAmbientTemperatureF(65);
         cable.setInsulation(Insul.RHW);
         cable.setJacketed(true);
         assertEquals(25*1.11*1.0, cable.getAmpacity());
         assertFalse(cable.isJacketed());
 
-        cable.setType(Cable.Type.AC);
+        cable.setType(CableType.AC);
         cable.setJacketed(true);
         assertTrue(cable.isJacketed());
 
@@ -215,10 +223,10 @@ class CableTest {
         assertTrue(bundle.complyWith310_15_B_3_a_5());
         assertEquals(25*1.11*0.6, cable.getAmpacity(), 0.01);
 
-        cable.setType(Cable.Type.MC);
+        cable.setType(CableType.MC);
         assertEquals(25*1.11*0.6, cable.getAmpacity(), 0.01);
 
-        cable.setType(Cable.Type.NMS);
+        cable.setType(CableType.NMS);
         assertEquals(25*1.11*0.45, cable.getAmpacity(), 0.01);
 
         //Running the example of the NEC2014 Handbook, page 262
@@ -226,7 +234,7 @@ class CableTest {
         cable.setAmbientTemperatureF(86);
         assertEquals(86, cable.getAmbientTemperatureF());
 
-        cable.setType(Cable.Type.MC);
+        cable.setType(CableType.MC);
         cable.setInsulation(Insul.THHN);
         cable.setSystem(VoltageSystemAC.v480_1ph_3w);
         assertEquals(3, cable.getCurrentCarryingCount());
@@ -291,7 +299,7 @@ class CableTest {
         Cable cable1 = new Cable(VoltageSystemAC.v208_3ph_3w, 1.5);
         Conduit conduit = new Conduit(Type.EMT, Conduit.Nipple.Yes);
         conduit.add(cable1);
-        cable1.setType(Cable.Type.NMS);
+        cable1.setType(CableType.NMS);
         cable1.setJacketed(true);
 //        cable1.setBundlingExceeds20(true);
 //        cable1.setBundlingDistanceExceeds24(true);
@@ -307,7 +315,7 @@ class CableTest {
         String cable2S = cable2.toString();
         System.out.println(cable2S);
 
-        cable2.setType(Cable.Type.AC);
+        cable2.setType(CableType.AC);
         cable2.setJacketed(false);
 //        cable2.setBundlingExceeds20(false);
 //        cable2.setBundlingDistanceExceeds24(false);
@@ -415,6 +423,21 @@ class CableTest {
         assertEquals(0, conduit1.getConduitables().size());
         assertEquals(4, bundle1.getConduitables().size());
         assertEquals(3, bundle2.getConduitables().size());
+
+    }
+
+    @Test
+    void setNeutralCarryingConductor(){
+        Tools.printTitle("CableTest.setNeutralCarryingConductor");
+        cable = new Cable();
+        cable.setSystem(VoltageSystemAC.v480_3ph_4w);
+        assertEquals(3, cable.getCurrentCarryingCount());
+
+        cable.setNeutralCarryingConductor(true);
+        assertEquals(4, cable.getCurrentCarryingCount());
+
+        cable.setNeutralCarryingConductor(false);
+        assertEquals(3, cable.getCurrentCarryingCount());
 
     }
 

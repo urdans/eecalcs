@@ -129,7 +129,7 @@ public class Conduit implements ShareableConduit {
         conduitable.setConduit(this);
 
         //setting the ambient temperature of this conduitable
-        if(conduitables.size()>0)
+        if(conduitables.size() > 0)
             conduitable.setAmbientTemperatureF(conduitables.get(0).getAmbientTemperatureF());
     }
 

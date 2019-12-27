@@ -30,7 +30,7 @@ import tools.ResultMessages;
  the presence of those messages. See {@link ResultMessages} class for details.
  */
 
-public class VoltDrop {
+public class VoltDrop implements ShareableVoltDrop {
 	private VoltageSystemAC sourceVoltage = VoltageSystemAC.v120_1ph_2w;
 	private Conductor conductor;
 	private int sets = 1;
@@ -50,8 +50,6 @@ public class VoltDrop {
 	private static Message ERROR08	= new Message("Voltage drop for determining conductor sizing must be between 0.5% and 25%",-8);
 	private static Message ERROR09	= new Message("Invalid conductor object.",-9);
 	private static Message ERROR20	= new Message("Load current exceeds maximum allowed ampacity of the set.",-20);
-	//todo as this rule is only applicable to insulated conductors, cables in paralleled could be allowed by code.
-
 	private static Message ERROR21	= new Message("Paralleled power conductors in sizes smaller than 1/0 AWG are not permitted. NEC-310" +
 			".10(H)(1)",-21);
 	private static Message ERROR30	= new Message("No length can achieve that voltage drop under the given conditions.", -30);

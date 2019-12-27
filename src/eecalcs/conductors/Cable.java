@@ -69,8 +69,8 @@ import tools.NotifierDelegate;
  conductors can be adjusted by the circuit based on the circuit
  characteristics. Refer to the {@link CircuitOld} class for more information.
  */
-public class Cable implements Conduitable{
-    private Type cableType = Type.MC;
+public class Cable implements Conduitable, ShareableCable{
+    private CableType cableType = CableType.MC;
     private boolean jacketed = false;
     private VoltageSystemAC voltageSystemAC = VoltageSystemAC.v120_1ph_2w;
     private Conductor phaseAConductor = new Conductor();
@@ -94,57 +94,12 @@ public class Cable implements Conduitable{
     private Bundle bundle;
 
     private int getHotCount(){
-        return (phaseAConductor == null ? 0 : 1) + (phaseBConductor == null ? 0 : 1) + (phaseCConductor == null ? 0 : 1);
+        return 1 + (phaseBConductor == null ? 0 : 1) + (phaseCConductor == null ? 0 : 1);
     }
 
-    private int getNeutralCount(){
+/*    private int getNeutralCount(){
         return (neutralConductor == null ? 0 : 1);
-    }
-
-    /**
-     Defines the type of cables recognized by the NEC that this software
-     handles. These are cables that could be installed in a conduit. Special
-     cables like flat, medium voltage, gas insulated and mineral insulated
-     cables are not handled by the class.
-     */
-    public enum Type{
-        AC("Armored Cable"),
-        MC("Metal Clad Cable"),
-        NM("Non Metallic Jacket Cable"),
-        NMC("Non Metallic Jacket Corrosion Resistant Cable"),
-        NMS("Non Metallic Jacket Cable with Power or Signaling Data Conductors");
-        //TC("Power and Control Tray Cable"); Not covered for now
-        private String name;
-        private static String[] names;
-
-        static{
-            names = new String[values().length];
-            for(int i=0; i<values().length; i++)
-                names[i] = values()[i].getName();
-        }
-
-        Type(String name){
-            this.name = name;
-        }
-
-        /**
-         Returns the string name that this enum represents.
-
-         @return The string name.
-         */
-        public String getName() {
-            return name;
-        }
-
-        /**
-         Returns an array of the string names that the enum values represent.
-
-         @return An array of strings
-         */
-        public static String[] getNames(){
-            return names;
-        }
-    }
+    }*/
 
     /**
      Creates an MC (default) cable object of the given system voltage, number of
@@ -263,7 +218,7 @@ public class Cable implements Conduitable{
      having an outer jacket, False: the opposite case.
      */
     public void setJacketed(boolean jacketed) {
-        if(cableType == Type.AC | cableType == Type.MC)
+        if(cableType == eecalcs.conductors.CableType.AC | cableType == eecalcs.conductors.CableType.MC)
             this.jacketed = jacketed;
         else
             this.jacketed = false;
@@ -308,7 +263,13 @@ public class Cable implements Conduitable{
      conductor, false otherwise.
      */
     public void setNeutralCarryingConductor(boolean flag){
-        if(neutralConductor != null){
+        if(neutralCarryingConductor == flag)
+            return;
+        neutralCarryingConductor = flag;
+        if(voltageSystemAC.getPhases() == 3)
+            setSystem(voltageSystemAC);//this will fire notifications
+        else
+/*        if(neutralConductor != null){
             if(flag)
                 neutralConductor.setRole(Conductor.Role.NEUCC);
             else {
@@ -316,8 +277,8 @@ public class Cable implements Conduitable{
                         voltageSystemAC != VoltageSystemAC.v277_1ph_2w)
                     neutralConductor.setRole(Conductor.Role.NEUNCC);
             }
-        }
-        notifier.notifyAllListeners();
+        }*/
+            notifier.notifyAllListeners();
     }
 
     /**
@@ -905,11 +866,11 @@ public class Cable implements Conduitable{
     }
 
     /**
-     Return the cable type as defined in {@link Type}
+     Return the cable type as defined in {@link CableType}
 
      @return The type of cable
      */
-    public Type getType() {
+    public CableType getType() {
         return cableType;
     }
 
@@ -921,10 +882,10 @@ public class Cable implements Conduitable{
      jacketed property.
 
      @param cableType The new cable type.
-     @see Type
+     @see CableType
      */
-    public void setType(Type cableType) {
-        if((this.cableType == Type.AC | this.cableType == Type.MC) & cableType != Type.AC & cableType != Type.MC)
+    public void setType(CableType cableType) {
+        if((this.cableType == eecalcs.conductors.CableType.AC | this.cableType == eecalcs.conductors.CableType.MC) & cableType != eecalcs.conductors.CableType.AC & cableType != eecalcs.conductors.CableType.MC)
             jacketed = false;
         this.cableType = cableType;
         notifier.notifyAllListeners();
@@ -939,4 +900,33 @@ public class Cable implements Conduitable{
     public VoltageSystemAC getVoltageSystemAC() {
         return voltageSystemAC;
     }
+
+    /**
+     Returns a deep copy of a conductor that represents the phases conductors.
+
+     @return A phase conductor copy.
+     */
+    public Conductor getPhaseConductorClone(){
+            return phaseAConductor.clone();
+    }
+
+    /**
+     Returns a deep copy of a conductor that represents the neutral conductor.
+
+     @return A neutral conductor copy.
+     */
+    public Conductor getNeutralConductorClone(){
+        return neutralConductor.clone();
+    }
+
+    /**
+     Returns a deep copy of a conductor that represents the grounding conductor.
+
+     @return A grounding conductor copy.
+     */
+    public Conductor getGroundingConductorClone(){
+        return groundingConductor.clone();
+    }
+
+
 }

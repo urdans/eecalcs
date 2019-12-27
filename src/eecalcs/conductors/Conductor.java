@@ -15,8 +15,8 @@ import tools.NotifierDelegate;
  is the conduit. Boxes and wireways are treated by its corresponding classes.
  <p>In some rare conditions, conductor are installed grouped in bundles; that
  condition is accounted for by this class.
- <p>This class implements the class Speaker which allows it to forecast messages
- to its registered Listeners.
+ <p>This class uses the NotifierDelegate class which allows it to forecast
+ messages to its registered Listeners.
  */
 public class Conductor implements Conduitable, ShareableConductor {
 
@@ -577,14 +577,4 @@ public class Conductor implements Conduitable, ShareableConductor {
 	public boolean hasBundle() {
 		return bundle != null;
 	}
-
-/*	@Override
-	public void notify(Speaker speaker){
-		if(action != null)
-			action.perform();
-	}*/
-
-/*	public void setAction(Action action){
-		this.action = action;
-	}*/
 }

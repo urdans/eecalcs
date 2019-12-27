@@ -168,7 +168,7 @@ This object must be able to provide its MCA (minimum conductor ampacity) and MOC
 load only).
 
 A load can take different behaviors and properties:
-	1. Type: as group by the NEC.
+	1. CableType: as group by the NEC.
 	2. Grouping: a load can be made out of one or more "atomic loads". For example, a group of 10 receptacles forms a 1800va load or one
 	dedicated receptacle for a specific 600va fridge. One could say also that a load can be "distributed" or "localized".
 
