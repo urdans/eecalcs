@@ -95,25 +95,25 @@ class VoltDropTest {
     @Test
     void getMaxLengthAC(){
         Tools.printTitle("VoltDropTest.getMaxLengthAC");
-        assertEquals(150.0046, voltDrop.getMaxLengthAC(), 0.0001);
+        assertEquals(150.0046, voltDrop.getMaxLengthACForCalculatedSize(), 0.0001);
 
         change1();
-        assertEquals(407.1041, voltDrop.getMaxLengthAC(), 0.0001);
+        assertEquals(407.1041, voltDrop.getMaxLengthACForCalculatedSize(), 0.0001);
 
         change2();
-        assertEquals(306.7943, voltDrop.getMaxLengthAC(), 0.0001);
+        assertEquals(306.7943, voltDrop.getMaxLengthACForCalculatedSize(), 0.0001);
     }
 
     @Test
     void getMaxLengthDC() {
         Tools.printTitle("VoltDropTest.getMaxLengthDC");
-        assertEquals(148.7603, voltDrop.getMaxLengthDC(), 0.0001);
+        assertEquals(148.7603, voltDrop.getMaxLengthDCForCalculatedSize(), 0.0001);
 
         change1();
-        assertEquals(377.9528, voltDrop.getMaxLengthDC(), 0.0001);
+        assertEquals(377.9528, voltDrop.getMaxLengthDCForCalculatedSize(), 0.0001);
 
         change2();
-        assertEquals(261.8515, voltDrop.getMaxLengthDC(), 0.0001);
+        assertEquals(261.8515, voltDrop.getMaxLengthDCForCalculatedSize(), 0.0001);
     }
 
     @Test

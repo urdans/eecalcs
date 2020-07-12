@@ -4,7 +4,7 @@ import eecalcs.conductors.*;
 import eecalcs.conduits.*;
 import eecalcs.systems.VoltageSystemAC;
 import eecalcs.systems.TempRating;
-import eecalcs.voltagedrop.VDrop;
+//import eecalcs.voltagedrop.VDrop;
 import tools.Message;
 
 import java.math.RoundingMode;
@@ -368,6 +368,9 @@ public class Main {
 		//endregion
 
 		//region testing voltage drop
+		//Old code using deprecated VDrop class. This should be rewritten using
+		//the new VoltDrop class.
+		/*
 		Conductor conductor = new Conductor();
 		CircuitOld circuitOld = new CircuitOld(conductor);
 		VDrop vd = new VDrop(circuitOld);
@@ -426,10 +429,13 @@ public class Main {
 			for (Message msg : vd.resultMessages.getMessages()) {
 				System.out.println(msg.message + " : " + msg.number);
 			}
-		}//*/
+		}*/
 		//endregion
 
 		//region test sizing conductor per voltage drop
+		//Old code using deprecated VDrop class. This should be rewritten using
+		//the new VoltDrop class.
+		/*
 		System.out.println("\n\n**************** TESTING SIZING CONDUCTOR PER VOLTAGE DROP ****************");
 		System.out.println("         Voltage (v): " + vd.getSourceVoltage());
 		System.out.println("              Phases: " + vd.getPhases());
@@ -483,7 +489,7 @@ public class Main {
 			for (Message msg : vd.resultMessages.getMessages()) {
 				System.out.println(msg.message + " : " + msg.number);
 			}
-		}//*/
+		}*/
 		//if (true) return;
 		//endregion */
 

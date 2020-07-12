@@ -2,16 +2,17 @@ package eecalcs.circuits;
 
 import eecalcs.conductors.*;
 import eecalcs.conduits.*;
+import eecalcs.loads.Load;
 import eecalcs.systems.TempRating;
 import eecalcs.systems.VoltageSystemAC;
 import eecalcs.voltagedrop.ShareableVoltDrop;
 import eecalcs.voltagedrop.VoltDrop;
-import tools.Listener;
-import tools.Message;
-import tools.ResultMessages;
+import tools.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  This class represents an electrical circuit as recognized by the NEC 2014.
@@ -56,8 +57,6 @@ import java.util.List;
  <li>The length of the circuit: which once assigned, propagates to its
  conduitables.</li>
 
-//<li>The role of the circuit: feeder or a branch circuit.</li>
-
  <li>The system voltage (number of phases, number of wires and if delta or wye
  connection for 3 phase feeder.)</li>
 
@@ -78,10 +77,10 @@ import java.util.List;
  based of the load type, like fire pump running, fire pump starting, sensitive
  electronic equipment, etc.).</li>
 
- <li>If the ocdp is 100% or 80% rated.</li>
+ <li>If the OCPD is 100% or 80% rated.</li>
  </ul>
 
- <p><b>Conduit sharing mechanism:</b></p>
+ <p><u>Conduit sharing mechanism:</u></p>
  By default, this class uses one conduit and several conductors. This is the
  most common scenario. However, other less common scenarios are also handled by
  this class: (in order of more common to less common)
@@ -95,25 +94,25 @@ import java.util.List;
  conduit.</li>
  <li>More than one set of insulated conductors in parallel, using equal number
  of sets of conductors per conduit.</li>
-
+ </ol>
  <b>Even more rare</b>:
-
+ <ol>
  <li>One or more sets of insulated conductors in free air (no conduit; bundled
  or not; even though this is allowed, it would be considered a bad practice).
  </li>
  <li>More than one cable in parallel, using one cable per conduit.</li>
  <li>More than one cable in parallel, using one large conduit.</li>
  <li>More than one cable in parallel, using equal number of cables per
- conduit.</li>
+ conduit.
  (Cables in conduits are permitted by code but are not common, are very
- expensive and could be considered a bad practice)
+ expensive and could be considered a bad practice)</li>
  </ol>
 
  <p>Out of this mechanism, there are three ways conduits are used by this class:
  <p>- Single conduit, (default) (applies for one set of conductors only).
  This conduit is owned by this class and can't be accessed from outside.
  <p>- Several conduits (applies for more than one set of conductors only).
- This conduit is owned by this class and can't be accessed from outside.
+ These conduits are owned by this class and can't be accessed from outside.
  <p>- Single conduit, not owned by this class. It's used for several
  one-set-only circuits that shares the same conduit.
  <br><br>
@@ -125,48 +124,51 @@ import java.util.List;
 
  <p><b><u>How this mechanism works.</u></b><br><br>
  ■ This class starts with one set of conductors using its private conduit.
- The circuit is said to be in "conduit mode". The user can decide to switch back
- and forth from conductors to cables at any time.<br><br>
+ The circuit is said to be in "conduit circuit mode". The user can decide to
+ switch back and forth from conductors to cables at any time.<br><br>
  ■ The user can increase and later decrease the number of sets. This is
- allowed only when in private conduit mode.<br><br>
- ■ The user can put the circuit in free air mode, or in bundle mode or back
- in conduit mode by calling the appropriated methods:
- <p>&nbsp - <em>SetFreeAirMode()</em> -> No conduit, no bundle, just in free air.
+ allowed only when in private conduit circuitMode.<br><br>
+ ■ The user can put the circuit in "free air circuit mode", or in "bundle
+ circuit mode" or back in "conduit circuit mode" by calling the appropriated
+ methods:
+ <p>&nbsp; - <em>SetFreeAirMode()</em>: No conduit, no bundle, just in free air.
  No restriction. If insulated conductor are used, a warning message is
- generated.
+ generated, since installing insulated conductor in free air is a bad practice.
 
- <p>&nbsp - <em>SetConduitMode()</em> -> Private conduit mode. No restriction. If
- cables are used, a warning message is generated.
+ <p>&nbsp; - <em>SetConduitMode()</em>: "Private conduit circuit mode". No
+ restriction. If cables are used, a warning message is generated, since using
+ cables inside a conduit is rare and could be considered a bad practice.
 
- <p>&nbsp - <em>SetConduitMode(Conduit sharedConduit)</em> -> Shared conduit
- mode. sharedConduit must be a valid conduit and the number of sets must be one.
- If cables are used, a warning message is generated. If there are more than one
- set an error message is generated.
+ <p>&nbsp; - <em>SetConduitMode(Conduit sharedConduit)</em>: "Shared conduit
+ circuit mode". sharedConduit must be a valid conduit and the number of sets
+ must be one. If cables are used, a warning message is generated. If there are
+ more than one set an error message is generated.
 
- <p>&nbsp - <em>SetBundleMode()</em> -> Bundle mode. No restriction. If
+ <p>&nbsp; - <em>SetBundleMode()</em>: "Bundle circuit mode". No restriction. If
  insulated conductors are used, a warning message is generated.
 
- <p>&nbsp - <em>SetBundleMode(Bundle sharedBundle)</em> -> Shared bundle mode.
- No restriction. If insulated conductors are used, a warning message is
+ <p>&nbsp; - <em>SetBundleMode(Bundle sharedBundle)</em>: "Shared bundle circuit
+ mode". No restriction. If insulated conductors are used, a warning message is
  generated.
 
- </pre>
  <br><br>
- ■ When in shared conduit mode the user increases the number of sets to more
- than one, it will switch to private conduit mode automatically. To return to
- shared mode, first the number of sets must return to one and then the method
- <em>SetConduitMode(Conduit sharedConduit)</em> must be called.<br><br>
+ ■ When in "shared conduit circuit mode" the user increases the number of sets
+ to more than one, it will switch to private conduit circuitMode automatically.
+ To return to shared circuitMode, first the number of sets must return to one
+ and then the method <em>SetConduitMode(Conduit sharedConduit)</em> must be
+ called. //<b>to be verified if this coded like this</b><br><br>
  ■ Keep in mind that some actions are not accomplished due to code rules,
  for example trying to use conductors smaller thant 1/0 AWG in parallel. In
  that case, the returned value makes no sense, like zero or null. This is an
  indication of error. There can also be warnings. In all cases, the user should
- ask the resultMessage field for the presence of messages. Refer to
- {@link tools.ResultMessages ResultMessages} for details.<br><br>
+ ask the resultMessage field for the presence of messages//<b>Is this
+ implemented?</b>. Refer to {@link tools.ResultMessages ResultMessages} for
+ details.<br><br>
  */
 public class Circuit {
-	private Mode mode = Mode.PRIVATE_CONDUIT;
+	private CircuitMode circuitMode = CircuitMode.PRIVATE_CONDUIT;
 	private static final int maxNumberOfSets = 10;
-	//list of conduitables owned by this circuit.
+	//list of all conduitables owned by this circuit.
 	private List<Conduitable> conduitables = new ArrayList<>();
 	//the overcurrent protection device owned by the circuit.
 	private Ocpd ocdp = new Ocpd();
@@ -177,7 +179,7 @@ public class Circuit {
 	private Bundle sharedBundle;   //is null or references an external bundle
 	private Load load;
 	private int numberOfSets = 1;
-	private int setsPerConduit = 1;
+	private int setsPerConduit = 1; //also means sets per bundle
 	private int numberOfConduits = 1;
 	private int conductorsPerSet; //meaningful only when using conductors
 	private Conductor phaseAConductor = new Conductor();
@@ -190,7 +192,7 @@ public class Circuit {
 	private VoltDrop voltageDrop = new VoltDrop();
 	private TempRating terminationTempRating;
 	private boolean neutralCurrentCarrying = false;
-	private static Message ERROR200	= new Message("The provided load is not valid.", -200);
+	//private static Message ERROR200	= new Message("The provided load is not valid.", -200);
 	private static Message ERROR210	= new Message("More than one set of conductors or cables cannot"
 			+ " be in a shared conduit.",-210);
 	private static Message ERROR220	= new Message("More than one set of conductors or cables cannot"
@@ -198,18 +200,21 @@ public class Circuit {
 	private static Message ERROR230	= new Message("The provided shared conduit is not valid.",-230);
 	private static Message ERROR240	= new Message("The provided shared bundle is not valid.",-240);
 	private static Message ERROR250	= new Message("Changing the number of conduits is only allowed when in"
-			+ " private mode.",-250);
-	private static Message ERROR260	= new Message("Ampacity of the load is to high. Increment the number of sets, or " +
-			"use less sets per conduit.",-260);
+			+ " private circuitMode.",-250);
+	private static Message ERROR260	= new Message("Ampacity of the load is to high. Increment the number of " +
+			"sets, or use less sets per conduit.",-260);
 	private static Message ERROR270	= new Message("Paralleled power conductors in sizes smaller than 1/0 AWG"
 			+ " are not permitted. NEC-310.10(H)(1)",-270);
-	private static Message ERROR280	= new Message("Private conduit is available only in private conduit mode.",-280);
-	private static Message ERROR282	= new Message("Private bundle is available only in private bundle mode.",-282);
-	private static Message ERROR284	= new Message("Circuit phase, neutral and grounding insulated conductors are " +
-			"available only when using conductors, not when using cables.",-284);
-	private static Message ERROR286	= new Message("Circuit cables are available only when using cables, not when " +
-			"using conductors", -286);
-
+	private static Message ERROR280	= new Message("Private conduit is available only in private conduit " +
+			"circuitMode.",-280);
+	private static Message ERROR282	= new Message("Private bundle is available only in private bundle " +
+			"circuitMode.",-282);
+	private static Message ERROR284	= new Message("Circuit phase, neutral and grounding insulated conductors " +
+			"are available only when using conductors, not when using cables.",-284);
+	private static Message ERROR286	= new Message("Circuit cables are available only when using cables, not " +
+			"when using conductors", -286);
+	private static Message ERROR290	= new Message("Temperature rating of conductors or cable is not suitable " +
+			"for the conditions of use", -290);
 	private static Message WARNN200	= new Message("Insulated conductors are being used in free air. This"
 			+ " could be considered a bad practice.", 200);
 	private static Message WARNN205	= new Message("Insulated conductors are being used in a bundle. This"
@@ -219,12 +224,16 @@ public class Circuit {
 	private static Message WARNN220	= new Message("Corrected and adjusted ampacity for this conductor/cable" +
 			" temp rating exceeds the ampacity for the temperature rating of the termination.\n" +
 			"Conductor/cable size has been selected per the termination temp rating.", 220);
+	private static Message WARNN230	= new Message("Size of conductors/cable selected by the load MCA, to " +
+			"satisfy NEC 219(A)(1) and 215.2(A)(1)", 230);
 
+	//creates a listener to listen for changes in the neutral conductors. This listener is not used if the
+	//load doesn't require a neutral.
 	private Listener neutralListener = speaker -> {
 		conduitables.forEach(conduitable ->
 			{
 				Conductor conductor = (Conductor) conduitable;
-				conductor.notifier.enabled(false);
+				conductor.getNotifier().enable(false);
 				if(conductor.getRole() == Conductor.Role.NEUCC ||
 						conductor.getRole() == Conductor.Role.NEUNCC)
 					conductor.copyFrom(neutralConductor);
@@ -234,7 +243,7 @@ public class Circuit {
 					conductor.setAmbientTemperatureFSilently(neutralConductor.getAmbientTemperatureF());
 					conductor.setMetal(neutralConductor.getMetal());
 				}
-				conductor.notifier.enabled(true);
+				conductor.getNotifier().enable(true);
 			}
 		);
 	};
@@ -247,64 +256,39 @@ public class Circuit {
 	 */
 	public ResultMessages resultMessages = new ResultMessages();
 
-//	/**
-//	 Removes all the conduitables of this circuit from the given conduit.
-//	 */
-//	private void leaveFrom(Conduit conduit){
-//		if(conduit == null)
-//			return;
-//		for(Conduitable conduitable: conduitables)
-//			conduit.remove(conduitable);
-//	}
-
-/*	*//*
-	 Removes all the conduitables of this circuit from the given bundle.
-	 *//*
-	private void leaveFrom(Bundle bundle){
-		if(bundle == null)
-			return;
-		for(Conduitable conduitable: conduitables)
-			bundle.remove(conduitable);
-	}*/
-
-//	/**
-//	 Moves all the conduitables of this circuit to the given conduit.
-//	 */
-//	private void moveTo(Conduit conduit){
-//		if(conduit == null)
-//			return;
-//		for(Conduitable conduitable: conduitables)
-//			conduit.add(conduitable);
-//	}
-
-//	/**
-//	 Moves all the conduitables of this circuit to the given bundle.
-//	 */
-//	private void moveTo(Bundle bundle){
-//		if(bundle == null)
-//			return;
-//		for(Conduitable conduitable: conduitables)
-//			bundle.add(conduitable);
-//	}
-
 	/**
-	Prepares the list of conduitables to match the number of sets (for cables)
-	or the number of conductors per set (for conductors). This method is called
-	after the model conductor is updated by the setupModelConductor() method,
-	or in addiction, whenever any of the following properties changes:<br>
-	- numberOfSets & setsPerConduit from setNumberOfSets()<br>
+	 Prepares the list of conduitables representing all the conduitables that
+	 this circuit will have:<br>
+	 - inside a conduit (private or shared), or<br>
+	 - bundled together (private os shared), or<br>
+	 - in free air.<br>
+	 <p>The number of conduitables in the list will match the number of sets of
+	 cables (when using cables), or the number of conductors per set (for
+	 conductors).<br>
+	 This method is called after the model conductor is updated by the
+	 setupModelConductor() method, or whenever any of the following properties
+	 changes:<br>
+	 - numberOfSets & setsPerConduit from setNumberOfSets()<br>
 	*/
 	private void prepareConduitableList(){
 		if(usingCable){
-/*			if (!conduitables.isEmpty()
-					&& (conduitables.get(0) instanceof Cable)
-					&& (conduitables.size() == numberOfSets))
-				return;*/
 			conduitables.clear();
 			conduitables.add(cable); //add the model cable to index 0
-			while (conduitables.size() < setsPerConduit/*numberOfSets*/)//add the rest.
+			while (conduitables.size() < setsPerConduit)//add the rest.
 				conduitables.add(cable.clone());
 		}else{//using conductors
+			if(circuitMode == CircuitMode.SHARED_CONDUIT) {
+				conduitables.forEach(conduitable -> {
+					if(sharedConduit.hasConduitable(conduitable))
+						sharedConduit.remove(conduitable);
+				});
+			}
+			if(circuitMode == CircuitMode.SHARED_BUNDLE) {
+				conduitables.forEach(conduitable -> {
+					if(!sharedBundle.hasConduitable(conduitable))
+						sharedBundle.remove(conduitable);
+				});
+			}
 			conduitables.clear();
 			conduitables.add(phaseAConductor);
 			if(phaseBConductor != null)
@@ -329,73 +313,89 @@ public class Circuit {
 	}
 
 	/**
-	Creates the conductors or the cable to be used as the one set of conductors
-	or one cable for this circuit, or to be used as a models for two or more
-	sets for this circuit.
+	 Creates the cable or the conductors to be used as the one cable of one set
+	 of conductors for this circuit, or to be used as a model for two or more
+	 sets for this circuit.<br>
+	 The model is represented either by:<br>
+	 <dl>
+	 <dt>- The cable field, or</dt>
+	 <dt>- A set of conductors conformed by:</dt>
+	 <dd>- The phaseAConductor field</dd>
+	 <dd>- The phaseBConductor field (if required)</dd>
+	 <dd>- The phaseCConductor field (if required)</dd>
+	 <dd>- The neutralConductor field (if required)</dd>
+	 <dd>- The groundingConductor field</dd>
+	 </dl>
 	*/
 	private void setupModelConductors(){
-		if(load == null || load.getSystemVoltage() == null) {
+		//creates the neutral conductor if it doesn't exist, with the given role
+		Consumer<Conductor.Role> setupNeutral = role -> {
+			if (neutralConductor == null) {
+				neutralConductor = new Conductor();
+				neutralConductor.getNotifier().addListener(neutralListener);
+			}
+			neutralConductor.setRole(role).setSize(phaseAConductor.getSize());
+		};
+		//creates the phase B conductor, if it doesn't exist, as a HOT.
+		Runnable setupPhaseB = () -> {
+			if (phaseBConductor == null)
+				phaseBConductor = new Conductor();
+			phaseBConductor.setRole(Conductor.Role.HOT).setSize(phaseAConductor.getSize());
+		};
+		//creates the phase C conductor, if it doesn't exist, as a HOT.
+		Runnable setupPhaseC = () -> {
+			if (phaseCConductor == null)
+				phaseCConductor = new Conductor();
+			phaseCConductor.setRole(Conductor.Role.HOT).setSize(phaseAConductor.getSize());
+		};
+/*		//this code will never run, since no circuit is created with a a null load
+		if(load == null || load.getVoltageSystem() == null) {
 			resultMessages.add(ERROR200);
 			return;
 		}
-		resultMessages.remove(ERROR200);
-		VoltageSystemAC systemVoltage = load.getSystemVoltage();
-		if(usingCable) {
+		resultMessages.remove(ERROR200);*/
+		VoltageSystemAC systemVoltage = load.getVoltageSystem();
+		if(usingCable) { //the model uses a cable
 			cable.setNeutralCarryingConductor(neutralCurrentCarrying);
 			cable.setSystem(systemVoltage);
 		}
-		else {
+		else { //the model uses conductors
+			//1 hot + neutral, only
 			if (systemVoltage == VoltageSystemAC.v120_1ph_2w
-					|| systemVoltage == VoltageSystemAC.v277_1ph_2w) {
-				if (neutralConductor == null) {
-					neutralConductor = new Conductor();
-					neutralConductor.notifier.addListener(neutralListener);
-				}
-				neutralConductor.setRole(Conductor.Role.NEUCC).setSize(phaseAConductor.getSize());
+					|| systemVoltage == VoltageSystemAC.v277_1ph_2w
+					|| systemVoltage == VoltageSystemAC.v208_1ph_2wN) { //208 high leg
+				setupNeutral.accept(Conductor.Role.NEUCC);
 				phaseBConductor = null;
 				phaseCConductor = null;
 			}
+			//2 hots only
 			else if (systemVoltage == VoltageSystemAC.v208_1ph_2w
 					|| systemVoltage == VoltageSystemAC.v240_1ph_2w
 					|| systemVoltage == VoltageSystemAC.v480_1ph_2w) {
-				if (phaseBConductor == null)
-					phaseBConductor = new Conductor();
-				phaseBConductor.setRole(Conductor.Role.HOT).setSize(phaseAConductor.getSize());
+				setupPhaseB.run();
 				neutralConductor = null;
 				phaseCConductor = null;
 			}
+			//2 hots + neutral, only
 			else if (systemVoltage == VoltageSystemAC.v208_1ph_3w
 					|| systemVoltage == VoltageSystemAC.v240_1ph_3w
 					|| systemVoltage == VoltageSystemAC.v480_1ph_3w) {
-				if (phaseBConductor == null)
-					phaseBConductor = new Conductor();
-				phaseBConductor.setRole(Conductor.Role.HOT).setSize(phaseAConductor.getSize());
-				if (neutralConductor == null) {
-					neutralConductor = new Conductor();
-					neutralConductor.notifier.addListener(neutralListener);
-				}
-				neutralConductor.setRole(Conductor.Role.NEUCC).setSize(phaseAConductor.getSize());
+				setupPhaseB.run();
+				setupNeutral.accept(Conductor.Role.NEUCC);
 				phaseCConductor = null;
 			}
-			else {//this account for all 3-phase systems.
-				if (phaseBConductor == null)
-					phaseBConductor = new Conductor();
-				phaseBConductor.setRole(Conductor.Role.HOT).setSize(phaseAConductor.getSize());
-				if (phaseCConductor == null)
-					phaseCConductor = new Conductor();
-				phaseCConductor.setRole(Conductor.Role.HOT).setSize(phaseAConductor.getSize());
-				if (systemVoltage.getWires() == 4) {
-					if (neutralConductor == null) {
-						neutralConductor = new Conductor();
-						neutralConductor.notifier.addListener(neutralListener);
-					}
-					Conductor.Role role = neutralCurrentCarrying ?
-							Conductor.Role.NEUCC : Conductor.Role.NEUNCC;
-					neutralConductor.setRole(role).setSize(phaseAConductor.getSize());
+			//3 hots + neutral (if required), only
+			else {
+				setupPhaseB.run();
+				setupPhaseC.run();
+				if (systemVoltage.getWires() == 4) { //neutral is required
+					setupNeutral.accept(neutralCurrentCarrying ?
+							Conductor.Role.NEUCC : Conductor.Role.NEUNCC);
 				}
-				else //3 wires
+				else //neutral is not required
 					neutralConductor = null;
 			}
+			//phase A and ground always count, that why the 2 in the sum
 			conductorsPerSet = 2 + (phaseBConductor == null ? 0 : 1)
 					+ (phaseCConductor == null ? 0 : 1)
 					+ (neutralConductor == null ? 0 : 1);
@@ -406,22 +406,192 @@ public class Circuit {
 	/**
 	 Calculates the size of this circuit cable or conductor under the preset
 	 conditions, that is able to handle its full load current (per ampacity).
+	 It accounts for rules NEC 210.19(A) for branch circuits and 215.2(A) for
+	 feeders.
+	 @return The size of the conductors/cable calculated per ampacity or null if
+	 an error occurred, in which case, check ResultMessages for errors and
+	 warning messages.
+	 */
+	public Size getSizePerAmpacity(){ //96 lines of code
+		Function<Size, Boolean> checkError260 = (size) ->{
+			if(size == null) {
+				resultMessages.add(ERROR260);
+				return true;
+			}
+			return false;
+		};
+		Function<Size, Boolean> checkError270 = (size) ->{
+			if(ConductorProperties.compareSizes(size, Size.AWG_1$0) < 0 && numberOfSets > 1) {
+				resultMessages.add(ERROR270);
+				return true;
+			}
+			return false;
+		};
+		//messages cleanup
+		resultMessages.remove(WARNN220);
+		resultMessages.remove(ERROR260);
+		resultMessages.remove(ERROR270);
+		resultMessages.remove(ERROR290);
+		resultMessages.remove(WARNN230);
+		Conduitable conduitable = getConduitable();//usingCable? cable: phaseAConductor;
+		double factor1;
+		if(ocdp.is100PercentRated())
+			factor1 = conduitable.getCompoundFactor();
+		else
+			factor1 = Math.min(1 / load.getMCAMultiplier(), conduitable.getCompoundFactor());
+
+		if(factor1 == 0) {//temp. rating of conductor not suitable for conditions of use.
+			resultMessages.add(ERROR290);
+			return null;
+		}
+		double loadCurrentPerSet = load.getCurrent() / numberOfSets;
+		double lookup_current1 = loadCurrentPerSet / factor1;
+		Size size1 = ConductorProperties.getSizeByAmperes(
+				lookup_current1,
+				conduitable.getMetal(),
+				conduitable.getTemperatureRating()
+		);
+		if(checkError260.apply(size1))
+			return null;
+		if(terminationTempRating != null){ //termination temperature rating is known
+			if(terminationTempRating.getValue() >= conduitable.getTemperatureRating().getValue()) {
+				if(checkError270.apply(size1))
+					return null;
+				return size1;
+			}
+			//conductor temperature rating is higher than equipment temperature rating
+			double ampacity1 = ConductorProperties.getAmpacity(
+					size1,
+					conduitable.getMetal(),
+					conduitable.getTemperatureRating()
+			);
+			double corrected_amp1 = ampacity1 * factor1;
+			double ampacity2 = ConductorProperties.getAmpacity(
+					size1,
+					conduitable.getMetal(),
+					terminationTempRating
+			);
+			if(corrected_amp1 <= ampacity2){
+				if(checkError270.apply(size1))
+					return null;
+				return size1;
+			}
+
+			double factor2 = conduitable.getCompoundFactor(terminationTempRating);
+			double lookup_current2 = loadCurrentPerSet / factor2;
+			Size size2 = ConductorProperties.getSizeByAmperes(
+					lookup_current2,
+					conduitable.getMetal(),
+					terminationTempRating
+			);
+			if(checkError260.apply(size2))
+				return null;
+			if(checkError270.apply(size2))
+				return null;
+			return size2;
+		}
+		else {//termination temperature rating is unknown
+			//todo implement: 110.14(C)(1)(4) motors design letter B, C or D...
+			TempRating t_rating;
+			if(loadCurrentPerSet <= 100)
+				t_rating = TempRating.T60;
+			else {
+				if(conduitable.getTemperatureRating().getValue() >= 75)
+					t_rating = TempRating.T75;
+				else
+					t_rating = TempRating.T60;
+			}
+			factor1 = conduitable.getCompoundFactor(t_rating);
+			lookup_current1 = loadCurrentPerSet / factor1;
+			size1 = ConductorProperties.getSizeByAmperes(
+					lookup_current1,
+					conduitable.getMetal(),
+					t_rating
+			);
+			if(checkError260.apply(size1))
+				return null;
+			if(checkError270.apply(size1))
+				return null;
+			return size1;
+		}
+	}
+
+	/**
+	 Calculates the size of this circuit cable or conductor under the preset
+	 conditions, that is able to handle its full load current (per ampacity).
+	 It compares the ampacity of the calculated conductor size with the load MCA
+	 and increases the size of the conductor to satisfy rules NEC 210.19(A)
+	 for branch circuits and 215.2(A) for feeders.
 	 If the number of sets is greater than one, and the resulting size is
 	 smaller than 1/0 AWG , an error message will be issued.
 
 	 @return The size of the conductors/cable calculated per ampacity or null if
 	 an error is encountered.
 	 */
-	private Size getSizePerAmpacity(){
+	@Deprecated
+	private Size getSizePerAmpacity_old(){
 		//messages cleanup
 		resultMessages.remove(WARNN220);
 		resultMessages.remove(ERROR260);
 		resultMessages.remove(ERROR270);
+		resultMessages.remove(ERROR290);
+		resultMessages.remove(WARNN230);
 
-		double mcaPerSet = load.getMCA()/numberOfSets;
+		//double loadCurrent = Math.max(load.getMCA(), load.getCurrent());;
+		double currentPerSet = load.getCurrent() / numberOfSets;
 		double compoundFactor;
 		Metal conductorMetal;
 		TempRating conductorTempRating;
+		Function<Size, Boolean> checkError270 = (size) ->{
+			if(ConductorProperties.compareSizes(size,Size.AWG_1$0) < 0
+					&& numberOfSets > 1) {
+				resultMessages.add(ERROR270);
+				return true;
+			}
+			return false;
+		};
+		Function<Size, Boolean> checkError260 = (size) ->{
+			if(size == null) {
+				resultMessages.add(ERROR260);
+				return true;
+			}
+			return false;
+		};
+		Function<Conduitable, Pair<TempRating, Double>> get_TR_and_Factor = (conduitable) -> {
+			Pair<TempRating, Double> tempRFactor = new Pair<>();
+			Insul previousInsul = conduitable.getInsulation();
+			conduitable.getNotifier().enable(false);
+			if(currentPerSet <= 100){
+				conduitable.setInsulation(Insul.TW);
+				tempRFactor.value1 = TempRating.T60;
+			}else{ //>100 amps
+				if(conduitable.getTemperatureRating().getValue() == 60)
+					tempRFactor.value1 = TempRating.T60;
+				else {
+					conduitable.setInsulation(Insul.THW);
+					tempRFactor.value1 = TempRating.T75;
+				}
+			}
+			tempRFactor.value2 = conduitable.getCorrectionFactor() *
+					conduitable.getAdjustmentFactor();
+			conduitable.setInsulation(previousInsul);
+			conduitable.getNotifier().enable(true);
+			return tempRFactor;
+		};
+		Function<Conduitable, Double> getCompoundFactor = (conduitable) ->{
+			Insul previousInsul = conduitable.getInsulation();
+			conduitable.getNotifier().enable(false);
+			if (terminationTempRating == TempRating.T60)
+				conduitable.setInsulation(Insul.TW);
+			else
+				conduitable.setInsulation(Insul.THW);
+			double cpFactor = conduitable.getCorrectionFactor() *
+					conduitable.getAdjustmentFactor();
+			conduitable.setInsulation(previousInsul);
+			conduitable.getNotifier().enable(true);
+			return cpFactor;
+		};
+
 	    if(usingCable){
 			compoundFactor = cable.getCorrectionFactor() *
 					cable.getAdjustmentFactor();
@@ -434,11 +604,32 @@ public class Circuit {
 	    	conductorMetal = phaseAConductor.getMetal();
 	    	conductorTempRating = phaseAConductor.getTemperatureRating();
 		}
-		double lookupAmperes = mcaPerSet / compoundFactor;
-	    TempRating chosenTempRating;
-	    Size proposedSize;
+
+	    if(compoundFactor == 0) {//temp. rating of conductor not suitable for conditions of use.
+			resultMessages.add(ERROR290);
+			return null;
+		}
+
+		TempRating chosenTempRating;
+		Size proposedSize;
 		double ampacityOfProposed;
 		double ampacityPerTerminationRating;
+		double lookupAmperes = currentPerSet / compoundFactor;
+		double loadMCAPerSet = load.getMCA() / numberOfSets;
+	    if(loadMCAPerSet > lookupAmperes) {
+			proposedSize = ConductorProperties.getSizeByAmperes(
+					loadMCAPerSet,
+					conductorMetal,
+					conductorTempRating
+			);
+			if(checkError260.apply(proposedSize))
+				return null;
+			if(checkError270.apply(proposedSize))
+				return null;
+			resultMessages.add(WARNN230);
+			return proposedSize;
+		}
+
         if(terminationTempRating != null) { //temperature rating of the terminations is known
 			if(compoundFactor != 1.0){ //310.15(B) and 110.14(C)
 				proposedSize = ConductorProperties.getSizeByAmperes(
@@ -446,10 +637,8 @@ public class Circuit {
 						conductorMetal,
 						conductorTempRating
 				);
-				if(proposedSize == null) {
-					resultMessages.add(ERROR260);
+				if(checkError260.apply(proposedSize))
 					return null;
-				}
 				ampacityOfProposed = ConductorProperties.getAmpacity(
 						proposedSize,
 						conductorMetal,
@@ -463,53 +652,29 @@ public class Circuit {
 				double correctedAdAdjustedAmpacity = ampacityOfProposed *
 						compoundFactor;
 				if(correctedAdAdjustedAmpacity <= ampacityPerTerminationRating) {
-					if(ConductorProperties.compareSizes(proposedSize, Size.AWG_1$0) < 0
-							&& numberOfSets > 1) {
-						resultMessages.add(ERROR270);
+					if(checkError270.apply(proposedSize))
 						return null;
-					}
+					if(checkError260.apply(proposedSize))
+						return null;
 					return proposedSize;
 				}
 				//corrected and adjusted ampacity exceeds the ampacity for the termination rating
 				if(usingCable){
-					Insul previousInsul = cable.getInsulation();
-					cable.notifier.enabled(false);
-					if (terminationTempRating == TempRating.T60)
-						cable.setInsulation(Insul.TW);
-					else
-						cable.setInsulation(Insul.THW);
-					compoundFactor = cable.getCorrectionFactor() *
-							cable.getAdjustmentFactor();
-					cable.setInsulation(previousInsul);
-					cable.notifier.enabled(true);
+					compoundFactor = getCompoundFactor.apply(cable);
 				}
 				else {
-					Insul previousInsul = phaseAConductor.getInsulation();
-					phaseAConductor.notifier.enabled(false);
-					if (terminationTempRating == TempRating.T60)
-						phaseAConductor.setInsulation(Insul.TW);
-					else
-						phaseAConductor.setInsulation(Insul.THW);
-					compoundFactor = phaseAConductor.getCorrectionFactor() *
-							phaseAConductor.getAdjustmentFactor();
-					phaseAConductor.setInsulation(previousInsul);
-					phaseAConductor.notifier.enabled(true);
+					compoundFactor = getCompoundFactor.apply(phaseAConductor);
 				}
-				lookupAmperes = mcaPerSet / compoundFactor;
+				lookupAmperes = currentPerSet / compoundFactor;
 				proposedSize = ConductorProperties.getSizeByAmperes(
 						lookupAmperes,
 						conductorMetal,
 						terminationTempRating
 				);
-				if(proposedSize == null) {
-					resultMessages.add(ERROR260);
+				if(checkError260.apply(proposedSize))
 					return null;
-				}
-				if(ConductorProperties.compareSizes(proposedSize, Size.AWG_1$0) < 0
-						&& numberOfSets > 1) {
-					resultMessages.add(ERROR270);
+				if(checkError270.apply(proposedSize))
 					return null;
-				}
 				resultMessages.add(WARNN220);
 				return proposedSize;
 			}
@@ -523,64 +688,38 @@ public class Circuit {
 					conductorMetal,
 					chosenTempRating
 			);
-			if (proposedSize == null) {
-				resultMessages.add(ERROR260);
+			if(checkError260.apply(proposedSize))
 				return null;
-			}
-			if(ConductorProperties.compareSizes(proposedSize,Size.AWG_1$0) < 0
-					&& numberOfSets > 1) {
-				resultMessages.add(ERROR270);
+			if(checkError270.apply(proposedSize))
 				return null;
-			}
 			return proposedSize;
         }
 		//temperature rating of the terminations is not known at this point
-		//todo implement: (4) motors design letter B, C or D...
+		//implement: 110.14(C)(1)(4) motors design letter B, C or D...
+		Pair<TempRating, Double> tempRFactor;
+
 		if(usingCable){
-			Insul previousInsul = cable.getInsulation();
-			cable.notifier.enabled(false);
-			if (mcaPerSet <= 100.0 || cable.getTemperatureRating().getValue() == 60) {
-				cable.setInsulation(Insul.TW);
-				chosenTempRating = TempRating.T60;
-			} else {
-				cable.setInsulation(Insul.THW);
-				chosenTempRating = TempRating.T75;
-			}
-			compoundFactor = cable.getCorrectionFactor() *
-					cable.getAdjustmentFactor();
-			cable.setInsulation(previousInsul);
-			cable.notifier.enabled(true);
+			tempRFactor = get_TR_and_Factor.apply(cable);
 		}
 		else {
-			Insul previousInsul = phaseAConductor.getInsulation();
-			phaseAConductor.notifier.enabled(false);
-			if (mcaPerSet <= 100.0 || phaseAConductor.getTemperatureRating().getValue() == 60) {
-				phaseAConductor.setInsulation(Insul.TW);
-				chosenTempRating = TempRating.T60;
-			} else {
-				phaseAConductor.setInsulation(Insul.THW);
-				chosenTempRating = TempRating.T75;
-			}
-			compoundFactor = phaseAConductor.getCorrectionFactor() *
-					phaseAConductor.getAdjustmentFactor();
-			phaseAConductor.setInsulation(previousInsul);
-			phaseAConductor.notifier.enabled(true);
+			tempRFactor = get_TR_and_Factor.apply(phaseAConductor);
 		}
-		lookupAmperes = mcaPerSet / compoundFactor;
+		chosenTempRating = tempRFactor.value1;//(TempRating) tempRFactor[0];
+		compoundFactor = tempRFactor.value2;//(double) tempRFactor[1];
+		if(compoundFactor == 0) {//temp. rating of conductor not suitable for conditions of use.
+			resultMessages.add(ERROR290);
+			return null;
+		}
+		lookupAmperes = currentPerSet / compoundFactor;
 		proposedSize = ConductorProperties.getSizeByAmperes(
 				lookupAmperes,
 				conductorMetal,
 				chosenTempRating
 		);
-		if (proposedSize == null) {
-			resultMessages.add(ERROR260);
+		if(checkError260.apply(proposedSize))
 			return null;
-		}
-		if(ConductorProperties.compareSizes(proposedSize,Size.AWG_1$0) < 0
-				&& numberOfSets > 1) {
-			resultMessages.add(ERROR270);
+		if(checkError270.apply(proposedSize))
 			return null;
-		}
 		return proposedSize;
 	}
 
@@ -592,15 +731,15 @@ public class Circuit {
 	 */
 	private int getCurrentCarryingNumber() {
 		int numberOfCurrentCarrying;
-		if(mode == Mode.PRIVATE_CONDUIT)
+		if(circuitMode == CircuitMode.PRIVATE_CONDUIT)
 			numberOfCurrentCarrying = privateConduit.getCurrentCarryingNumber();
-		else if(mode == Mode.SHARED_CONDUIT)
+		else if(circuitMode == CircuitMode.SHARED_CONDUIT)
 			numberOfCurrentCarrying = sharedConduit.getCurrentCarryingNumber();
-		else if(mode == Mode.PRIVATE_BUNDLE)
+		else if(circuitMode == CircuitMode.PRIVATE_BUNDLE)
 			numberOfCurrentCarrying = privateBundle.getCurrentCarryingNumber();
-		else if(mode == Mode.SHARED_BUNDLE)
+		else if(circuitMode == CircuitMode.SHARED_BUNDLE)
 			numberOfCurrentCarrying = sharedBundle.getCurrentCarryingNumber();
-		else {//it's in free air mode
+		else {//it's in free air circuitMode
 			numberOfCurrentCarrying = 0;
 			for(Conduitable conduitable: conduitables)
 				numberOfCurrentCarrying += conduitable.getCurrentCarryingCount();
@@ -616,11 +755,11 @@ public class Circuit {
 	 @return The size of this circuit conductor/cable calculated per voltage
 	 drop.
 	 */
-	private Size getSizePerVoltageDrop(){
+	public Size getSizePerVoltageDrop(){
 		Conduit usedConduit;
-		if(mode == Mode.PRIVATE_CONDUIT)
+		if(circuitMode == CircuitMode.PRIVATE_CONDUIT)
 			usedConduit = privateConduit;
-		else if(mode == Mode.SHARED_CONDUIT)
+		else if(circuitMode == CircuitMode.SHARED_CONDUIT)
 			usedConduit = sharedConduit;
 		else
 			usedConduit = null;
@@ -642,7 +781,7 @@ public class Circuit {
 		voltageDrop.setLoadCurrent(load.getCurrent());
 		voltageDrop.setPowerFactor(load.getPowerFactor());
 		voltageDrop.setSets(numberOfSets);
-		voltageDrop.setSourceVoltage(load.getSystemVoltage());
+		voltageDrop.setSourceVoltage(load.getVoltageSystem());
 		return voltageDrop.getCalculatedSizeAC();
 	}
 
@@ -655,9 +794,12 @@ public class Circuit {
 		resultMessages.remove(WARNN205);
 		resultMessages.remove(WARNN210);
 		resultMessages.remove(ERROR210);
+		resultMessages.remove(ERROR220);
 		resultMessages.remove(ERROR230);
 		resultMessages.remove(ERROR240);
 		resultMessages.remove(ERROR250);
+		resultMessages.remove(ERROR280);
+		resultMessages.remove(ERROR282);
 	}
 
 	/**
@@ -667,53 +809,66 @@ public class Circuit {
 	 <p>- One set of conductors.
 	 <p>- Default conductors. See {@link Conductor#Conductor() Conductor()} for
 	 default properties.
-	 <p>- One private conduit. See {@link Conduit#Conduit(Type, Conduit.Nipple)
-	 Conduit(CableType, Conduit.Nipple)} for default properties.
+	 <p>- One private conduit. See {@link Conduit#Conduit(Type, Conduit.Nipple)}
+	 for default properties.
 
 	 @param load The load that will be copied as part of this circuit and that
 	 will be served by this circuit.
 	 @see Load
 	 */
 	public Circuit(Load load){
+		if(load == null)
+			throw new IllegalArgumentException("Load parameter cannot be null");
+
 		this.load = load.clone();
-		this.load.notifier.addListener(
+		//if the load changes, the model of conductors needs to be set up
+		this.load.getNotifier().addListener(
 				speaker -> setupModelConductors()
 		);
-		phaseAConductor.notifier.addListener(speaker -> {
+		//when a property of the the phase A conductor changes...
+		phaseAConductor.getNotifier().addListener(speaker -> {
+			//the other conductors must be updated accordingly...
 			conduitables.forEach(conduitable ->
-					{
-						Conductor conductor = (Conductor) conduitable;
-						conductor.notifier.enabled(false);
-						if (conductor.getRole() == Conductor.Role.HOT ||
-								conductor.getRole() == Conductor.Role.NCONC)
-							conductor.copyFrom(phaseAConductor);
-						else {
-							conductor.setLength(phaseAConductor.getLength());
-							conductor.setInsulation(phaseAConductor.getInsulation());
-							conductor.setAmbientTemperatureFSilently(phaseAConductor.getAmbientTemperatureF());
-							conductor.setMetal(phaseAConductor.getMetal());
-							if (conductor.getRole() == Conductor.Role.NEUCC ||
-									conductor.getRole() == Conductor.Role.NEUNCC)
-								conductor.setSize(phaseAConductor.getSize());
-						}
-						conductor.notifier.enabled(true);
+				{
+					Conductor conductor = (Conductor) conduitable;
+					conductor.getNotifier().enable(false);
+					//all hot conductors must mirror the phase A conductor...
+					if (conductor.getRole() == Conductor.Role.HOT ||
+							conductor.getRole() == Conductor.Role.NCONC)
+						conductor.copyFrom(phaseAConductor);
+					else {
+						//...while the others update some properties only (length, insulation, ambient temp., metal)
+						conductor.setLength(phaseAConductor.getLength());
+						conductor.setInsulation(phaseAConductor.getInsulation());
+						conductor.setAmbientTemperatureFSilently(phaseAConductor.getAmbientTemperatureF());
+						conductor.setMetal(phaseAConductor.getMetal());
+						//the size property is updated for the neutral conductors but not updated for the
+						//grounding conductors
+						if (conductor.getRole() == Conductor.Role.NEUCC ||
+								conductor.getRole() == Conductor.Role.NEUNCC)
+							conductor.setSize(phaseAConductor.getSize());
 					}
+					conductor.getNotifier().enable(true);
+				}
 			);
 		});
-		groundingConductor.notifier.addListener(speaker -> {
+		//when a property of the the grounding conductor changes...
+		groundingConductor.getNotifier().addListener(speaker -> {
+			//the other conductors must be updated accordingly...
 			conduitables.forEach(conduitable ->
-					{
-						Conductor conductor = (Conductor) conduitable;
-						conductor.notifier.enabled(false);
-						if (conductor.getRole() == Conductor.Role.GND)
-							conductor.copyFrom(groundingConductor);
-						else {
-							conductor.setLength(groundingConductor.getLength());
-							conductor.setInsulation(groundingConductor.getInsulation());
-							conductor.setAmbientTemperatureFSilently(groundingConductor.getAmbientTemperatureF());
-						}
-						conductor.notifier.enabled(true);
+				{
+					Conductor conductor = (Conductor) conduitable;
+					conductor.getNotifier().enable(false);
+					//all grounding conductors must have the same properties...
+					if (conductor.getRole() == Conductor.Role.GND)
+						conductor.copyFrom(groundingConductor);
+					else {//while the others, only some of them (length, insulation and ambient temp.)
+						conductor.setLength(groundingConductor.getLength());
+						conductor.setInsulation(groundingConductor.getInsulation());
+						conductor.setAmbientTemperatureFSilently(groundingConductor.getAmbientTemperatureF());
 					}
+					conductor.getNotifier().enable(true);
+				}
 			);
 		});
 		setupModelConductors();
@@ -728,22 +883,23 @@ public class Circuit {
 	/**
 	 Returns the voltage drop object used by this circuit for internal
 	 calculations.
+	 @return This circuit's voltage drop readonly object
 	 */
 	public ShareableVoltDrop getVoltageDrop(){
 		return voltageDrop;
 	}
 
-	//todo javadoc
+	/* Sets the circuit mode */
 	private void setMode(){
-		if(mode == Mode.PRIVATE_CONDUIT)
+		if(circuitMode == CircuitMode.PRIVATE_CONDUIT)
 			setConduitMode();
-		else if(mode == Mode.FREE_AIR)
+		else if(circuitMode == CircuitMode.FREE_AIR)
 			setFreeAirMode();
-		else if(mode == Mode.SHARED_CONDUIT)
+		else if(circuitMode == CircuitMode.SHARED_CONDUIT)
 			setConduitMode(sharedConduit);
-		else if(mode == Mode.PRIVATE_BUNDLE)
+		else if(circuitMode == CircuitMode.PRIVATE_BUNDLE)
 			setBundleMode();
-		else //if(mode == Mode.SHARED_BUNDLE)
+		else //if(circuitMode == CircuitMode.SHARED_BUNDLE)
 			setBundleMode(sharedBundle);
 	}
 
@@ -751,7 +907,7 @@ public class Circuit {
 	 Sets the circuit in free air. All conductors and cables are removed from
 	 any shared or private conduit or bundle and put in free air. If the circuit
 	 is made of insulated conductors (not cables) a warning is generated. After
-	 calling this method, the circuit is in free air mode.
+	 calling this method, the circuit is in free air circuit mode.
 	 */
 	public void setFreeAirMode(){
 		//This method must always run from top to bottom since the conduitable list might have changed.
@@ -762,7 +918,7 @@ public class Circuit {
 		sharedBundle = null;
 		if(!usingCable) //conductors in free air
 			resultMessages.add(WARNN200);
-		mode = Mode.FREE_AIR;
+		circuitMode = CircuitMode.FREE_AIR;
 	}
 
 	/**
@@ -781,11 +937,12 @@ public class Circuit {
 		conduitables.forEach(conduitable -> privateConduit.add(conduitable));
 		if(usingCable) //using cables in conduit
 			resultMessages.add(WARNN210); //cables in conduit
-		mode = Mode.PRIVATE_CONDUIT;
+		circuitMode = CircuitMode.PRIVATE_CONDUIT;
 	}
 
 	/**
 	 Sets the circuit in a shared public conduit.
+	 Calling this method resets the number of sets to 1.
 
 	 @param conduit The public conduit to which all the conduitables go in.
 	 */
@@ -797,10 +954,7 @@ public class Circuit {
 			resultMessages.add(ERROR230);
 			return;
 		}
-		if(numberOfSets > 1) {
-			resultMessages.add(ERROR210);
-			return;
-		}
+		circuitMode = CircuitMode.SHARED_CONDUIT;
 		privateConduit.empty();
 		privateBundle.empty();
 		sharedConduit = conduit;
@@ -808,7 +962,6 @@ public class Circuit {
 		conduitables.forEach(conduitable -> sharedConduit.add(conduitable));
 		if(usingCable) //using cables in conduit
 			resultMessages.add(WARNN210); //cables in conduit
-		mode = Mode.SHARED_CONDUIT;
 	}
 
 	/**
@@ -824,7 +977,7 @@ public class Circuit {
 		conduitables.forEach(conduitable -> privateBundle.add(conduitable));
 		if(!usingCable) //using conductors in bundle
 			resultMessages.add(WARNN205);
-		mode = Mode.PRIVATE_BUNDLE;
+		circuitMode = CircuitMode.PRIVATE_BUNDLE;
 	}
 
 	/**
@@ -834,11 +987,13 @@ public class Circuit {
 	 */
 	public void setBundleMode(Bundle bundle){
 		//This method must always run from top to bottom since the conduitable list might have changed.
+		//properties like neutralCurrentCarrying or numberOfSets or others might have change the conduitable list.
 		clearModeMsg();
 		if(bundle == null) {
 			resultMessages.add(ERROR240);
 			return;
 		}
+		circuitMode = CircuitMode.SHARED_BUNDLE;
 		privateConduit.empty();
 		privateBundle.empty();
 		sharedConduit = null;
@@ -846,21 +1001,18 @@ public class Circuit {
 		conduitables.forEach(conduitable -> sharedBundle.add(conduitable));
 		if(!usingCable) //using conductors in bundle
 			resultMessages.add(WARNN205);
-		mode = Mode.SHARED_BUNDLE;
 	}
 
 	/**
 	 Increments the number of conduits used by this circuit, when in private
-	 conduit mode. The resulting number of conduits depends on the actual number
-	 of sets. The NEC allows to distribute the sets of conductors in parallel in
-	 a way that the impedance of each sets is maintained equal on each set. Keep
-	 in mind that the number of conduits is reset to the same number of sets of
-	 conductors (the default) whenever the number of sets changes or the circuit
-	 mode changes.
+	 conduit circuit mode. The resulting number of conduits depends on the
+	 actual number of sets. The NEC allows to distribute the sets of conductors
+	 in parallel in a way that the impedance of each sets is maintained equal on
+	 each set.
 	 */
 	public void moreConduits(){
 		resultMessages.remove(ERROR250);
-		if(mode != Mode.PRIVATE_CONDUIT){
+		if(circuitMode != CircuitMode.PRIVATE_CONDUIT){
 			resultMessages.add(ERROR250);
 			return;
 		}
@@ -875,15 +1027,15 @@ public class Circuit {
 
 	/**
 	 Decrements the number of conduits used by this circuit, when in private
-	 conduit mode. The resulting number of conduits depends on the actual number
+	 conduit circuitMode. The resulting number of conduits depends on the actual number
 	 of sets. The NEC allows to distribute the sets of conductors in parallel in
 	 a way that the impedance of each sets is maintained equal on each set. Keep
 	 in mind that the number of conduits is reset to the same number of sets of
 	 conductors (the default) whenever the number of sets changes or the circuit
-	 mode changes.
+	 circuitMode changes.
 	 */
 	public void lessConduits(){
-		if(mode != Mode.PRIVATE_CONDUIT){
+		if(circuitMode != CircuitMode.PRIVATE_CONDUIT){
 			resultMessages.add(ERROR250);
 			return;
 		}
@@ -903,12 +1055,12 @@ public class Circuit {
 	 size. This is the size for the phase conductors and depending on the system
 	 voltage (if the neutral is used) and the load (if it's linear or not) this
 	 size will also correspond to the size of the neutral conductor.
-	 The size of the neutral can be in some scenarios bigger than the size of
-	 the phase conductors.
+	 The size of the neutral can be in some rare scenarios bigger than the size
+	 of the phase conductors <b>to be confirmed, investigate about this</b>.
 	 <p>To particularly obtain the size of the neutral use
 	 <code>getNeutralConductor().getSize()</code>.
 	 <p>To get the size of the
-	 grounding conductor <code>getNeutralConductor().getSize()</code>.
+	 grounding conductor <code>getGroundingConductor().getSize()</code>.
 
 	 @return The size of the conductors/cables.
 	 */
@@ -928,11 +1080,29 @@ public class Circuit {
 		else
 			phasesSize = sizePerAmpacity;
 		//2. todo Calculate neutral conductor size if required
-//		Size neutralSize = ...
+//		if (neutralConductor != null)
+//			neutralConductor.setSize(phasesSize);
 		//3. todo Calculate the size of the OCPD
-		//4. todo Calculate the size of the grounding conductor
+		/*To keep in mind: once the circuit size has been calculated, the ocdp is determined to protect the
+		* conductor (except for motors and other exceptions). The size of the ocpd is chosen per standard sizes
+		* and the due to rule 240.4(D) and the type of load, the size of the conductor might be adjusted.
+		*
+		* For example: A continuous load of 16 amps will use a THHW (90°C) copper conductor, protected by an ocpd
+		* rated for 75°C. The ambient temperature is 43°C. There are a total of 6 current-carrying conductors in the
+		* raceway.
+		* Question: What is the minimum size of conductor to be selected?
+		* Answer: 14 AWG.
+		* Now, per rue 210.20(A), the size of the ocpd must be 16*1.25 = 20 amps.
+		* Because of the 240.4(D)(3) rule, the #14 conductor cannot protected by an ocpd larger than 15 amps. This
+		* means the size of the conductor must be increased to #12.
+		* */
+		//set up the ocdp object with the size and the load
+		//4. todo Calculate the size of the grounding conductor: keep in mind the rule that says that the EGC
+		//    conductor must be increased if the hot conductors had to be increase for other reasons. rule 250.122(B)
+
 //		Size groundingSize = ...
 		//5. todo Update the size of all conductors
+		voltageDrop.getConductor().setSize(phasesSize);
 		if(usingCable) {
 			conduitables.forEach(conduitable -> {
 				Cable cable = (Cable) conduitable;
@@ -956,14 +1126,14 @@ public class Circuit {
 	 @return The trade size of the conduit.
 	 *//*
 	public Trade getConduitTradeSize(){
-		if(mode == Mode.FREE_AIR || mode == Mode.PRIVATE_BUNDLE || mode == Mode.SHARED_BUNDLE)
+		if(circuitMode == CircuitMode.FREE_AIR || circuitMode == CircuitMode.PRIVATE_BUNDLE || circuitMode == CircuitMode.SHARED_BUNDLE)
 			return null;
-		//the circuit here is in shared or public conduit mode
+		//the circuit here is in shared or public conduit circuitMode
 		if(getCircuitSize() == null)
 			return null;
 
 		// todo refactor ShareableConductor interface to use only the necessary methods
-		if(mode == Mode.PRIVATE_CONDUIT)
+		if(circuitMode == CircuitMode.PRIVATE_CONDUIT)
 			return privateConduit.getTradeSize();
 		else
 			return sharedConduit.getTradeSize();
@@ -990,16 +1160,16 @@ public class Circuit {
 	 assigned and the number of conduits is reset to match this quantity. To
 	 change the number of conduits call the methods {@link #moreConduits()} or
 	 {@link #lessConduits()}. The default behavior of this class is having one
-	 set of conductors per conduit, unless the said methods are called.
-
+	 set of conductors per conduit, unless the said methods are called. If the
+	 circuit is in shared conduit mode no action is performed.
+	 Only one set is allowed when using a shared conduit or shared bundle.
 	 @param numberOfSets The new number of sets.
 	 */
 	public void setNumberOfSets(int numberOfSets){
 		if(this.numberOfSets == numberOfSets)
 			return;
 		this.numberOfSets = numberOfSets;
-		numberOfConduits = numberOfSets;
-		setsPerConduit = 1;
+		setsPerConduit = numberOfSets / numberOfConduits;
 		prepareConduitableList();
 	}
 
@@ -1017,11 +1187,11 @@ public class Circuit {
 	 Returns the actual number of conduits. Notice that the number or conduits
 	 changes by changing the number of sets, or  by calling
 	 {@link #moreConduits()} or {@link #lessConduits()} while in private conduit
-	 mode. Other methods that changes the number of conduits are the methods
+	 circuitMode. Other methods that changes the number of conduits are the methods
 	 {@link #setConduitMode()}, {@link #setConduitMode(Conduit)},
 	{@link #setBundleMode()} or {@link #setBundleMode(Bundle)}.
 
-	 @return The actual number of conduits used in private conduit mode.
+	 @return The actual number of conduits used in private conduit circuitMode.
 	 */
 	public int getNumberOfConduits(){
 		return numberOfConduits;
@@ -1044,7 +1214,7 @@ public class Circuit {
 
 	/**
 	 Sets the temperature rating of the equipment that this circuit serves. The
-	 allowed values as recognized by the NEC are 60°C, 75°C & 90°C and even
+	 allowed values as recognized by the NEC are 60°C, 75°C &#38; 90°C and even
 	 unknown (for this purpose, null value correspond to unknown).
 
 	 @param terminationTempRating The temperature rating: 60°C, 75°C, 90°C or
@@ -1118,13 +1288,13 @@ public class Circuit {
 
 	/**
 	 Returns the private conduit of this circuit as a shareable conduit when
-	 this circuit is in private conduit mode.
+	 this circuit is in private conduit circuitMode.
 
 	 @return This circuit's private conduit.
 	 */
 	public ShareableConduit getPrivateConduit(){
 		resultMessages.remove(ERROR280);
-		if(mode != Mode.PRIVATE_CONDUIT) {
+		if(circuitMode != CircuitMode.PRIVATE_CONDUIT) {
 			resultMessages.add(ERROR280);
 			return null;
 		}
@@ -1134,13 +1304,13 @@ public class Circuit {
 
 	/**
 	 Returns the private bundle of this circuit as a shareable bundle when
-	 this circuit is in private bundle mode.
+	 this circuit is in private bundle circuitMode.
 
 	 @return This circuit's private conduit.
 	 */
 	public ShareableBundle getPrivateBundle(){
 		resultMessages.remove(ERROR282);
-		if(mode != Mode.PRIVATE_BUNDLE){
+		if(circuitMode != CircuitMode.PRIVATE_BUNDLE){
 			resultMessages.add(ERROR282);
 			return null;
 		}
@@ -1176,7 +1346,7 @@ public class Circuit {
 		if(flag == neutralCurrentCarrying)
 			return;
 		neutralCurrentCarrying = flag;
-		if(load.getSystemVoltage().getPhases() == 3)
+		if(load.getVoltageSystem().getPhases() == 3)
 			setupModelConductors();
 	}
 
@@ -1190,7 +1360,10 @@ public class Circuit {
 		return load;
 	}
 
-	//todo javadoc
+	/**
+	 Indicates if this circuit will use cable or conductors.
+	 @param usingCable True if using cables, false if using conductors.
+	 */
 	public void setUsingCable(boolean usingCable) {
 		if(usingCable == this.usingCable)
 			return;
@@ -1198,19 +1371,66 @@ public class Circuit {
 		setupModelConductors();
 	}
 
-	//todo javadoc
+	/**
+	 @return True if this circuit is using cables, false if using conductors.
+	 */
 	public boolean isUsingCable(){
 		return usingCable;
 	}
 
-	//todo javadoc
-	public Mode getMode() {
-		return mode;
+	/**
+	 @return The circuit mode for this circuit.
+	 @see CircuitMode
+	 */
+	public CircuitMode getCircuitMode() {
+		return circuitMode;
 	}
 
-	//todo javadoc
+	/**
+	 @return The number of sets of conductors/cables per conduit. This makes
+	 sense only when the circuit is using a private or shared conduit.
+	 */
 	public int getSetsPerConduit() {
 		return setsPerConduit;
+	}
+
+	/**
+	 @return The shared conduit used by this circuit. Keep in mind that the
+	 conduit returned by this method is actually a ShareableConduit which is
+	 mostly read-only. To gain full access to the share conduit, use the conduit
+	 object passed to setConduitMode(Conduit) method.
+	 @see #setConduitMode(Conduit)
+	 */
+	public ShareableConduit getSharedConduit() {
+		return sharedConduit;
+	}
+
+	/**
+	 @return The shared bundle used by this circuit. Keep in mind that the
+	 bundled returned by this method is actually a ShareableBundle which is
+	 mostly read-only. To gain full access to the share bundle, use the bundle
+	 object passed to setBundleMode(Bundle) method.
+	 @see #setBundleMode(Bundle)
+	 */
+	public ShareableBundle getSharedBundle() {
+		return sharedBundle;
+	}
+
+	/**
+	 @return The length of this circuit, in feet.
+	 */
+	public double getCircuitLength(){
+		if(usingCable)
+			return cable.getLength();
+		return phaseAConductor.getLength();
+	}
+
+	/**
+	 @return A Conduitable interface to this circuit's internal cable or phase A
+	 conductor.
+	 */
+	public Conduitable getConduitable(){
+		return usingCable? cable: phaseAConductor;
 	}
 }
 

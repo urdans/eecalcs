@@ -3,23 +3,23 @@ package eecalcs.conduits;
 /**
  Enum structure for the type of conduit recognized by the NEC.
  <br><br>
- <p><b>EMT</b>: Electrical Metallic Tubing;
- <p><b>ENT</b>: Electrical Nonmetallic Tubing;
- <p><b>FMC</b>: Flexible Metal Conduit;
- <p><b>IMC</b>: Intermediate Metal Conduit;
- <p><b>LFNCA</b>: Liquidtight Flexible Nonmetallic Conduit type A;
- <p><b>LFNCB</b>: Liquidtight Flexible Nonmetallic Conduit type A;
- <p><b>LFMC</b>: Liquidtight Flexible Metal Conduit;
- <p><b>RMC</b>: Rigid Metal Conduit;
- <p><b>PVC80</b>: Rigid Polyvinyl Chloride Conduit, schedule 80;
- <p><b>PVC40</b>: Rigid Polyvinyl Chloride Conduit, schedule 40;
- <p><b>HDPE</b>: High Density Polyethylene Conduit;
- <p><b>PVCA</b>: Rigid Polyvinyl Chloride Conduit, type A;
- <p><b>PVCEB</b>: Rigid Polyvinyl Chloride Conduit, type B;
- <p><b>EMTAL</b>: Electrical Metallic Tubing, Aluminum;
- <p><b>FMCAL</b>: Flexible Metal Conduit, Aluminum;
- <p><b>LFMCAL</b>: Liquidtight Flexible Metal Conduit, Aluminum;
- <p><b>RMCAL</b>: Rigid Metal Conduit, Aluminum;
+ <p><b>EMT</b>:&#9;Electrical Metallic Tubing;
+ <p><b>ENT</b>:&#9;Electrical Nonmetallic Tubing;
+ <p><b>FMC</b>:&#9;Flexible Metal Conduit;
+ <p><b>IMC</b>:&#9;Intermediate Metal Conduit;
+ <p><b>LFNCA</b>:&#9;Liquidtight Flexible Nonmetallic Conduit type A;
+ <p><b>LFNCB</b>:&#9;Liquidtight Flexible Nonmetallic Conduit type A;
+ <p><b>LFMC</b>:&#9;Liquidtight Flexible Metal Conduit;
+ <p><b>RMC</b>:&#9;Rigid Metal Conduit;
+ <p><b>PVC80</b>:&#9;Rigid Polyvinyl Chloride Conduit, schedule 80;
+ <p><b>PVC40</b>:&#9;Rigid Polyvinyl Chloride Conduit, schedule 40;
+ <p><b>HDPE</b>:&#9;High Density Polyethylene Conduit;
+ <p><b>PVCA</b>:&#9;Rigid Polyvinyl Chloride Conduit, type A;
+ <p><b>PVCEB</b>:&#9;Rigid Polyvinyl Chloride Conduit, type B;
+ <p><b>EMTAL</b>:&#9;Electrical Metallic Tubing, Aluminum;
+ <p><b>FMCAL</b>:&#9;Flexible Metal Conduit, Aluminum;
+ <p><b>LFMCAL</b>:&#9;Liquidtight Flexible Metal Conduit, Aluminum;
+ <p><b>RMCAL</b>:&#9;Rigid Metal Conduit, Aluminum;
  */
 public enum Type {
     EMT("EMT"),

@@ -1,6 +1,8 @@
 package eecalcs.conductors;
 
 import eecalcs.conduits.Conduit;
+import eecalcs.systems.TempRating;
+import tools.NotifierDelegate;
 
 /**
  A Conduitable object is a conductor or a cable. Any of these objects can be
@@ -147,4 +149,65 @@ public interface Conduitable {
      @param flag true to enable the broadcasting, false otherwise.
      */
     void notifierEnabled(boolean flag);
+
+    /**
+     Sets this conduitable's insulation.
+     @param insulation The new insulation
+     @see Insul
+     */
+    void setInsulation(Insul insulation);
+
+    /**
+     @return This conduitable's insulation.
+     @see Insul
+     */
+    Insul getInsulation();
+
+    /**
+     Returns the temperature correction factor to be applied to the ampacity.
+
+     @return The temperature correction factor.
+     */
+    double getCorrectionFactor();
+
+    /**
+     Returns the adjustment factor for ampacity of this conduitable, as per
+     <b>NEC 310.15(B)(3)</b>; it specifically accounts for rules
+     <b>310.15(B)(3)(a)(4) {@literal &} (5)</b> and <b>Table 310.15(B)(3)(a).</b>
+
+     @return The adjustment factor.
+     */
+    double getAdjustmentFactor();
+
+    /**
+     @return The product of the correction and adjustment factor of this
+     conduitable.
+     */
+    double getCompoundFactor();
+
+    /**
+     @param terminationTempRating The temperature rating of the termination.
+     @return The product of the correction and adjustment factor of this
+     conduitable when calculated based on the given termination temperature
+     rating. If terminationTempRating is zero the returned value is 1.
+     */
+    double getCompoundFactor(TempRating terminationTempRating);
+
+    /**
+     @return The NotifierDelegate for this conduitable
+     @see NotifierDelegate
+     */
+    NotifierDelegate getNotifier();
+
+    /**
+     @return The temperature rating of this conduitable per its insulator, as
+     defined in {@link TempRating}
+     */
+    TempRating getTemperatureRating();
+
+    /**
+     @return The metal of this conduitable as defined by {@link Metal}
+     */
+    Metal getMetal();
+
 }

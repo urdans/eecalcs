@@ -77,18 +77,18 @@ public class Factors {
         if(distance > 24){
             if(currentCarrying <= 3)
                 return 1;
-            else if(currentCarrying >= 4 & currentCarrying <= 6)
+            if(currentCarrying <= 6)
                 return 0.8;
-            else if(currentCarrying >= 7 & currentCarrying <= 9)
+            if(currentCarrying <= 9)
                 return 0.7;
-            else if(currentCarrying >= 10 & currentCarrying <= 20)
+            if(currentCarrying <= 20)
                 return 0.5;
-            else if(currentCarrying >= 21 & currentCarrying <= 30)
+            if(currentCarrying <= 30)
                 return 0.45;
-            else if(currentCarrying >= 31 & currentCarrying <= 40)
+            if(currentCarrying <= 40)
                 return 0.4;
-            else // totalCurrentCarrying >= 41
-                return 0.35;
+            // totalCurrentCarrying >= 41
+            return 0.35;
         }
         return 1;
     }
@@ -100,7 +100,8 @@ public class Factors {
 
      @param currentCarrying The number of current-carrying conductors in a
      conduit.
-     @param nipple Indicates if the conduit is a nipple (length is <= 24 inches).
+     @param nipple Indicates if the conduit is a nipple (length is &#60;= 24
+     inches).
      @return The adjustment factor.
      */
     public static double getAdjustmentFactor(int currentCarrying, boolean nipple){

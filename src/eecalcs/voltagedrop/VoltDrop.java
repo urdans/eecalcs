@@ -2,6 +2,7 @@ package eecalcs.voltagedrop;
 
 import eecalcs.conductors.Conductor;
 import eecalcs.conductors.ConductorProperties;
+import eecalcs.conductors.ShareableConductor;
 import eecalcs.conductors.Size;
 import eecalcs.conduits.ConduitProperties;
 import eecalcs.conduits.Material;
@@ -11,23 +12,24 @@ import tools.Message;
 import tools.ResultMessages;
 
 /**
- Provides methods for calculation of the voltage drop across conductors
- and for calculation of the maximum length of a circuit for a given maximum
- voltage drop.
+ Provides methods for calculation of the voltage drop across conductors and for
+ calculation of the maximum length of a circuit for a given maximum voltage
+ drop.
  <br><br>
  Before any computation is done, all the required input values are validated. If
- there is an invalid value, the result of the calculation are useless values,
+ there is any invalid input value, the results of the calculations are useless,
  like:
  <br>
  - Zero for voltage drop;<br>
- - Null for determining the minimum size.<br>
-
+ - Null for the minimum conductor size.<br>
+<br>
  When a zero or null value is returned, the resultMessages field contains the
- message explaining the reason. Most of those reasons are input validation
- fails, but there are few messages that are obtained during calculation time and
- are that related to code violations, no mathematical results for the given set
- of conditions or even warnings. The resultMessages field must be checked for
- the presence of those messages. See {@link ResultMessages} class for details.
+ message explaining the reason. Most of those reasons are failing in the
+ validation of the input data. However, there are few messages that are obtained
+ during calculation time. These are related to NEC code violations and no
+ valid results are obtained for the given set of conditions.<br>
+ The resultMessages field must be checked for the presence of those messages.
+ See {@link ResultMessages} class for how to use it.
  */
 
 public class VoltDrop implements ShareableVoltDrop {
@@ -39,7 +41,7 @@ public class VoltDrop implements ShareableVoltDrop {
 	private double maxVoltageDropPercent = 3;
 	private Material conduitMaterial = Material.PVC;
 
-	//region messages
+	//region Predefined messages
 	private static Message ERROR01	= new Message("Source voltage must be greater that zero.",-1);
 	private static Message ERROR02	= new Message("Invalid conduit material.",-2);
 	private static Message ERROR03	= new Message("Invalid conductor size.",-3);
@@ -137,7 +139,7 @@ public class VoltDrop implements ShareableVoltDrop {
 			resultMessages.add(ERROR01);
 		if(sets <= 0 || sets>10)
 			resultMessages.add(ERROR04);
-		if(conductor == null || (conductor != null && conductor.getLength() <= 0) )
+		if(conductor == null || conductor.getLength() <= 0)
 			resultMessages.add(ERROR05);
 		if(loadCurrent <= 0)
 			resultMessages.add(ERROR06);
@@ -159,7 +161,7 @@ public class VoltDrop implements ShareableVoltDrop {
 			resultMessages.add(ERROR01);
 		if(sets <= 0 || sets>10)
 			resultMessages.add(ERROR04);
-		if(conductor == null || (conductor != null && conductor.getLength() <= 0) )
+		if(conductor == null || conductor.getLength() <= 0)
 			resultMessages.add(ERROR05);
 		if(loadCurrent <= 0)
 			resultMessages.add(ERROR06);
@@ -170,9 +172,9 @@ public class VoltDrop implements ShareableVoltDrop {
 
 	/**
 	 Constructs a VoltDrop object for the given conductor object.
-	 The default property values are:
+	 The property's values are:
 	 <br><br>
-	 <p><b>Source voltage</b>: defaults to 120 volts.
+	 <p><b>Source voltage</b>: defaults to 120 volts, single phase, 2 wires.
 	 <p><b>Conductor</b>: provided in the constructor.
 	 <p><b>Sets</b>: defaults to 1 set.
 	 <p><b>Load current</b>: defaults to 10 amps.
@@ -192,6 +194,17 @@ public class VoltDrop implements ShareableVoltDrop {
 
 	/**
 	 Default constructor for this voltage drop object.
+	 The default property's values are:
+	 <br><br>
+	 <p><b>Source voltage</b>: defaults to 120 volts, single phase, 2 wires..
+	 <p><b>Conductor</b>: null. It can later be assigned with {@link
+	 #setConductor(Conductor)}
+	 <p><b>Sets</b>: defaults to 1 set.
+	 <p><b>Load current</b>: defaults to 10 amps.
+	 <p><b>Power factor</b>: defaults to 1.0.
+	 <p><b>Conduit material</b>: defaults to PVC.
+	 <p><b>Maximum allowed voltage drop</b>: defaults to 3 percent.
+	 <br><br>
 	 */
 	public VoltDrop(){
 	}
@@ -207,12 +220,20 @@ public class VoltDrop implements ShareableVoltDrop {
 	}
 
 	/**
+	 Gets the conductor that this voltage drop object uses.
+	 @return The conductor that this voltage drop object uses.
+	 */
+	public ShareableConductor getConductor() {
+		return conductor;
+	}
+
+	/**
 	 Sets the source system voltage for this VoltDrop object.
 
 	 @param sourceVoltage The new source system voltage.
-	 Notice that no validation is performed while setting this value. The user
-	 must check for the presence of errors or warnings after obtaining a
-	 calculation result of zero or null.
+	 Notice that no validation is performed at this point.
+	 The user must check for the presence of errors or warnings after obtaining
+	 a calculation result of zero or null.
 	 @see VoltageSystemAC
 	 */
 	public void setSourceVoltage(VoltageSystemAC sourceVoltage) {
@@ -223,7 +244,7 @@ public class VoltDrop implements ShareableVoltDrop {
 	 Sets the number of sets of conductors in parallel.
 
 	 @param sets The number of sets in parallel.
-	 Notice that no validation is performed while setting this value. The user
+	 Notice that no validation is performed at this point. The user
 	 must check for the presence of errors or warnings after obtaining a
 	 calculation result of zero.
 	 */
@@ -235,7 +256,7 @@ public class VoltDrop implements ShareableVoltDrop {
 	 Sets the load's current.
 
 	 @param loadCurrent The current of the load in amperes.
-	 Notice that no validation is performed while setting this value. The user
+	 Notice that no validation is performed at this point. The user
 	 must check for the presence of errors or warnings after obtaining a
 	 calculation result of zero.
 	 */
@@ -248,7 +269,7 @@ public class VoltDrop implements ShareableVoltDrop {
 
 	 @param powerFactor The power factor of the load.
 	 Should be a number between 0.7 and 1.0 inclusive.
-	 Notice that no validation is performed while setting this value. The user
+	 Notice that no validation is performed at this point. The user
 	 must check for the presence of errors or warnings after obtaining a
 	 calculation result of zero.
 	 */
@@ -256,16 +277,6 @@ public class VoltDrop implements ShareableVoltDrop {
 		this.powerFactor = powerFactor;
 	}
 
-	/**
-	 Sets the maximum allowed voltage drop. This value is used to compute the
-	 the size and the maximum length of the circuit conductors that would have a
-	 voltage drop less or equal to the specified value.
-
-	 @param maxVoltageDropPercent The maximum voltage drop in percentage.
-	 Notice that no validation is performed while setting this value. The user
-	 must check for the presence of errors or warnings after obtaining a
-	 calculation result of zero.
-	 */
 	public void setMaxVoltageDropPercent(double maxVoltageDropPercent) {
 		this.maxVoltageDropPercent = maxVoltageDropPercent;
 	}
@@ -279,7 +290,7 @@ public class VoltDrop implements ShareableVoltDrop {
 	 If the conductor is part of a cable, the outer jacket of the cable will
 	 define the conduit (raceway) material. For AC or MC cable, it's steel. For
 	 any of the NM cable, the PVC material must be used.<br>
-	 Notice that no validation is performed while setting this value. The user
+	 Notice that no validation is performed at this point. The user
 	 must check for the presence of errors or warnings after obtaining a
 	 calculation result of zero.
 	 */
@@ -288,83 +299,48 @@ public class VoltDrop implements ShareableVoltDrop {
 	}
 
 	//----AC Calculations
-	/**
-	 Calculates and returns the AC voltage drop percentage across the set of
-	 conductors under the preset conditions.
-
-	 @return The voltage drop in percentage. If the result is zero, the
-	 resultMessage field content must be checked to determine the reason.
-	 */
 	public double getACVoltageDropPercentage() {
 		if(checkInputForACVoltageDrop())
 			return 100.0 * getACVoltageDrop()/sourceVoltage.getVoltage();
 		return 0;
 	}
 
-	/**
-	 Calculates and returns the AC voltage drop in volts across the set of
-	 conductors under the preset conditions.
-
-	 @return The voltage drop in volts. If the result is zero, the
-	 resultMessage field content must be checked to determine the reason.
-	 */
 	public double getACVoltageDrop() {
 		if(checkInputForACVoltageDrop())
 			return sourceVoltage.getVoltage() - getACVoltageAtLoad();
 		return 0;
 	}
 
-	/**
-	 Calculates and returns the AC voltage in volts at the load terminals
-	 under the preset conditions.
-
-	 @return The voltage at the load terminals in volts. If the result is zero,
-	 the resultMessage field content must be checked to determine the reason.
-	 */
 	public double getACVoltageAtLoad(){
 		if(checkInputForACVoltageDrop())
 			return getGenericACVoltageAtLoad(conductor.getSize());
 		return 0;
 	}
 
-	/**
-	 Returns the size of the circuit's conductor whose AC voltage drop (under
-	 the given conditions) is less or equals to the given maximum voltage drop.
-	 If the returned Size is null the user should check for errors in the
-	 resultMessage field.
-
-	 @return The size of the conductor as defined in {@link Size}.
-	 @see #resultMessages
-	 */
 	public Size getCalculatedSizeAC(){
 		if(checkInputForACSizeCalculation())
 			return computeSizeAC();
 		return null;
 	}
 
-	/**
-	 Returns the calculated one way length of the circuit's conductor whose AC
-	 voltage drop (under the given conditions) is less or equals to the given
-	 maximum voltage drop. If the returned value is zero, the user must check
-	 the result Message field content.
-
-	 @return The maximum conductor's length in feet.
-	 @see #getCalculatedSizeAC()
-	 */
-	public double getMaxLengthAC(){
+	public double getMaxLengthACForCalculatedSize(){
 		getCalculatedSizeAC();
 		if(resultMessages.hasErrors())
 			return 0;
 		return maxLengthAC;
 	}
 
-	/**
-	 Returns the actual AC voltage drop for the calculated conductor size, under
-	 the given conditions.
+	public double getMaxLengthACForActualConductor(){
+		if(checkInputForACSizeCalculation()){
+			maxLengthAC = computeMaxLengthAC(conductor.getSize());
+			if(maxLengthAC <= 0) {
+				resultMessages.add(ERROR30);
+				return 0;
+			}
+		}
+		return maxLengthAC;
+	}
 
-	 @return The AC voltage drop in volts, of the calculated conductor size.
-	 @see #getCalculatedSizeAC()
-	 */
 	public double getActualVoltageDropPercentageAC(){
 		getCalculatedSizeAC();
 		if(resultMessages.hasErrors())
@@ -373,8 +349,8 @@ public class VoltDrop implements ShareableVoltDrop {
 	}
 
 	/*
-	 Calculates and returns the AC voltage at the load terminals fed, by the
-	 preset conductor, of the given size.
+	 Calculates and returns the AC voltage at the load terminals, fed by the
+	 preset conductor, but of the given size.
 	 */
 	private double getGenericACVoltageAtLoad(Size size){
 		double k = sourceVoltage.getPhases() == 1 ? 2 : sourceVoltage.getFactor();
@@ -400,8 +376,8 @@ public class VoltDrop implements ShareableVoltDrop {
 	}
 
 	/*
-	 Calculates and return the size of the preset conductor whose AC voltage drop
-	 percentage is less or equal to the given maximum voltage drop.
+	 Calculates and return the size of the preset conductor whose AC voltage
+	 drop percentage is less or equal to the given maximum voltage drop.
 	 Simultaneously, the max length and the actual voltage drop percentage is
 	 calculated and saved in the corresponding fields.
  	*/
@@ -460,84 +436,48 @@ public class VoltDrop implements ShareableVoltDrop {
 	}
 
 	//----DC Calculations
-	/**
-	 Calculates and returns the DC voltage drop percentage across the set of
-	 conductors under the preset conditions.
-
-	 @return The voltage drop in percentage. If the result is zero, the
-	 resultMessage field content must be checked to determine the reason.
-	 */
 	public double getDCVoltageDropPercentage() {
 		if(checkInputForDCVoltageDrop())
 			return 100.0 * getDCVoltageDrop()/sourceVoltage.getVoltage();
 		return 0;
 	}
 
-	/**
-	 Calculates and returns the DC voltage drop in volts across the set of
-	 conductors under the preset conditions.
-
-	 @return The voltage drop in volts. If the result is zero, the
-	 resultMessage field content must be checked to determine the reason.
-	 */
 	public double getDCVoltageDrop() {
 		if(checkInputForDCVoltageDrop())
 			return sourceVoltage.getVoltage() - getDCVoltageAtLoad();
 		return 0;
 	}
 
-	/**
-	 Calculates and returns the DC voltage in volts at the load terminals
-	 under the preset conditions.
-
-	 @return The voltage at the load terminals in volts. If the result is zero,
-	 the resultMessage field content must be checked to determine the reason.
-	 */
 	public double getDCVoltageAtLoad(){
 		if(checkInputForDCVoltageDrop())
 			return getGenericDCVoltageAtLoad(conductor.getSize());
 		return 0;
 	}
 
-	/**
-	 Returns the size of the circuit's conductor whose DC voltage drop (under
-	 the given conditions) is less or equals to the given maximum voltage drop.
-	 If the returned value is null the user must check the resultMessage field
-	 content.
-
-	 @return The size of the conductor as defined in {@link Size}.
-	 @see #resultMessages
-	 */
 	public Size getCalculatedSizeDC(){
 		if(checkInputForDCSizeCalculation())
 			return computeSizeDC();
 		return null;
 	}
 
-	/**
-	 Returns the calculated one way length of the circuit's conductor whose DC
-	 voltage drop (under the given conditions) is less or equals to the given
-	 maximum voltage drop. If the returned value is zero, the user must check
-	 the resultMessage field content.
-
-	 @return The maximum conductor's length in feet.
-	 @see #getCalculatedSizeDC()
-	 */
-	public double getMaxLengthDC(){
+	public double getMaxLengthDCForCalculatedSize(){
 		getCalculatedSizeDC();
 		if(resultMessages.hasErrors())
 			return 0;
 		return maxLengthDC;
 	}
 
-	/**
-	 Returns the actual DC voltage drop for the calculated conductor size, under
-	 the given conditions.
+	public double getMaxLengthDCForActualConductor(){
+		if(checkInputForDCSizeCalculation()) {
+			maxLengthDC = computeMaxLengthDC(conductor.getSize());
+			if(maxLengthDC <= 0) {
+				resultMessages.add(ERROR30);
+				return 0;
+			}
+		}
+		return maxLengthDC;
+	}
 
-	 @return The DC voltage drop in volts, of the calculated conductor. If the
-	 returned value is zero, check the resultMessage field content.
-	 @see #getCalculatedSizeDC()
-	 */
 	public double getActualVoltageDropPercentageDC(){
 		getCalculatedSizeDC();
 		if(resultMessages.hasErrors())
@@ -598,5 +538,10 @@ public class VoltDrop implements ShareableVoltDrop {
 				sets,
 				conductor.getCopperCoating());
 		return sourceVoltage.getVoltage() * maxVoltageDropPercent * conductor.getLength() / (200 * loadCurrent * dCResistance);
+	}
+
+
+	public double getMaxVoltageDropPercent() {
+		return maxVoltageDropPercent;
 	}
 }

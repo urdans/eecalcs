@@ -157,5 +157,7 @@ public interface ShareableCable {
     /** Refer to {@link Cable#toString()} */
     String toString();
 
+    /** Refer to {@link Conduitable#getCompoundFactor()} */
+    double getCompoundFactor();
 
 }

@@ -1,24 +1,16 @@
 package test.java;
 
 import eecalcs.circuits.Circuit;
-import eecalcs.circuits.Load;
-import eecalcs.circuits.Mode;
-import eecalcs.circuits.Ocpd;
+import eecalcs.circuits.CircuitMode;
+import eecalcs.conduits.*;
+import eecalcs.loads.Load;
 import eecalcs.conductors.*;
-import eecalcs.conduits.Conduit;
-import eecalcs.conduits.ConduitProperties;
-import eecalcs.conduits.Trade;
-import eecalcs.conduits.Type;
 import eecalcs.systems.TempRating;
 import eecalcs.systems.VoltageSystemAC;
 import org.junit.jupiter.api.Test;
 import test.Tools;
+import tools.Message;
 //import static test.Tools;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,6 +18,71 @@ class CircuitTest {
 //    Load load = new Load();
     private Circuit circuit = new Circuit(new Load());
     private Conduit sharedConduit = new Conduit(Type.RMC, Conduit.Nipple.No);
+    private void printState(){
+        Tools.println("Voltage: " + circuit.getLoad().getVoltageSystem());
+        Tools.println("Load current: " + circuit.getLoad().getCurrent());
+        Tools.println("Load MCA: " + circuit.getLoad().getMCA());
+        Tools.println("Load type: " + circuit.getLoad().getLoadType());
+        Size s = circuit.getSizePerVoltageDrop();
+        Tools.println("Max V.drop: " + circuit.getVoltageDrop().getMaxVoltageDropPercent());
+        Tools.println("Actual V.drop: " + circuit.getVoltageDrop().getActualVoltageDropPercentageAC());
+        Tools.println("Size per V.drop: " + s);
+        s = circuit.getSizePerAmpacity();
+        Tools.println("Size per ampacity: " + s);
+        Tools.println("Circuit length: " + circuit.getCircuitLength());
+        Tools.println("Number Of Sets: " + circuit.getNumberOfSets());
+        Tools.println("Termination Temperature Rating: " + circuit.getTerminationTempRating());
+        if(circuit.isUsingCable()) {
+            Tools.println("**** Using a cable ****");
+            Tools.println("Cable Insulation: " + circuit.getCable().getInsulation().getName());
+            Tools.println("Cable Ambient Temperature: " + circuit.getCable().getAmbientTemperatureF());
+            Tools.println("Cable Temperature Rating: " + circuit.getCable().getTemperatureRating());
+            Tools.println("Metal: " + circuit.getCable().getMetal());
+            Tools.println("Correction Factor: " + circuit.getCable().getCorrectionFactor());
+            Tools.println("Adjustment Factor: " + circuit.getCable().getAdjustmentFactor());
+            Tools.println("Compound Factor: " + circuit.getCable().getCompoundFactor());
+        }
+        else {
+            Tools.println("**** Using conductors ****");
+            Tools.println("Conductor Insulation: " + circuit.getPhaseConductor().getInsulation().getName());
+            Tools.println("Conductor Ambient Temperature: " + circuit.getPhaseConductor().getAmbientTemperatureF());
+            Tools.println("Conductor Temperature Rating: " + circuit.getPhaseConductor().getTemperatureRating());
+            Tools.println("Metal: " + circuit.getPhaseConductor().getMetal());
+            Tools.println("Correction Factor: " + circuit.getPhaseConductor().getCorrectionFactor());
+            Tools.println("Adjustment Factor: " + circuit.getPhaseConductor().getAdjustmentFactor());
+            Tools.println("Compound Factor: " + circuit.getPhaseConductor().getCompoundFactor());
+        }
+        //PRIVATE_CONDUIT, FREE_AIR, SHARED_CONDUIT, PRIVATE_BUNDLE, SHARED_BUNDLE
+        if(circuit.getCircuitMode() == CircuitMode.PRIVATE_CONDUIT) {
+            Tools.println("**** PRIVATE_CONDUIT ****");
+            Tools.println("Current Carrying Number: " + circuit.getPrivateConduit().getCurrentCarryingNumber());
+            Tools.println("Number of conduits: " + circuit.getNumberOfConduits());
+        }
+        else if(circuit.getCircuitMode() == CircuitMode.SHARED_CONDUIT) {
+            Tools.println("**** SHARED_CONDUIT ****");
+            Tools.println("Current Carrying Number: " + circuit.getSharedConduit().getCurrentCarryingNumber());
+            Tools.println("Number of conduits: " + circuit.getNumberOfConduits());
+        }
+        else if(circuit.getCircuitMode() == CircuitMode.PRIVATE_BUNDLE) {
+            Tools.println("**** PRIVATE_BUNDLE ****");
+            Tools.println("Current Carrying Number: " + circuit.getPrivateBundle().getCurrentCarryingNumber());
+        }
+        else if(circuit.getCircuitMode() == CircuitMode.SHARED_BUNDLE) {
+            Tools.println("**** SHARED_BUNDLE ****");
+            Tools.println("Current Carrying Number: " + circuit.getSharedBundle().getCurrentCarryingNumber());
+        }
+        else
+            Tools.println("Free air mode");
+
+        Tools.println("");
+
+
+    }
+    private void printResultMessages(){
+        for(Message m: circuit.resultMessages.getMessages()){
+            Tools.println(m.number + ": " + m.message);
+        }
+    }
 /*    CircuitData circuitData;
     {
         try {
@@ -162,29 +219,46 @@ class CircuitTest {
     @Test
     void lessConduits(){
         Tools.printTitle("CircuitTest.lessConduits");
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         assertEquals(1, circuit.getNumberOfConduits());
         assertEquals(1, circuit.getNumberOfSets());
+        assertEquals(1, circuit.getSetsPerConduit());
 
-        circuit.setNumberOfSets(10); //this keeps the number of sets per conduit to 1
+        circuit.setNumberOfSets(10);
+        assertEquals(1, circuit.getNumberOfConduits());
+        assertEquals(10, circuit.getNumberOfSets());
+        assertEquals(10, circuit.getSetsPerConduit());
+
+
+        circuit.moreConduits();
+        assertEquals(2, circuit.getNumberOfConduits());
+        assertEquals(10, circuit.getNumberOfSets());
+        assertEquals(5, circuit.getSetsPerConduit());
+
+        circuit.moreConduits();
+        assertEquals(5, circuit.getNumberOfConduits());
+        assertEquals(10, circuit.getNumberOfSets());
+        assertEquals(2, circuit.getSetsPerConduit());
+
+        circuit.moreConduits();
         assertEquals(10, circuit.getNumberOfConduits());
         assertEquals(10, circuit.getNumberOfSets());
+        assertEquals(1, circuit.getSetsPerConduit());
 
         circuit.lessConduits();
         assertEquals(5, circuit.getNumberOfConduits());
         assertEquals(10, circuit.getNumberOfSets());
+        assertEquals(2, circuit.getSetsPerConduit());
 
         circuit.lessConduits();
         assertEquals(2, circuit.getNumberOfConduits());
         assertEquals(10, circuit.getNumberOfSets());
+        assertEquals(5, circuit.getSetsPerConduit());
 
         circuit.lessConduits();
         assertEquals(1, circuit.getNumberOfConduits());
         assertEquals(10, circuit.getNumberOfSets());
-
-        circuit.lessConduits();
-        assertEquals(1, circuit.getNumberOfConduits());
-        assertEquals(10, circuit.getNumberOfSets());
+        assertEquals(10, circuit.getSetsPerConduit());
     }
 
     @Test
@@ -222,14 +296,14 @@ class CircuitTest {
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25);
         circuit.getPhaseConductor().setLength(1);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v480_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v480_3ph_4w);
         circuit.getLoad().setVoltAmperes(87295.3607014714);
         circuit.setNeutralCurrentCarrying(true); //4 current-carrying
         circuit.getPhaseConductor().setAmbientTemperatureF(100);
         circuit.getPhaseConductor().setInsulation(Insul.THHW);
         circuit.getPhaseConductor().setMetal(Metal.COPPER);
         assertEquals(105, circuit.getLoad().getMCA(), 0.01);
-        assertEquals(Mode.PRIVATE_CONDUIT, circuit.getMode());
+        assertEquals(CircuitMode.PRIVATE_CONDUIT, circuit.getCircuitMode());
         assertEquals(4, circuit.getPrivateConduit().getCurrentCarryingNumber());
 
         circuit.getPhaseConductor().setSize(Size.AWG_1);
@@ -299,12 +373,12 @@ class CircuitTest {
         circuit.setNumberOfSets(2);
 //        Tools.println("#CCC: " + circuit.getPrivateConduit().getCurrentCarryingNumber());
 //        Tools.println("#conduits: " + circuit.getNumberOfConduits());
-        assertEquals(Size.KCMIL_500, circuit.getCircuitSize());
+        assertEquals(Size.KCMIL_350, circuit.getCircuitSize());
 
         //termination temperature rating is known, T75
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v240_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v240_3ph_4w);
         circuit.getPhaseConductor().setAmbientTemperatureF(110);
         circuit.getPhaseConductor().setInsulation(Insul.TW);
         circuit.getLoad().setCurrent(100);
@@ -364,7 +438,7 @@ class CircuitTest {
         //termination temperature rating is known, T90
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v240_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v240_3ph_4w);
         circuit.getPhaseConductor().setAmbientTemperatureF(102);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
         circuit.setNeutralCurrentCarrying(true);
@@ -382,17 +456,17 @@ class CircuitTest {
         circuit.getLoad().setCurrent(420);
         circuit.setNumberOfSets(2);
         circuit.getPhaseConductor().setInsulation(Insul.TW);
-        assertEquals(Size.KCMIL_600, circuit.getCircuitSize());
+        assertEquals(Size.KCMIL_700, circuit.getCircuitSize());
 
         circuit.getPhaseConductor().setInsulation(Insul.THW);
-        assertEquals(Size.KCMIL_350, circuit.getCircuitSize());
+        assertEquals(Size.KCMIL_500, circuit.getCircuitSize());
 
         circuit.getPhaseConductor().setInsulation(Insul.THHW);
-        assertEquals(Size.KCMIL_250, circuit.getCircuitSize());
+        assertEquals(Size.KCMIL_350, circuit.getCircuitSize());
 
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getPhaseConductor().setAmbientTemperatureF(95);
         circuit.getPhaseConductor().setMetal(Metal.ALUMINUM);
 
@@ -405,42 +479,215 @@ class CircuitTest {
 
         circuit.getPhaseConductor().setInsulation(Insul.THHW);
         assertEquals(Size.AWG_12, circuit.getCircuitSize());
+    }
 
-        if(true)
-            return;
+    @Test
+    void getCircuitSize_no_ampacity_due_to_ambient_temp_equal_conductor_temp_rating(){
+        //circuit cannot be sized because the ambient temperature is above or near the
+        //temperature rating of the conductor, so TABLE 310.15(B)(2)(a) gives a correction
+        //factor of zero.
+        circuit.getLoad().setCurrent(10);
+        circuit.getPhaseConductor().setInsulation(Insul.TW); //60°C
+        circuit.getPhaseConductor().setAmbientTemperatureF(TempRating.getFahrenheit(56));
+        assertNull(circuit.getCircuitSize());
 
-        circuit.getCircuitSize();
-        circuit.resultMessages.getMessages().forEach(x -> System.out.println(x.number + ": " + x.message));
+        circuit.setTerminationTempRating(TempRating.T75);
+        circuit.getPhaseConductor().setInsulation(Insul.THW); //75°C
+        circuit.getPhaseConductor().setAmbientTemperatureF(TempRating.getFahrenheit(70));
+        assertNotNull(circuit.getCircuitSize());
+
+        circuit.getPhaseConductor().setAmbientTemperatureF(TempRating.getFahrenheit(71));
+        assertNull(circuit.getCircuitSize());
+
+        circuit.setTerminationTempRating(TempRating.T90);
+        circuit.getPhaseConductor().setInsulation(Insul.THHW); //90°C
+        circuit.getPhaseConductor().setAmbientTemperatureF(TempRating.getFahrenheit(81));
+        assertNotNull(circuit.getCircuitSize());
+
+        circuit.getPhaseConductor().setAmbientTemperatureF(TempRating.getFahrenheit(86));
+        assertNull(circuit.getCircuitSize());
+    }
+
+    @Test
+    void getCircuitSize_determined_by_MCA(){
+        //size of circuit conductors is decided upon MCA
+        circuit.getVoltageDrop().setMaxVoltageDropPercent(5.0);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v480_3ph_4w);
+        circuit.getLoad().setCurrent(100);
+        circuit.getPhaseConductor().setLength(50);
+        circuit.getPhaseConductor().setMetal(Metal.COPPER);
+        circuit.getPhaseConductor().setInsulation(Insul.THW);
+        circuit.getPhaseConductor().setAmbientTemperatureF(86);
+        circuit.setNeutralCurrentCarrying(false);
+        circuit.setNumberOfSets(1);
+        circuit.setConduitMode();
+        circuit.setTerminationTempRating(TempRating.T75);
+        circuit.getLoad().setNonContinuous();
+
+        //case 1 - standard (default) conditions
+        //correction factor = 1
+        //adjustment factor = 1
+        //load is non continuous
+        assertEquals(Size.AWG_3, circuit.getCircuitSize());
+
+        //case 2 - load is continuous, no factors, MCA decides
+        circuit.getLoad().setContinuous();
+        //correction factor = 1
+        //adjustment factor = 1
+        //load is continuous
+        assertEquals(Size.AWG_1, circuit.getCircuitSize());
+
+        //case 3 - load is continuous, factors decides.
+        circuit.getPhaseConductor().setAmbientTemperatureF(95); //CorrectionFactor: 0.94
+        circuit.setNeutralCurrentCarrying(true); //AdjustmentFactor: 0.8
+        //correction factor = 0.94
+        //adjustment factor = 0.8
+        //load is continuous
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize());
+        Tools.println("Load tpe: " + circuit.getLoad().getLoadType());
+        Tools.println("Load current: " + circuit.getLoad().getCurrent());
+        Tools.println("Load MCA: " + circuit.getLoad().getMCA());
+        Tools.println("CircuitSize: " + circuit.getCircuitSize().getName());
+        Tools.println("Selected by MCA: " + circuit.resultMessages.containsMessage(230));
+        Tools.println("Ampacity: " + circuit.getPhaseConductor().getAmpacity());
+        Tools.println("CorrectionFactor: " + circuit.getPhaseConductor().getCorrectionFactor());
+        Tools.println("AdjustmentFactor: " + circuit.getPhaseConductor().getAdjustmentFactor());
+        Tools.println("----------");
+
+        //case 4 - load is continuous, MCA decides.
+        circuit.getPhaseConductor().setAmbientTemperatureF(77);
+        //correction factor = 1.05
+        //adjustment factor = 0.8
+        //load is continuous
+        assertEquals(Size.AWG_1, circuit.getCircuitSize());
+        Tools.println("Load tpe: " + circuit.getLoad().getLoadType());
+        Tools.println("Load current: " + circuit.getLoad().getCurrent());
+        Tools.println("Load MCA: " + circuit.getLoad().getMCA());
+        Tools.println("CircuitSize: " + circuit.getCircuitSize().getName());
+        Tools.println("Ampacity: " + circuit.getPhaseConductor().getAmpacity());
+        Tools.println("Selected by MCA: " + circuit.resultMessages.containsMessage(230));
+        Tools.println("CorrectionFactor: " + circuit.getPhaseConductor().getCorrectionFactor());
+        Tools.println("AdjustmentFactor: " + circuit.getPhaseConductor().getAdjustmentFactor());
+        Tools.println("----------");
+
+        //case 5 - load is continuous, MCA decides.
+        circuit.getPhaseConductor().setAmbientTemperatureF(50);
+        //correction factor = 1.20
+        //adjustment factor = 0.8
+        //load is continuous
+        //assertEquals(Size.AWG_1, circuit.getCircuitSize());
+        Tools.println("Load tpe: " + circuit.getLoad().getLoadType());
+        Tools.println("Load current: " + circuit.getLoad().getCurrent());
+        Tools.println("Load MCA: " + circuit.getLoad().getMCA());
+        Tools.println("CircuitSize: " + circuit.getCircuitSize().getName());
+        Tools.println("Ampacity: " + circuit.getPhaseConductor().getAmpacity());
+        Tools.println("Selected by MCA: " + circuit.resultMessages.containsMessage(230));
+        Tools.println("CorrectionFactor: " + circuit.getPhaseConductor().getCorrectionFactor());
+        Tools.println("AdjustmentFactor: " + circuit.getPhaseConductor().getAdjustmentFactor());
+        Tools.println("----------");
+
+        //load is continuous, but temperature is too high, adj. & correc. factors govern
+        //todo: this is a good example of how big a conductor could be when accounting all factors in the code
+        //A challenge question could be:
+        //A 83.14 KVA, 480v 3-phase 4-wire continuous load is located at 450 feet from its feeding panel.
+        //The load is mostly non linear and will be installed in a PVC conduit.
+        //The design ambient temperature is 100°F.
+        //1. Select the proper size for a set of THW copper conductors. A: 1/0 AWG
+        //2. Select a 80% rated circuit breaker. A: 125 Amps
+        //3. Select the minimum conduit trade size.
+        //next level questions...
+        //4. What is the voltage drop on this circuit? 1.94%
+        //very challenging question...
+        //5. How far can this load be from the panel using the selected conductor for a voltage drop of no more than
+        // 3%? 694 FT
+
+        //case 6 - load is continuous, factors decides.
+        circuit.getPhaseConductor().setAmbientTemperatureF(100);
+        circuit.getVoltageDrop().setMaxVoltageDropPercent(3.0);
+        circuit.getPhaseConductor().setLength(450);
+        //correction factor = 0.88
+        //adjustment factor = 0.8
+        //load is continuous
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize());
+        Tools.println("Load tpe: " + circuit.getLoad().getLoadType());
+        Tools.println("Load current: " + circuit.getLoad().getCurrent());
+        Tools.println("Load MCA: " + circuit.getLoad().getMCA());
+        Tools.println("CircuitSize: " + circuit.getCircuitSize().getName());
+        Tools.println("Ampacity: " + circuit.getPhaseConductor().getAmpacity());
+        Tools.println("Selected by MCA: " + circuit.resultMessages.containsMessage(230));
+        Tools.println("CorrectionFactor: " + circuit.getPhaseConductor().getCorrectionFactor());
+        Tools.println("AdjustmentFactor: " + circuit.getPhaseConductor().getAdjustmentFactor());
+        Tools.println("----------");
+    }
+
+    @Test
+    void getCircuitSize_VDrop_Neutral_OCPD_Grounding_ConductorsUpdated_TradeSize() {
+        Tools.printTitle("CircuitTest.getCircuitSize_Neutral_OCPD_Grounding_ConductorsUpdated_TradeSize");
+        circuit.getVoltageDrop().setMaxVoltageDropPercent(3);
+        circuit.getPhaseConductor().setLength(100);
+        circuit.setNumberOfSets(1);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v480_3ph_4w);
+        circuit.setNeutralCurrentCarrying(true); //4 current-carrying
+        circuit.getPhaseConductor().setAmbientTemperatureF(100);
+        circuit.getPhaseConductor().setInsulation(Insul.THHW);
+        circuit.getPhaseConductor().setMetal(Metal.COPPER);
+        circuit.getPhaseConductor().setSize(Size.AWG_1);
+        //termination temperature rating is unknown
+        circuit.setTerminationTempRating(null);
+        circuit.getLoad().setCurrent(100);
+        assertEquals(Size.AWG_3$0, circuit.getCircuitSize());
+        //check that the VDrop object provides calculations for the calculated size
+        assertEquals(1.333, circuit.getVoltageDrop().getACVoltageDrop(), 0.001);
+        assertEquals(0.277, circuit.getVoltageDrop().getACVoltageDropPercentage(), 0.001);
+        assertEquals(478.666, circuit.getVoltageDrop().getACVoltageAtLoad(), 0.001);
+        assertEquals(1084.734, circuit.getVoltageDrop().getMaxLengthACForActualConductor(), 0.001);
+        //check that the neural size was also calculated.
+        assertEquals(Size.AWG_3$0, circuit.getNeutralConductor().getSize());
+
+/*        System.out.println("                getACVoltageDrop: "+circuit.getVoltageDrop().getACVoltageDrop());
+        System.out.println("      getACVoltageDropPercentage: "+circuit.getVoltageDrop().getACVoltageDropPercentage());
+        System.out.println("              getACVoltageAtLoad: "+circuit.getVoltageDrop().getACVoltageAtLoad());
+        System.out.println("                  getMaxLengthAC: "+circuit.getVoltageDrop().getMaxLengthACForActualConductor());*/
+
+
+
+
+
+
     }
 
     @Test
     void getTradeSize(){
         Tools.printTitle("CircuitTest.getTradeSize");
-        assertEquals(Trade.T1$2,circuit.getPrivateConduit().getTradeSize());
+        assertEquals(Trade.T1$2, circuit.getPrivateConduit().getTradeSize());
 
         circuit.setTerminationTempRating(null);
         circuit.setNumberOfSets(2);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v240_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v240_3ph_4w);
         circuit.getPhaseConductor().setAmbientTemperatureF(110);
         circuit.getPhaseConductor().setInsulation(Insul.THWN);
         circuit.getLoad().setCurrent(350);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(5.0);
         circuit.setNeutralCurrentCarrying(true);
-        assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
-        assertEquals(Size.KCMIL_300, circuit.getNeutralConductor().getSize());
+
+        printState();
+
+        assertEquals(Size.KCMIL_350, circuit.getCircuitSize());
+        assertEquals(Size.KCMIL_350, circuit.getNeutralConductor().getSize());
+        //todo in the future, the grounding conductor size must be selected per the ocpd
         assertEquals(Size.AWG_12, circuit.getGroundingConductor().getSize());
-        assertEquals(4, circuit.getPrivateConduit().getCurrentCarryingNumber());
+        assertEquals(8, circuit.getPrivateConduit().getCurrentCarryingNumber());
         assertEquals(Type.PVC40, circuit.getPrivateConduit().getType());
         assertEquals(40, circuit.getPrivateConduit().getAllowedFillPercentage());
-        assertEquals(1.8565, circuit.getPrivateConduit().getConduitablesArea());
+        assertEquals(4.2202, circuit.getPrivateConduit().getConduitablesArea());
         assertEquals(
-                4.695,
+                12.554,
                 ConduitProperties.getArea(
                         circuit.getPrivateConduit().getType(),
-                        Trade.T2_1$2
+                        Trade.T4
                 )
         );
-        assertEquals(Trade.T2_1$2, circuit.getPrivateConduit().getTradeSize());
+        assertEquals(Trade.T4, circuit.getPrivateConduit().getTradeSize());
     }
 
     @Test
@@ -473,7 +720,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(null);
         circuit.getPhaseConductor().setInsulation(Insul.TW);
         circuit.getPhaseConductor().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(100);
         circuit.setNeutralCurrentCarrying(true);
         //even if there are 4 current-carrying conductor in free air, adjustment
@@ -495,7 +742,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(null);
         circuit.getPhaseConductor().setInsulation(Insul.TW);
         circuit.getPhaseConductor().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment
@@ -517,7 +764,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(null);
         circuit.getPhaseConductor().setInsulation(Insul.THW);
         circuit.getPhaseConductor().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment
@@ -539,7 +786,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(null);
         circuit.getPhaseConductor().setInsulation(Insul.THHW);
         circuit.getPhaseConductor().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment
@@ -561,7 +808,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.getPhaseConductor().setInsulation(Insul.TW);
         circuit.getPhaseConductor().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment
@@ -583,7 +830,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.getPhaseConductor().setInsulation(Insul.THW);
         circuit.getPhaseConductor().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment  factor is 1.
@@ -614,7 +861,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.getPhaseConductor().setInsulation(Insul.THHW);
         circuit.getPhaseConductor().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment  factor is 1.
@@ -645,7 +892,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.getPhaseConductor().setInsulation(Insul.TW);
         circuit.getPhaseConductor().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //The temp rating of the conductor does not exceeds the temp rating of the termination, in fact, its bellow
@@ -668,7 +915,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.getPhaseConductor().setInsulation(Insul.THW);
         circuit.getPhaseConductor().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //The temp rating of the conductor equals the temp rating of the termination (T75). The size of the conductor
@@ -690,7 +937,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.getPhaseConductor().setInsulation(Insul.THHW);
         circuit.getPhaseConductor().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment  factor is 1.
@@ -721,7 +968,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.getPhaseConductor().setInsulation(Insul.THW);
         circuit.getPhaseConductor().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //The temp rating of the conductor does not exceeds the temp rating of the termination, in fact, its bellow
@@ -744,7 +991,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.getPhaseConductor().setInsulation(Insul.THHW);
         circuit.getPhaseConductor().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //The temp rating of the conductor equals the temp rating of the termination (T90). The size of the conductor
@@ -768,7 +1015,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(null);
         circuit.getPhaseConductor().setInsulation(Insul.THHW);
         circuit.getPhaseConductor().setAmbientTemperatureF(102);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(100);
         circuit.setNeutralCurrentCarrying(true);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -790,7 +1037,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(null);
         circuit.getPhaseConductor().setInsulation(Insul.THHW);
         circuit.getPhaseConductor().setAmbientTemperatureF(102);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(101);
         circuit.setNeutralCurrentCarrying(true);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -812,7 +1059,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.getPhaseConductor().setInsulation(Insul.TW);
         circuit.getPhaseConductor().setAmbientTemperatureF(102);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -834,7 +1081,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.getPhaseConductor().setInsulation(Insul.THHW);
         circuit.getPhaseConductor().setAmbientTemperatureF(102);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -856,7 +1103,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.getPhaseConductor().setInsulation(Insul.THW);
         circuit.getPhaseConductor().setAmbientTemperatureF(102);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -878,7 +1125,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.getPhaseConductor().setInsulation(Insul.THHW);
         circuit.getPhaseConductor().setAmbientTemperatureF(102);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(false);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -905,7 +1152,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.getPhaseConductor().setInsulation(Insul.THHW);
         circuit.getPhaseConductor().setAmbientTemperatureF(102);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(false);
         //the shared conduit has 8 CCC
@@ -927,7 +1174,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(null);
         circuit.getPhaseConductor().setInsulation(Insul.TW);
         circuit.getPhaseConductor().setAmbientTemperatureF(87);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(18);
         circuit.setNeutralCurrentCarrying(true);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -974,7 +1221,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(null);
         circuit.getPhaseConductor().setInsulation(Insul.TW);
         circuit.getPhaseConductor().setAmbientTemperatureF(87);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(18);
         circuit.setNeutralCurrentCarrying(true);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -1072,14 +1319,14 @@ class CircuitTest {
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25);
         circuit.getCable().setLength(1);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v480_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v480_3ph_4w);
         circuit.getLoad().setVoltAmperes(87295.3607014714);
         circuit.setNeutralCurrentCarrying(true); //4 current-carrying
         circuit.getCable().setAmbientTemperatureF(100);
         circuit.getCable().setInsulation(Insul.THHW);
         circuit.getCable().setMetal(Metal.COPPER);
         assertEquals(105, circuit.getLoad().getMCA(), 0.01);
-        assertEquals(Mode.PRIVATE_CONDUIT, circuit.getMode());
+        assertEquals(CircuitMode.PRIVATE_CONDUIT, circuit.getCircuitMode());
         assertEquals(4, circuit.getPrivateConduit().getCurrentCarryingNumber());
 
         circuit.getCable().setPhaseConductorSize(Size.AWG_1);
@@ -1147,12 +1394,12 @@ class CircuitTest {
         assertNull(circuit.getCircuitSize());
 
         circuit.setNumberOfSets(2);
-        assertEquals(Size.KCMIL_500, circuit.getCircuitSize());
+        assertEquals(Size.KCMIL_350, circuit.getCircuitSize());
 
         //termination temperature rating is known, T75
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v240_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v240_3ph_4w);
         circuit.getCable().setAmbientTemperatureF(110);
         circuit.getCable().setInsulation(Insul.TW);
         circuit.getLoad().setCurrent(100);
@@ -1212,7 +1459,7 @@ class CircuitTest {
         //termination temperature rating is known, T90
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v240_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v240_3ph_4w);
         circuit.getCable().setAmbientTemperatureF(102);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
         circuit.setNeutralCurrentCarrying(true);
@@ -1227,23 +1474,33 @@ class CircuitTest {
         circuit.getCable().setInsulation(Insul.THHW);
         assertEquals(Size.AWG_2, circuit.getCircuitSize());
 
+
         circuit.getLoad().setCurrent(420);
         circuit.setNumberOfSets(2);
         circuit.getCable().setInsulation(Insul.TW);
-        assertEquals(Size.KCMIL_600, circuit.getCircuitSize());
+        assertEquals(Size.KCMIL_700, circuit.getCircuitSize());
 
         circuit.getCable().setInsulation(Insul.THW);
-        assertEquals(Size.KCMIL_350, circuit.getCircuitSize());
+        assertEquals(Size.KCMIL_500, circuit.getCircuitSize());
 
         circuit.getCable().setInsulation(Insul.THHW);
-        assertEquals(Size.KCMIL_250, circuit.getCircuitSize());
+        assertEquals(Size.KCMIL_350, circuit.getCircuitSize());
 
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getCable().setAmbientTemperatureF(95);
         circuit.getCable().setMetal(Metal.ALUMINUM);
+        circuit.getLoad().setCurrent(10);
+        circuit.getCable().setInsulation(Insul.TW);
+        assertEquals(Size.AWG_12, circuit.getCircuitSize());
 
+        //using high leg
+        circuit.setTerminationTempRating(TempRating.T60);
+        circuit.setNumberOfSets(1);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_1ph_2wN);
+        circuit.getCable().setAmbientTemperatureF(95);
+        circuit.getCable().setMetal(Metal.ALUMINUM);
         circuit.getLoad().setCurrent(10);
         circuit.getCable().setInsulation(Insul.TW);
         assertEquals(Size.AWG_12, circuit.getCircuitSize());
@@ -1258,65 +1515,63 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.getCable().setAmbientTemperatureF(110);
         circuit.getCable().setInsulation(Insul.THHW);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getCable().setMetal(Metal.COPPER);
         circuit.setNeutralCurrentCarrying(false);
-        circuit.getLoad().setCurrent(2502);
+        circuit.getLoad().setCurrent(1957);
         circuit.setNumberOfSets(6);
-        assertEquals(6,circuit.getNumberOfConduits());
-        assertEquals(1,circuit.getSetsPerConduit());
-        Tools.println("NumberOfConduits: "+ circuit.getNumberOfConduits());
-        Tools.println("SetsPerConduit: "+ circuit.getSetsPerConduit());
-        Tools.println("CurrentCarryingNumber: "+ circuit.getPrivateConduit().getCurrentCarryingNumber());
-        Tools.println("--------lessConduits----------");
-        assertEquals(Size.KCMIL_700, circuit.getCircuitSize());
-
-        circuit.lessConduits();
-        assertEquals(3,circuit.getNumberOfConduits());
-        assertEquals(2,circuit.getSetsPerConduit());
-        Tools.println("NumberOfConduits: "+ circuit.getNumberOfConduits());
-        Tools.println("SetsPerConduit: "+ circuit.getSetsPerConduit());
-        Tools.println("CurrentCarryingNumber: "+ circuit.getPrivateConduit().getCurrentCarryingNumber());
-        Tools.println("--------lessConduits----------");
-        assertEquals(Size.KCMIL_1000, circuit.getCircuitSize());
-
-        circuit.lessConduits();
-        assertEquals(2,circuit.getNumberOfConduits());
-        assertEquals(3,circuit.getSetsPerConduit());
-        Tools.println("NumberOfConduits: "+ circuit.getNumberOfConduits());
-        Tools.println("SetsPerConduit: "+ circuit.getSetsPerConduit());
-        Tools.println("CurrentCarryingNumber: "+ circuit.getPrivateConduit().getCurrentCarryingNumber());
-        Tools.println("--------lessConduits----------");
-        assertEquals(Size.KCMIL_1500, circuit.getCircuitSize());
-
-
-        circuit.lessConduits();
-        assertEquals(1,circuit.getNumberOfConduits());
-        assertEquals(6,circuit.getSetsPerConduit());
-        assertNull(circuit.getCircuitSize());
-        Tools.println("NumberOfConduits: "+ circuit.getNumberOfConduits());
-        Tools.println("SetsPerConduit: "+ circuit.getSetsPerConduit());
-        Tools.println("CurrentCarryingNumber: "+ circuit.getPrivateConduit().getCurrentCarryingNumber());
-        Tools.println("--------moreConduits----------");
+        assertEquals(1, circuit.getNumberOfConduits());
+        assertEquals(6, circuit.getSetsPerConduit());
+//        Tools.println("NumberOfConduits: "+ circuit.getNumberOfConduits());
+//        Tools.println("SetsPerConduit: "+ circuit.getSetsPerConduit());
+//        Tools.println("CurrentCarryingNumber: "+ circuit.getPrivateConduit().getCurrentCarryingNumber());
+//        Tools.println("--------lessConduits----------");
+        assertEquals(Size.KCMIL_2000, circuit.getCircuitSize());
 
         circuit.moreConduits();
-        assertEquals(2,circuit.getNumberOfConduits());
-        assertEquals(3,circuit.getSetsPerConduit());
-        Tools.println("NumberOfConduits: "+ circuit.getNumberOfConduits());
-        Tools.println("SetsPerConduit: "+ circuit.getSetsPerConduit());
-        Tools.println("CurrentCarryingNumber: "+ circuit.getPrivateConduit().getCurrentCarryingNumber());
-        Tools.println("--------moreConduits----------");
-
-        assertEquals(Size.KCMIL_1500, circuit.getCircuitSize());
+        assertEquals(2, circuit.getNumberOfConduits());
+        assertEquals(3, circuit.getSetsPerConduit());
+//        Tools.println("NumberOfConduits: "+ circuit.getNumberOfConduits());
+//        Tools.println("SetsPerConduit: "+ circuit.getSetsPerConduit());
+//        Tools.println("CurrentCarryingNumber: "+ circuit.getPrivateConduit().getCurrentCarryingNumber());
+//        Tools.println("--------lessConduits----------");
+        assertEquals(Size.KCMIL_800, circuit.getCircuitSize());
 
         circuit.moreConduits();
-        assertEquals(3,circuit.getNumberOfConduits());
-        assertEquals(2,circuit.getSetsPerConduit());
-        Tools.println("NumberOfConduits: "+ circuit.getNumberOfConduits());
-        Tools.println("SetsPerConduit: "+ circuit.getSetsPerConduit());
-        Tools.println("CurrentCarryingNumber: "+ circuit.getPrivateConduit().getCurrentCarryingNumber());
-        Tools.println("------------------");
-        assertEquals(Size.KCMIL_1000, circuit.getCircuitSize());
+        assertEquals(3, circuit.getNumberOfConduits());
+        assertEquals(2, circuit.getSetsPerConduit());
+//        Tools.println("NumberOfConduits: "+ circuit.getNumberOfConduits());
+//        Tools.println("SetsPerConduit: "+ circuit.getSetsPerConduit());
+//        Tools.println("CurrentCarryingNumber: "+ circuit.getPrivateConduit().getCurrentCarryingNumber());
+//        Tools.println("--------lessConduits----------");
+        assertEquals(Size.KCMIL_600, circuit.getCircuitSize());
+
+        circuit.moreConduits();
+        assertEquals(6, circuit.getNumberOfConduits());
+        assertEquals(1, circuit.getSetsPerConduit());
+        assertEquals(Size.KCMIL_400, circuit.getCircuitSize());
+//        Tools.println("NumberOfConduits: "+ circuit.getNumberOfConduits());
+//        Tools.println("SetsPerConduit: "+ circuit.getSetsPerConduit());
+//        Tools.println("CurrentCarryingNumber: "+ circuit.getPrivateConduit().getCurrentCarryingNumber());
+//        Tools.println("--------moreConduits----------");
+
+        circuit.moreConduits();
+        assertEquals(6, circuit.getNumberOfConduits());
+        assertEquals(1, circuit.getSetsPerConduit());
+//        Tools.println("NumberOfConduits: "+ circuit.getNumberOfConduits());
+//        Tools.println("SetsPerConduit: "+ circuit.getSetsPerConduit());
+//        Tools.println("CurrentCarryingNumber: "+ circuit.getPrivateConduit().getCurrentCarryingNumber());
+//        Tools.println("--------moreConduits----------");
+        assertEquals(Size.KCMIL_400, circuit.getCircuitSize());
+
+        circuit.lessConduits();
+        assertEquals(3, circuit.getNumberOfConduits());
+        assertEquals(2, circuit.getSetsPerConduit());
+//        Tools.println("NumberOfConduits: "+ circuit.getNumberOfConduits());
+//        Tools.println("SetsPerConduit: "+ circuit.getSetsPerConduit());
+//        Tools.println("CurrentCarryingNumber: "+ circuit.getPrivateConduit().getCurrentCarryingNumber());
+//        Tools.println("------------------");
+        assertEquals(Size.KCMIL_600, circuit.getCircuitSize());
 
         circuit.getCircuitSize();
         circuit.resultMessages.getMessages().forEach(x -> System.out.println(x.number + ": " + x.message));
@@ -1332,7 +1587,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(null);
         circuit.getCable().setInsulation(Insul.THHW);
         circuit.getCable().setAmbientTemperatureF(102);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(100);
         circuit.setNeutralCurrentCarrying(true);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -1355,7 +1610,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(null);
         circuit.getCable().setInsulation(Insul.THHW);
         circuit.getCable().setAmbientTemperatureF(102);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(101);
         circuit.setNeutralCurrentCarrying(true);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -1378,7 +1633,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.getCable().setInsulation(Insul.TW);
         circuit.getCable().setAmbientTemperatureF(102);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -1401,7 +1656,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.getCable().setInsulation(Insul.THHW);
         circuit.getCable().setAmbientTemperatureF(102);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -1424,7 +1679,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.getCable().setInsulation(Insul.THW);
         circuit.getCable().setAmbientTemperatureF(102);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -1447,7 +1702,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.getCable().setInsulation(Insul.THHW);
         circuit.getCable().setAmbientTemperatureF(102);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(false);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -1475,7 +1730,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.getCable().setInsulation(Insul.THHW);
         circuit.getCable().setAmbientTemperatureF(102);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(false);
         //the shared conduit has 8 CCC
@@ -1498,7 +1753,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(null);
         circuit.getCable().setInsulation(Insul.TW);
         circuit.getCable().setAmbientTemperatureF(87);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(18);
         circuit.setNeutralCurrentCarrying(true);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -1546,7 +1801,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(null);
         circuit.getCable().setInsulation(Insul.TW);
         circuit.getCable().setAmbientTemperatureF(87);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(18);
         circuit.setNeutralCurrentCarrying(true);
         circuit.getVoltageDrop().setMaxVoltageDropPercent(25.0);
@@ -1641,7 +1896,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(null);
         circuit.getCable().setInsulation(Insul.TW);
         circuit.getCable().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(100);
         circuit.setNeutralCurrentCarrying(true);
         //even if there are 4 current-carrying conductor in free air, adjustment
@@ -1664,7 +1919,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(null);
         circuit.getCable().setInsulation(Insul.TW);
         circuit.getCable().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment
@@ -1687,7 +1942,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(null);
         circuit.getCable().setInsulation(Insul.THW);
         circuit.getCable().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment
@@ -1710,7 +1965,7 @@ class CircuitTest {
         circuit.setUsingCable(true);
         circuit.getCable().setInsulation(Insul.THHW);
         circuit.getCable().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment
@@ -1733,7 +1988,7 @@ class CircuitTest {
         circuit.setUsingCable(true);
         circuit.getCable().setInsulation(Insul.TW);
         circuit.getCable().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment
@@ -1756,7 +2011,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.getCable().setInsulation(Insul.THW);
         circuit.getCable().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment  factor is 1.
@@ -1788,7 +2043,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.getCable().setInsulation(Insul.THHW);
         circuit.getCable().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment  factor is 1.
@@ -1820,7 +2075,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.getCable().setInsulation(Insul.TW);
         circuit.getCable().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //The temp rating of the conductor does not exceeds the temp rating of the termination, in fact, its bellow
@@ -1844,7 +2099,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.getCable().setInsulation(Insul.THW);
         circuit.getCable().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //The temp rating of the conductor equals the temp rating of the termination (T75). The size of the conductor
@@ -1867,7 +2122,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.getCable().setInsulation(Insul.THHW);
         circuit.getCable().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment  factor is 1.
@@ -1899,7 +2154,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.getCable().setInsulation(Insul.THW);
         circuit.getCable().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //The temp rating of the conductor does not exceeds the temp rating of the termination, in fact, its bellow
@@ -1923,7 +2178,7 @@ class CircuitTest {
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.getCable().setInsulation(Insul.THHW);
         circuit.getCable().setAmbientTemperatureF(96);
-        circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.getLoad().setCurrent(200);
         circuit.setNeutralCurrentCarrying(true);
         //The temp rating of the conductor equals the temp rating of the termination (T90). The size of the conductor
@@ -1938,8 +2193,125 @@ class CircuitTest {
         assertEquals(Size.AWG_3$0, circuit.getCircuitSize());
     }
 
+    @Test
+    void setCircuitMode(){
+        //set up
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setCurrent(240);
+        circuit.setTerminationTempRating(TempRating.T60);
 
+        Runnable case1 = () -> {
+            Tools.println("\nCase 1: private conduit, 1 set");
+            circuit.setConduitMode();
+            circuit.setNumberOfSets(2);
+            assertEquals(CircuitMode.PRIVATE_CONDUIT, circuit.getCircuitMode());
+            circuit.resultMessages.getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
+        };
 
+        case1.run();
+
+        Tools.println("\nCase 2: private conduit, 2 sets");
+        circuit.setNumberOfSets(2);
+        assertEquals(2, circuit.getNumberOfSets()); //was 1
+        printState();
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize());//was bigger
+        assertNotNull(circuit.getPrivateConduit());
+        assertNull(circuit.getPrivateBundle());
+        circuit.resultMessages.getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
+
+        Tools.println("\nCase 3: in free air, 1 set");
+        circuit.setFreeAirMode();
+        circuit.setNumberOfSets(1);
+        assertEquals(1, circuit.getNumberOfSets());
+        assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
+        circuit.resultMessages.getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
+
+        Tools.println("\nCase 4: in free air, 2 sets");
+        circuit.setNumberOfSets(2);
+        assertEquals(2, circuit.getNumberOfSets()); //was 1
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize());
+        assertNull(circuit.getPrivateConduit());
+        assertNull(circuit.getPrivateBundle());
+        circuit.resultMessages.getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
+
+        //case1.run();
+
+        Tools.println("\nCase 5: private bundle, 1 set");
+        circuit.setBundleMode();
+        circuit.setNumberOfSets(1);
+        assertEquals(1, circuit.getNumberOfSets());
+        assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
+        circuit.resultMessages.getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
+
+        Tools.println("\nCase 6: private bundle, 1 set");
+        circuit.setNumberOfSets(2);
+        assertEquals(2, circuit.getNumberOfSets());
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize());
+        assertNull(circuit.getPrivateConduit());
+        assertNotNull(circuit.getPrivateBundle());
+        circuit.resultMessages.getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
+
+        //case1.run();
+
+        Tools.println("\nCase 7: shared conduit, 1 set");
+        Conduit sharedConduit = new Conduit();
+        circuit.setConduitMode(sharedConduit);
+        circuit.setNumberOfSets(1);
+        assertEquals(1, circuit.getNumberOfSets());
+        assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
+        circuit.resultMessages.getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
+
+        Tools.println("\nCase 8: shared conduit, 2 sets");
+        circuit.setNumberOfSets(2); //circuit does not ignore this value //7/11/20
+        assertEquals(2, circuit.getNumberOfSets());//was 1
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize());//7/11/20 was KCMIL_300
+        assertNull(circuit.getPrivateConduit());
+        assertNull(circuit.getPrivateBundle());
+        circuit.resultMessages.getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
+
+        Tools.println("\nCase 9: shared bundle, 1 set");
+        Bundle sharedBundle = new Bundle();
+        circuit.setBundleMode(sharedBundle);
+        circuit.setNumberOfSets(1);
+        assertEquals(1, circuit.getNumberOfSets());
+        assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
+        circuit.resultMessages.getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
+
+        Tools.println("\nCase 10: shared bundle, 2 sets");
+        circuit.setNumberOfSets(2);
+        assertEquals(2, circuit.getNumberOfSets());//was 1
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize());//was KCMIL_300
+        circuit.resultMessages.getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
+    }
+
+    @Test
+    void sizing_conductors_with_continuous_load(){
+        circuit.getConduitable().setLength(1);
+        circuit.setTerminationTempRating(TempRating.T90);
+        circuit.getLoad().setCurrent(100);
+        //conductor sized per MCA
+        circuit.getLoad().setContinuous();
+        assertEquals(Size.AWG_1,circuit.getCircuitSize());
+
+        //conductor sized per factors
+        circuit.getLoad().setNonContinuous();
+        assertEquals(Size.AWG_3, circuit.getCircuitSize());
+
+        //conductor sized per factors
+        circuit.getLoad().setCurrent(420);
+        circuit.setNumberOfSets(2);
+        assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
+
+        //conductor sized per MCA
+        circuit.getLoad().setContinuous();
+        circuit.getConduitable().setAmbientTemperatureF(68);
+        assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
+
+        //conductor sized per factors
+        circuit.getConduitable().setAmbientTemperatureF(105);
+        assertEquals(Size.KCMIL_400, circuit.getCircuitSize());
+
+    }
 
 
 

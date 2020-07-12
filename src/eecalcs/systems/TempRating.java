@@ -16,7 +16,7 @@ public enum TempRating {
     T90(90);
     private int value;
 
-    private TempRating(int value){
+    TempRating(int value){
         this.value = value;
     }
 
@@ -26,5 +26,23 @@ public enum TempRating {
      */
     public int getValue(){
         return value;
+    }
+
+    /**
+     Converts the given temperature from celsius degrees to fahrenheit degrees.
+     @param celsius The temperature to be converted
+     @return The fahrenheit value of the given temperature.
+     */
+    public static int getFahrenheit(double celsius){
+        return (int) Math.round(1.8 * celsius + 32);
+    }
+
+    /**
+     Converts the given temperature from fahrenheit degrees to celsius degrees.
+     @param fahrenheit The temperature to be converted
+     @return The celsius value of the given temperature.
+     */
+    public static int getCelsius(double fahrenheit){
+        return (int) Math.round((fahrenheit - 32)/1.8);
     }
 }

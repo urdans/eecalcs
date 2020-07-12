@@ -605,13 +605,20 @@ public class ConductorProperties {
 	 @return The temperature rating of this insulation in degrees Celsius.
 	 */
 	public static TempRating getTempRating(Insul insulation){
+		TempRating result = null;
 		for(TempRating tempRating: TempRating.values()){
 			for(Insul insul: insulationTempMap.get(tempRating)){
-				if(insul == insulation)
-					return tempRating;
+				if(insul == insulation) {
+					result = tempRating;
+					break;
+//					return tempRating;
+				}
 			}
+			if(result != null)
+				break;
 		}
-		return null; //this will never happen
+//		return null; //this will never happen
+		return result;
 	}
 
 	/**

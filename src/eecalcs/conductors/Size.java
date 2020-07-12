@@ -93,4 +93,13 @@ public enum Size {
 	public static String[] getNames(){
 		return names;
 	}
+
+	/**
+	 @return The next bigger conductor size than this conductor size.
+	 */
+	public Size getNextSizeUp() {
+		if(this.ordinal() + 1 >= values().length)
+			return this;
+		return Size.values()[this.ordinal() + 1];
+	}
 }

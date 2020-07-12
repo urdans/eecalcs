@@ -2,11 +2,13 @@ package tools;
 
 import java.util.ArrayList;
 import java.util.List;
-/***
- This class will contain and manage messages that results from any calculations
+
+/**
+ This class contains and manage messages that results from any calculations
  or validation performed by this package tool. Negative message number are
- considered errors that impeached proper calculation. Positive messages are
- warnings that doesn't affect the calculation result.
+ considered errors that impeaches proper calculation. Positive messages numbers
+ are warnings that doesn't affect the calculation result but that the user
+ needs to be aware of.
  */
 public class ResultMessages {
 	private List<Message> messages =  new ArrayList<>();
@@ -17,8 +19,8 @@ public class ResultMessages {
 	 Negative numbers are considered errors, while positive numbers are
 	 considered warnings.
 
-	 @param resultMessage The text of the message
-	 @param number The number of the message
+	 @param resultMessage The text of the message.
+	 @param number The number of the message.
 	 @see Message
 	 */
 	public void add(String resultMessage, int number) {
@@ -71,8 +73,9 @@ public class ResultMessages {
 	 Asks if this result message container already contains the given message
 	 object.
 
-	 @param msg The message object to check
-	 @return True if this container contains that message object, false otherwise.
+	 @param msg The message object to check.
+	 @return True if this container contains that message object, false
+	 otherwise.
 	 */
 	public boolean containsMessage(Message msg){
 		return messages.contains(msg);

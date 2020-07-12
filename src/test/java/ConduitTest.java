@@ -192,6 +192,13 @@ class ConduitTest {
     @Test
     void getAllowedFillPercentage() {
         Tools.printTitle("ConduitTest.getAllowedFillPercentage");
+        assertFalse(conduit.isNipple());
+
+        conduit.setNipple(Conduit.Nipple.Yes);
+        assertTrue(conduit.isNipple());
+        assertEquals(60, conduit.getAllowedFillPercentage());
+
+        conduit.setNipple(Conduit.Nipple.No);
         assertEquals(53, conduit.getAllowedFillPercentage());
 
         change1();

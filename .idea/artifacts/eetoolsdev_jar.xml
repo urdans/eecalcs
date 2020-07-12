@@ -1,0 +1,11 @@
+<component name="ArtifactManager">
+  <artifact name="eetoolsdev:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/eetoolsdev_jar</output-path>
+    <root id="root">
+      <element id="archive" name="eetoolsdev.jar">
+        <element id="module-output" name="eetoolsdev" />
+      </element>
+      <element id="library" level="project" name="commons-math3-3.6.1" />
+    </root>
+  </artifact>
+</component>

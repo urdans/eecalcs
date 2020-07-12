@@ -2,19 +2,26 @@ package eecalcs.systems;
 /**
  Enums to represent standards system voltages.
  <ul>
- <li><b>v120_1ph</b> -> 120v 1Ø -> 2 wires.</li>
- <li><b>v208_1ph</b> -> 208v 1Ø -> 2 or 3 wires.</li>
- <li><b>v208_3ph</b> -> 208v 3Ø -> 3 or 4 wires.</li>
- <li><b>v240_1ph</b> -> 240v 1Ø -> 2 or 3 wires.</li>
- <li><b>v240_3ph</b> -> 240v 3Ø -> 3 or 4 wires.</li>
- <li><b>v277_1ph</b> -> 277v 1Ø -> 2 wires.</li>
- <li><b>v480_1ph</b> -> 480v 1Ø -> 2 or 3 wires.</li>
- <li><b>v480_3ph</b> -> 480v 3Ø -> 3 or 2 wires.</li>
+ <li><b>v120_1ph_2w</b>: 120v, 1Ø, 2 wires.</li>
+ <li><b>v208_1ph_2w</b>: 208v, 1Ø, 2 wires.</li>
+ <li><b>v208_1ph_3w</b>: 208v, 1Ø, 3 wires.</li>
+ <li><b>v208_3ph_3w</b>: 208v, 3Ø, 3 wires.</li>
+ <li><b>v208_3ph_4w</b>: 208v, 3Ø, 4 wires.</li>
+ <li><b>v240_1ph_2w</b>: 240v, 1Ø, 2 wires.</li>
+ <li><b>v240_1ph_3w</b>: 240v, 1Ø, 3 wires.</li>
+ <li><b>v240_3ph_3w</b>: 240v, 3Ø, 3 wires.</li>
+ <li><b>v240_3ph_4w</b>: 240v, 3Ø, 4 wires.</li>
+ <li><b>v277_1ph_2w</b>: 277v, 1Ø, 2 wires.</li>
+ <li><b>v480_1ph_2w</b>: 480v, 1Ø, 2 wires.</li>
+ <li><b>v480_1ph_3w</b>: 480v, 1Ø, 3 wires.</li>
+ <li><b>v480_3ph_2w</b>: 480v, 3Ø, 2 wires.</li>
+ <li><b>v480_3ph_3w</b>: 480v, 3Ø, 3 wires.</li>
  </ul>
  */
 public enum VoltageSystemAC{									   //neutral is CCC
 	v120_1ph_2w("120v 1Ø 2W",120, 1, 2),//2w:yes
 	v208_1ph_2w("208v 1Ø 2W",208, 1, 2),//2w:no neutral
+	v208_1ph_2wN("208v 1Ø 2W High leg",208, 1, 2),//2w:yes
 	v208_1ph_3w("208v 1Ø 3W",208, 1, 3),//3w:yes
 	v208_3ph_3w("208v 3Ø 3W",208, 3, 3),//3w:no neutral
 	v208_3ph_4w("208v 3Ø 4W",208, 3, 4),//4w:no, but if load>50% harmonic:yes

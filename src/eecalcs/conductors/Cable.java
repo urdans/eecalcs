@@ -80,7 +80,7 @@ public class Cable implements Conduitable, ShareableCable{
     private Conductor groundingConductor = new Conductor();
     private double outerDiameter = 0.5;
     private boolean neutralCarryingConductor = false;
-    public NotifierDelegate notifier = new NotifierDelegate(this);
+    private NotifierDelegate notifier = new NotifierDelegate(this);
 
     /*TODO *************************
     *  URGENT: the outer diameter of a cable should adjust automatically to a minimum value once its phase conductors or neutral or ground
@@ -184,13 +184,6 @@ public class Cable implements Conduitable, ShareableCable{
         return jacketed;
     }
 
-    /**
-     Returns the adjustment factor for ampacity of this cable, as per
-     <b>NEC 310.15(B)(3)</b>; it specifically accounts for rules
-     <b>310.15(B)(3)(a)(4) {@literal &} (5)</b> and <b>Table 310.15(B)(3)(a).</b>
-
-     @return The adjustment factor.
-     */
     public double getAdjustmentFactor() {
         if(hasConduit())
             return Factors.getAdjustmentFactor(conduit.getCurrentCarryingNumber(), conduit.isNipple());
@@ -203,6 +196,41 @@ public class Cable implements Conduitable, ShareableCable{
             return Factors.getAdjustmentFactor(bundle.getCurrentCarryingNumber(), bundle.getDistance());
         }
         return 1;
+    }
+
+    @Override
+    public double getCompoundFactor() {
+        return getCorrectionFactor() * getAdjustmentFactor();
+    }
+
+    @Override
+    public double getCompoundFactor(TempRating terminationTempRating) {
+        if(terminationTempRating == null)
+            return 1;
+        Insul temp_insul;
+        if(terminationTempRating == TempRating.T60)
+            temp_insul = Insul.TW;
+        else if(terminationTempRating == TempRating.T75)
+            temp_insul = Insul.THW;
+        else
+            temp_insul = Insul.THHW;
+
+        Insul old_insul = phaseAConductor.getInsulation();
+        boolean _enabled = phaseAConductor.getNotifier().isEnable();
+        phaseAConductor.getNotifier().enable(false);
+        phaseAConductor.setInsulation(temp_insul);
+
+        double compoundFactor = getCorrectionFactor() * getAdjustmentFactor();
+
+        phaseAConductor.setInsulation(old_insul);
+        phaseAConductor.getNotifier().enable(_enabled);
+
+        return compoundFactor;
+    }
+
+    @Override
+    public NotifierDelegate getNotifier() {
+        return notifier;
     }
 
     /**
@@ -304,7 +332,8 @@ public class Cable implements Conduitable, ShareableCable{
     public void setSystem(VoltageSystemAC voltage){
         this.voltageSystemAC = voltage;
         if(voltage == VoltageSystemAC.v120_1ph_2w
-                || voltage == VoltageSystemAC.v277_1ph_2w) {
+                || voltage == VoltageSystemAC.v277_1ph_2w
+                || voltage == VoltageSystemAC.v208_1ph_2wN) {
             if(neutralConductor == null)
                 neutralConductor = new Conductor();
             neutralConductor.setRole(Conductor.Role.NEUCC).setSize(phaseAConductor.getSize());
@@ -372,11 +401,6 @@ public class Cable implements Conduitable, ShareableCable{
         return ccc;
     }
 
-    /**
-     Returns the temperature correction factor to be applied to the ampacity.
-
-     @return The temperature correction factor.
-     */
     public double getCorrectionFactor(){
         int adjustedTemp;
         if(hasConduit())
@@ -467,7 +491,7 @@ public class Cable implements Conduitable, ShareableCable{
      example). Then the method
      {@link ConductorProperties#getSizeByAmperes(double, Metal, TempRating)} can
      provide the proper size of the conductor.
-     p><br>
+     <p><br>
      Adjustment factor exceptions apply to AC and MC cable under the conditions
      explained in 310.15(B)(3)(a)(4).
      <p>What this method DOES NOT cover:
@@ -650,12 +674,6 @@ public class Cable implements Conduitable, ShareableCable{
         notifier.notifyAllListeners();
     }
 
-    /**
-     Returns this cable conductor' metal.
-
-     @return This cable conductor' metal. Default metal is copper.
-     @see Metal
-     */
     public Metal getMetal(){
         return phaseAConductor.getMetal();
     }
@@ -678,22 +696,10 @@ public class Cable implements Conduitable, ShareableCable{
         notifier.notifyAllListeners();
     }
 
-    /**
-     Returns this cable conductor' insulation.
-
-     @return This cable conductor' insulation. Default insulation is THW.
-     @see Insul
-     */
     public Insul getInsulation(){
         return phaseAConductor.getInsulation();
     }
 
-    /**
-     Sets this cable conductor' insulation.
-
-     @param insul The new insulation
-     @see Insul
-     */
     public void setInsulation(Insul insul){
         phaseAConductor.setInsulation(insul);
         if(phaseBConductor != null)
@@ -790,12 +796,6 @@ public class Cable implements Conduitable, ShareableCable{
         notifier.notifyAllListeners();
     }
 
-    /**
-     Returns the temperature rating of this cable.
-
-     @return The temperature rating of this cable as defined in
-     {@link TempRating}
-     */
     public TempRating getTemperatureRating(){
         return phaseAConductor.getTemperatureRating();
     }
@@ -813,7 +813,7 @@ public class Cable implements Conduitable, ShareableCable{
 
     @Override
     public void notifierEnabled(boolean flag) {
-        notifier.enabled(flag);
+        notifier.enable(flag);
     }
 
     /**

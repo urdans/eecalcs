@@ -1,16 +1,20 @@
 package tools;
 
 /**
- * This class encapsulates a message and a number resulting from a calculation. It can be an error or a warning, depending on the sign of
- * the message number
+ * This class encapsulates a message. A message is a string text explaining a
+ * condition to the user. An unique number is associated with a message.
+ * Message objects are usually returned by objects that perform calculations.
+ * If the message's number is negative, it must be interpreted as an error
+ * message. If this number is positive it must be interpreted as a warning.
+ * A number equals to zero has no meaning and eventually can be used to indicate
+ * a neutral message, like a "status".
  */
 public class Message {
 	public String message;
 	public int number;
 
 	/**
-	 * Constructs a message object with a personalized message and number. Negative numbers within eecalcs are considered errors,
-	 * while positive message numbers are considered warnings
+	 * Constructs a message object with a text message and number
 	 * @param message The string containing the message
 	 * @param number The number of the message
 	 */

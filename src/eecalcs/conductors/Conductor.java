@@ -43,16 +43,16 @@ public class Conductor implements Conduitable, ShareableConductor {
 	 conductor is a current-carrying conductor, the system voltages can be
 	 considered as follow:
 	 <ol>
-	 <li>120v 1Ø: => always 2w. Neutral is CCC.</li>
-	 <li>208v 1Ø: => 2w:no neutral; 3w: always CCC.</li>
-	 <li>208v 3Ø: => 3w:no neutral; 4w:neutral present but no CCC unless more
+	 <li>120v 1Ø: always 2w. Neutral is CCC.</li>
+	 <li>208v 1Ø: 2w:no neutral; 3w: always CCC.</li>
+	 <li>208v 3Ø: 3w:no neutral; 4w:neutral present but no CCC unless more
 	 than 50% of the load is non-linear (harmonics).</li>
-	 <li>240v 1Ø: => 2w:no neutral; 3w: always CCC.</li>
-	 <li>240v 3Ø: => 3w:no neutral; 4w:neutral present but no CCC unless more
+	 <li>240v 1Ø: 2w:no neutral; 3w: always CCC.</li>
+	 <li>240v 3Ø: 3w:no neutral; 4w:neutral present but no CCC unless more
 	 than 50% of the load is non-linear (harmonics).</li>
-	 <li>277v 1Ø: => always 2w. Neutral is CCC.</li>
-	 <li>480v 1Ø: => 2w:no neutral; 3w: always CCC.</li>
-	 <li>480v 3Ø: => 3w:no neutral; 4w:neutral present but no CCC unless more
+	 <li>277v 1Ø: always 2w. Neutral is CCC.</li>
+	 <li>480v 1Ø: 2w:no neutral; 3w: always CCC.</li>
+	 <li>480v 3Ø: 3w:no neutral; 4w:neutral present but no CCC unless more
 	 than 50% of the load is non-linear (harmonics).</li>
 	 </ol>
 	 */
@@ -107,7 +107,8 @@ public class Conductor implements Conduitable, ShareableConductor {
 	private Role role = Role.HOT;
 	private Conduit conduit;
 	private Bundle bundle;
-	public NotifierDelegate notifier = new NotifierDelegate(this);
+	private NotifierDelegate notifier = new NotifierDelegate(this);
+//	private long enablingKey = notifier.getEnablingKey();
 
 	/**
 	 Constructs a conductor with the given characteristics. The other properties
@@ -152,6 +153,11 @@ public class Conductor implements Conduitable, ShareableConductor {
 		return conductorClone;
 	}
 
+	/**
+	 Copies the state of the given conductor into this conductor.
+	 The conduit, bundle and notifier delegates are not copied.
+	 @param conductor The passed Conductor to copy from.
+	 */
 	public void copyFrom(Conductor conductor){
 		size = conductor.size;
 		metal = conductor.metal;
@@ -196,11 +202,6 @@ public class Conductor implements Conduitable, ShareableConductor {
 		return this;
 	}
 
-	/**
-	 Gets the metal of this conductor.
-
-	 @return The metal of this conductor as defined by {@link Metal}
-	 */
 	public Metal getMetal() {
 		return metal;
 	}
@@ -216,25 +217,14 @@ public class Conductor implements Conduitable, ShareableConductor {
 		return this;
 	}
 
-	/**
-	 Gets the insulation type of this conductor.
-
-	 @return The insulation type of this conductor as defined by {@link Insul}
-	 */
 	public Insul getInsulation() {
 		return insulation;
 	}
 
-	/**
-	 Sets the insulation type to this conductor.
-
-	 @param insulation The conductor's insulation type as defined by
-	 {@link Insul}
-	 */
-	public Conductor setInsulation(Insul insulation) {
+	public /*Conductor*/ void setInsulation(Insul insulation) {
 		this.insulation = insulation;
 		notifier.notifyAllListeners();
-		return this;
+		//return this;
 	}
 
 	/**
@@ -335,7 +325,7 @@ public class Conductor implements Conduitable, ShareableConductor {
 	 This method alone does not calculate the allowed ampacity because the load
 	 amps is not known at this level.
 	 However, the methods {@link #getCorrectionFactor()} and
-	 {@link #getAdjustmentFactor()} will provide the 0.91 & 0.8 value
+	 {@link #getAdjustmentFactor()} will provide the 0.91 &#38; 0.8 value
 	 (from the example) that the {@link Circuit} class would need as reversed
 	 coefficient to multiply the load amperes (to get the 144.23 AMPS from the
 	 example). Then the method
@@ -352,11 +342,6 @@ public class Conductor implements Conduitable, ShareableConductor {
 		return amp * cf * af;
 	}
 
-	/**
-	 Returns the temperature correction factor to be applied to the ampacity.
-
-	 @return The temperature correction factor.
-	 */
 	public double getCorrectionFactor(){
 		int adjustedTemp = 0;
 		if(hasConduit())
@@ -367,13 +352,6 @@ public class Conductor implements Conduitable, ShareableConductor {
 				getTemperatureRating());
 	}
 
-	/**
-	 Returns the adjustment factor for ampacity of this cable, as per
-	 <b>NEC 310.15(B)(3)</b>; it specifically accounts for rules
-	 <b>310.15(B)(3)(a)(4) {@literal &} (5)</b> and <b>Table 310.15(B)(3)(a).</b>
-
-	 @return The adjustment factor.
-	 */
 	public double getAdjustmentFactor() {
 		if(hasConduit())
 			return Factors.getAdjustmentFactor(conduit.getCurrentCarryingNumber(), conduit.isNipple());
@@ -381,6 +359,36 @@ public class Conductor implements Conduitable, ShareableConductor {
 			return Factors.getAdjustmentFactor(bundle.getCurrentCarryingNumber(), bundle.getDistance());
 		}
 		return 1;
+	}
+
+	@Override
+	public double getCompoundFactor() {
+		return getCorrectionFactor() * getAdjustmentFactor();
+	}
+
+	@Override
+	public double getCompoundFactor(TempRating terminationTempRating) {
+		if(terminationTempRating == null)
+			return 1;
+		Insul temp_insul;
+		if(terminationTempRating == TempRating.T60)
+			temp_insul = Insul.TW;
+		else if(terminationTempRating == TempRating.T75)
+			temp_insul = Insul.THW;
+		else
+			temp_insul = Insul.THHW;
+
+		Insul old_insul = insulation;
+		boolean _enabled = notifier.isEnable();
+		notifier.enable(false);
+		insulation = temp_insul;
+
+		double compoundFactor = getCorrectionFactor() * getAdjustmentFactor();
+
+		insulation = old_insul;
+		notifier.enable(_enabled);
+
+		return compoundFactor;
 	}
 
 	@Override
@@ -430,6 +438,7 @@ public class Conductor implements Conduitable, ShareableConductor {
 	 aluminum.
 
 	 @param copperCoated Indicates if the conductor is coated
+	 @return this Conductor object
 	 */
 	public Conductor setCopperCoated(Coating copperCoated) {
 		this.copperCoated = copperCoated;
@@ -479,13 +488,6 @@ public class Conductor implements Conduitable, ShareableConductor {
 		return conduit != null;
 	}
 
-	/**
-	 Returns the temperature rating of this conductor which is defined by its
-	 insulator.
-
-	 @return The enum temperature rating.
-	 @see TempRating
-	 */
 	public TempRating getTemperatureRating() {
 		return ConductorProperties.getTempRating(insulation);
 	}
@@ -503,6 +505,7 @@ public class Conductor implements Conduitable, ShareableConductor {
 	 Sets the role of this conductor as defined by {@link Role}.
 
 	 @param role The role of this conductor. Notice the default role if HOT.
+	 @return this Conductor object
 	 */
 	public Conductor setRole(Role role) {
 		this.role = role;
@@ -543,7 +546,7 @@ public class Conductor implements Conduitable, ShareableConductor {
 
 	@Override
 	public void notifierEnabled(boolean flag) {
-		notifier.enabled(flag);
+		notifier.enable(flag/*, enablingKey*/);
 	}
 
 	@Override
@@ -576,5 +579,10 @@ public class Conductor implements Conduitable, ShareableConductor {
 	@Override
 	public boolean hasBundle() {
 		return bundle != null;
+	}
+
+	@Override
+	public NotifierDelegate getNotifier() {
+		return notifier;
 	}
 }

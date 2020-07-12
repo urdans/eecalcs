@@ -1,15 +1,20 @@
 <component name="ProjectDictionaryState">
   <dictionary name="urdans">
     <words>
+	  <w>ampacities</w>
+      <w>ampacity</w>
       <w>busways</w>
       <w>cablebuses</w>
       <w>conduitable</w>
       <w>conduitables</w>
       <w>continuousness</w>
+      <w>eecalcs</w>
       <w>emtal</w>
       <w>fmcal</w>
       <w>hdpe</w>
+      <w>ieee</w>
       <w>insul</w>
+      <w>insulations</w>
       <w>kcmil</w>
       <w>lfmc</w>
       <w>lfmcal</w>
@@ -17,14 +22,23 @@
       <w>lfncb</w>
       <w>liquidtight</w>
       <w>mocpd</w>
+      <w>multiwire</w>
       <w>nconc</w>
       <w>neucc</w>
       <w>neuncc</w>
       <w>ocdp</w>
+      <w>ocpd</w>
+      <w>overcurrent</w>
+      <w>overcurrents</w>
+      <w>phasor</w>
       <w>pvca</w>
       <w>pvceb</w>
+      <w>reactance</w>
+      <w>reactances</w>
       <w>rmcal</w>
       <w>thhw</w>
+      <w>uncoated</w>
+      <w>unmark</w>
       <w>warnn</w>
       <w>wireways</w>
     </words>
