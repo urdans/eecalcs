@@ -178,6 +178,17 @@ public class ResultMessages {
 	public void clearMessages(){
 		messages.clear();
 	}
+
+	public int copyFrom(ResultMessages source){
+		int count = 0;
+		for(Message sourceMessage: source.getMessages()) {
+			if (!containsMessage(sourceMessage.number)){
+				count++;
+				add(sourceMessage);
+			}
+		}
+		return count;
+	}
 }
 
 

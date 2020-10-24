@@ -191,7 +191,7 @@ class BundleTest {
 
 
         //case 8
-        bundle.setDistance(24);
+        bundle.setBundlingLength(24);
         bundle.add(conductor.clone());
         conductor.setSize(Size.AWG_8);
         conductor.setMetal(Metal.ALUMINUM);
@@ -227,7 +227,7 @@ class BundleTest {
         bundle.add(conductor.clone());
         bundle.add(conductor.clone());
         assertEquals(21, bundle.getCurrentCarryingNumber());
-        assertEquals(25, bundle.getDistance());
+        assertEquals(25, bundle.getBundlingLength());
 
         //case 1
         assertTrue(bundle.complyWith310_15_B_3_a_5());
@@ -255,11 +255,11 @@ class BundleTest {
         assertTrue(bundle.complyWith310_15_B_3_a_5());
 
         //case 5
-        bundle.setDistance(20);
+        bundle.setBundlingLength(20);
         assertFalse(bundle.complyWith310_15_B_3_a_5());
         assertEquals(1.0, conductor.getAdjustmentFactor());
         assertEquals(1.0, cable.getAdjustmentFactor());
-        bundle.setDistance(25);
+        bundle.setBundlingLength(25);
         assertTrue(bundle.complyWith310_15_B_3_a_5());
     }
 

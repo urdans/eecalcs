@@ -13,8 +13,8 @@ public enum CableType {
     MC("Metal Clad Cable", Material.STEEL),
     NM("Non Metallic Jacket Cable", Material.PVC),
     NMC("Non Metallic Jacket Corrosion Resistant Cable", Material.PVC),
-    NMS("Non Metallic Jacket Cable with Power or Signaling Data Conductors", Material.PVC);
-    //TC("Power and Control Tray Cable"); Not covered for now
+    NMS("Non Metallic Jacket Cable with Motor or Signaling Data Conductors", Material.PVC);
+    //TC("Motor and Control Tray Cable"); Not covered for now
     private String name;
     private static String[] names;
     private Material material;

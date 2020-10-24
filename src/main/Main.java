@@ -5,7 +5,6 @@ import eecalcs.conduits.*;
 import eecalcs.systems.VoltageSystemAC;
 import eecalcs.systems.TempRating;
 //import eecalcs.voltagedrop.VDrop;
-import tools.Message;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -117,7 +116,7 @@ public class Main {
 		//region testing conduit calculations
 		System.out.println("**************** Testing conduit calculations ****************");
 
-		Conduit conduit = new Conduit(Type.EMT, Conduit.Nipple.No);
+		Conduit conduit = new Conduit(Type.EMT, false);
 		Conductor conductor1 = new Conductor();
 		Conductor conductor2 = new Conductor();
 		Conductor conductor3 = new Conductor();
@@ -141,13 +140,13 @@ public class Main {
 
 		System.out.println("     Calculated trade size: " +	conduit.getTradeSize().getName());
 		System.out.println("     Conduit internal area: " + ConduitProperties.getArea(conduit.getType(), conduit.getTradeSize()));
-		System.out.println("   Allowed fill percentage: " + conduit.getAllowedFillPercentage()+"%");
+		System.out.println("   Allowed fill percentage: " + conduit.getMaxAllowedFillPercentage()+"%");
 		System.out.println("     Total conductors area: " + String.format("%.4f",conduit.getConduitablesArea()));
 		double fill = 100 * conduit.getConduitablesArea()/ConduitProperties.getArea(conduit.getType(), conduit.getTradeSize());
 		System.out.println(" Actual filling percentage: " + String.format("%.1f", fill) + "%\n");
 
 		System.out.println("********after changes and adding more conduitables***********");
-		conduit.setNipple(Conduit.Nipple.Yes);
+		conduit.setNipple(true);
 		conduit.setType(Type.PVC80);
 		conduit.add(conductor3);
 		conduit.add(conductor4);
@@ -163,7 +162,7 @@ public class Main {
 		conduit.getConduitables().forEach(conduitable -> System.out.println("\t\t\t\t\t\t\t" + conduitable.getDescription()));
 		System.out.println("     Calculated trade size: " +	tradeSize.getName());
 		System.out.println("     Conduit internal area: " + ConduitProperties.getArea(conduit.getType(), tradeSize));
-		System.out.println("   Allowed fill percentage: " + conduit.getAllowedFillPercentage()+"%");
+		System.out.println("   Allowed fill percentage: " + conduit.getMaxAllowedFillPercentage()+"%");
 		System.out.println("     Total conductors area: " + String.format("%.4f", conduit.getConduitablesArea()));
 		fill = 100 * conduit.getConduitablesArea()/ConduitProperties.getArea(conduit.getType(), tradeSize);
 		System.out.println(" Actual filling percentage: " + String.format("%.1f", fill) + "%\n");
@@ -197,7 +196,7 @@ public class Main {
 
 		conductor1.setLength(25);
 		conductor1.setSize(Size.AWG_12);
-		conduit.setNipple(Conduit.Nipple.No);
+		conduit.setNipple(false);
 
 		System.out.println("**************** TESTING CONDUITABLES PROPERTIES ****************");
 		System.out.println("**************** CONDUCTORS ****************");
@@ -241,7 +240,7 @@ public class Main {
 			System.out.println("       Conduit is nipple: " + conductor1.getConduit().isNipple());
 			System.out.println("            Conduit type: " + conductor1.getConduit().getType().getName());
 			System.out.println("    Number of conductors: " + conductor1.getConduit().getFillingConductorCount());
-			System.out.println("           Number of CCC: " + conductor1.getConduit().getCurrentCarryingNumber());
+			System.out.println("           Number of CCC: " + conductor1.getConduit().getCurrentCarryingCount());
 			conduit.getConduitables().forEach(conduitable -> System.out.println("\t\t\t\t\t\t\t" + conduitable.getDescription()));
 /*			{
 				List<String> sizes = new ArrayList<>();
@@ -252,7 +251,7 @@ public class Main {
 				System.out.println("                     Sizes: " + String.join(", ", sizes));
 			}*/
 			System.out.println(" Conduit calculated size: " + conductor1.getConduit().getTradeSize().getName());
-			System.out.println(" Allowed fill percentage: " + conductor1.getConduit().getAllowedFillPercentage());
+			System.out.println(" Allowed fill percentage: " + conductor1.getConduit().getMaxAllowedFillPercentage());
 		}//*/
 
 		//if(true) return;
@@ -294,35 +293,6 @@ public class Main {
 		System.out.println("isValidFullName(\" AGW 4/0 \"): " + ConductorProperties.isValidFullName(" AWG 4/0 "));
 		System.out.println("isValidInsulStringName(\"  XHHW-2 \"): " + ConductorProperties.isValidInsulStringName("  XHHW-2 ") );
 		//endregion
-
-/*		System.out.println("Testing creating a circuitOld out of an existing conductor object");
-		Conductor c1 = new Conductor(Size.S10, Metal.ALUMINUM, Insul.TW, 50);
-		CircuitOld ckt1 = new CircuitOld(c1);
-		ckt1.setConduitMaterial(ConduitProperties.Material.STEEL);
-
-		CircuitOld ckt2 = new CircuitOld(ckt1);
-
-		ckt1.setSize(Size.S8);
-		ckt1.setAmbientTemperatureC(40);
-		ckt1.setNumberOfSets(2);
-		ckt1.setConduitMaterial(ConduitProperties.Material.ALUMINUM);
-		ckt1.setInsulation(Insul.THHW);
-		ckt1.setMetal(Metal.COPPER);
-		ckt1.setLength(625);
-
-		c1.setLength(112);
-		c1.setSize(Size.S14);
-		System.out.println(ckt1.getAmbientTemperatureC() + "\t" + ckt1.getAmbientTemperatureF() + "\t" + ckt1.getAmpacity() +
-			"\t" + ckt1.getAreaCM() + "\t" + ckt1.getConduitMaterial() + "\t" + ckt1.getInsulatedAreaIn2() +
-			"\t" + ckt1.getInsulation() + "\t" + ckt1.getLength() + "\t" + ckt1.getMetal() + "\t" + ckt1.getNumberOfSets() +
-			"\t" + ckt1.getOneWayACResistance() + "\t" + ckt1.getOneWayDCResistance() + "\t" + ckt1.getOneWayReactance() +
-			"\t" + ckt1.getSize() + "\t" + ckt1.getTemperatureRating());
-
-		System.out.println(ckt2.getAmbientTemperatureC() + "\t" + ckt2.getAmbientTemperatureF() + "\t" + ckt2.getAmpacity() +
-				"\t" + ckt2.getAreaCM() + "\t" + ckt2.getConduitMaterial() + "\t" + ckt2.getInsulatedAreaIn2() +
-				"\t" + ckt2.getInsulation() + "\t" + ckt2.getLength() + "\t" + ckt2.getMetal() + "\t" + ckt2.getNumberOfSets() +
-				"\t" + ckt2.getOneWayACResistance() + "\t" + ckt2.getOneWayDCResistance() + "\t" + ckt2.getOneWayReactance() +
-				"\t" + ckt2.getSize() + "\t" + ckt2.getTemperatureRating());*/
 
 		//region ampacity of conductors and conduit sizes tests
 		System.out.println("\n**************** Ampacity of conductors ****************");
@@ -367,71 +337,6 @@ public class Main {
 		}//*/
 		//endregion
 
-		//region testing voltage drop
-		//Old code using deprecated VDrop class. This should be rewritten using
-		//the new VoltDrop class.
-		/*
-		Conductor conductor = new Conductor();
-		CircuitOld circuitOld = new CircuitOld(conductor);
-		VDrop vd = new VDrop(circuitOld);
-		System.out.println("\n**************** TESTING VOLTAGE DROP METHOD ****************");
-		System.out.println("     Voltage (v): " + vd.getSourceVoltage());
-		System.out.println("  Conductor size: " + vd.getCircuitOld().getSize());
-		System.out.println("          Phases: " + vd.getPhases());
-		System.out.println("    Conduit type: " + vd.getCircuitOld().getConduitMaterial());
-		System.out.println("  Conductor type: " + vd.getCircuitOld().getMetal());
-		System.out.println("  Number of sets: " + vd.getCircuitOld().getNumberOfSets());
-		System.out.println("     Lenght (ft): " + vd.getCircuitOld().getLength());
-		System.out.println("     Current (A): " + vd.getLoadCurrent());
-		System.out.println("    Power factor: " + vd.getPowerFactor());
-		System.out.println("         Coating: " + vd.getCircuitOld().isCopperCoated());
-		System.out.println("==============AC Results==============");
-		System.out.println(" AC Voltage at load: " + String.format("%.4f", vd.getVoltageAtLoadAC()));
-		System.out.println("AC Voltage drop (v): " + String.format("%.4f", vd.getVoltageDropVoltsAC())+"V");
-		System.out.println("AC Voltage drop (%): " + String.format("%.4f", vd.getVoltageDropPercentageAC())+"%");
-		System.out.println("==============DC Results==============");
-		System.out.println(" DC Voltage at load: " + String.format("%.4f", vd.getVoltageAtLoadDC()));
-		System.out.println("DC Voltage drop (v): " + String.format("%.4f", vd.getVoltageDropVoltsDC())+"V");
-		System.out.println("DC Voltage drop (%): " + String.format("%.4f", vd.getVoltageDropPercentageDC())+"%");
-
-		System.out.println("\n******* Changing values *******");
-		vd.setSourceVoltage(208);
-		vd.getCircuitOld().setSize(Size.AWG_1$0);
-		vd.setPhases(3);
-		vd.getCircuitOld().setConduitMaterial(Material.ALUMINUM);
-		//vd.getCircuitOld().setMetal(Metal.ALUMINUM);
-		vd.getCircuitOld().setCopperCoated(Coating.COATED);
-		vd.getCircuitOld().setNumberOfSets(2);
-		vd.setLoadCurrent(130);
-		vd.setPowerFactor(0.9);
-		vd.getCircuitOld().setLength(350);
-
-		System.out.println("     Voltage (v): " + vd.getSourceVoltage());
-		System.out.println("  Conductor size: " + vd.getCircuitOld().getSize());
-		System.out.println("          Phases: " + vd.getPhases());
-		System.out.println("    Conduit type: " + vd.getCircuitOld().getConduitMaterial());
-		System.out.println("  Conductor type: " + vd.getCircuitOld().getMetal());
-		System.out.println("  Number of sets: " + vd.getCircuitOld().getNumberOfSets());
-		System.out.println("     Lenght (ft): " + vd.getCircuitOld().getLength());
-		System.out.println("     Current (A): " + vd.getLoadCurrent());
-		System.out.println("    Power factor: " + vd.getPowerFactor());
-		System.out.println("==============AC Results==============");
-		System.out.println(" AC Voltage at load: " + String.format("%.4f", vd.getVoltageAtLoadAC()));
-		System.out.println("AC Voltage drop (v): " + String.format("%.4f", vd.getVoltageDropVoltsAC())+"V");
-		System.out.println("AC Voltage drop (%): " + String.format("%.4f", vd.getVoltageDropPercentageAC())+"%");
-		System.out.println("==============DC Results==============");
-		System.out.println(" DC Voltage at load: " + String.format("%.4f", vd.getVoltageAtLoadDC()));
-		System.out.println("DC Voltage drop (v): " + String.format("%.4f", vd.getVoltageDropVoltsDC())+"V");
-		System.out.println("DC Voltage drop (%): " + String.format("%.4f", vd.getVoltageDropPercentageDC())+"%");
-
-		if (vd.resultMessages.hasErrors()) {
-			System.out.println("The following errors ocurred:");
-			for (Message msg : vd.resultMessages.getMessages()) {
-				System.out.println(msg.message + " : " + msg.number);
-			}
-		}*/
-		//endregion
-
 		//region test sizing conductor per voltage drop
 		//Old code using deprecated VDrop class. This should be rewritten using
 		//the new VoltDrop class.
@@ -444,7 +349,7 @@ public class Main {
 		System.out.println("      Number of sets: " + vd.getCircuitOld().getNumberOfSets());
 		System.out.println("         Lenght (ft): " + vd.getCircuitOld().getLength());
 		System.out.println("         Current (A): " + vd.getLoadCurrent());
-		System.out.println("        Power factor: " + vd.getPowerFactor());
+		System.out.println("        Motor factor: " + vd.getPowerFactor());
 		System.out.println("       Cooper coated: " + vd.getCircuitOld().isCopperCoated());
 		System.out.println("Maximum voltage drop: " + vd.getMaxVoltageDropPercent() + "%");
 		System.out.println("============== AC Results==============");
@@ -472,7 +377,7 @@ public class Main {
 		System.out.println("      Number of sets: " + vd.getCircuitOld().getNumberOfSets());
 		System.out.println("         Lenght (ft): " + vd.getCircuitOld().getLength());
 		System.out.println("         Current (A): " + vd.getLoadCurrent());
-		System.out.println("        Power factor: " + vd.getPowerFactor());
+		System.out.println("        Motor factor: " + vd.getPowerFactor());
 		System.out.println("       Cooper coated: " + vd.getCircuitOld().isCopperCoated());
 		System.out.println("Maximum voltage drop: " + vd.getMaxVoltageDropPercent() + "%");
 		System.out.println("============== AC Results==============");

@@ -11,7 +11,7 @@ import test.Tools;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConduitTest {
-    Conduit conduit = new Conduit(Type.EMT, Conduit.Nipple.No);
+    Conduit conduit = new Conduit(Type.EMT, false);
     Conductor conductor = new Conductor();
     Conductor conductor2;
     Cable cable = new Cable();
@@ -105,20 +105,20 @@ class ConduitTest {
     @Test
     void getCurrentCarryingNumber() {
         Tools.printTitle("ConduitTest.getCurrentCarryingNumber");
-        assertEquals(0, conduit.getCurrentCarryingNumber());
+        assertEquals(0, conduit.getCurrentCarryingCount());
 
         change1();
-        assertEquals(3, conduit.getCurrentCarryingNumber());
+        assertEquals(3, conduit.getCurrentCarryingCount());
 
         change2();
-        assertEquals(8, conduit.getCurrentCarryingNumber());
+        assertEquals(8, conduit.getCurrentCarryingCount());
 
         cable2.setNeutralCarryingConductor(true);
-        assertEquals(9, conduit.getCurrentCarryingNumber());
+        assertEquals(9, conduit.getCurrentCarryingCount());
 
         conductor.setRole(Conductor.Role.GND);
         conductor2.setRole(Conductor.Role.GND);
-        assertEquals(7, conduit.getCurrentCarryingNumber());
+        assertEquals(7, conduit.getCurrentCarryingCount());
     }
 
     @Test
@@ -175,9 +175,9 @@ class ConduitTest {
         conduit.resultMessages.getMessages().forEach(message -> System.out.println(message.message));
         System.out.println("-----");
 
-        conduit.setNipple(null);
+/*        conduit.setNipple(null);
         assertNull(conduit.getTradeSize());
-        assertTrue(conduit.resultMessages.containsMessage(-130));
+        assertTrue(conduit.resultMessages.containsMessage(-130));*/
 
         conduit.setType(null);
         assertNull(conduit.getTradeSize());
@@ -194,18 +194,18 @@ class ConduitTest {
         Tools.printTitle("ConduitTest.getAllowedFillPercentage");
         assertFalse(conduit.isNipple());
 
-        conduit.setNipple(Conduit.Nipple.Yes);
+        conduit.setNipple(true);
         assertTrue(conduit.isNipple());
-        assertEquals(60, conduit.getAllowedFillPercentage());
+        assertEquals(60, conduit.getMaxAllowedFillPercentage());
 
-        conduit.setNipple(Conduit.Nipple.No);
-        assertEquals(53, conduit.getAllowedFillPercentage());
+        conduit.setNipple(false);
+        assertEquals(53, conduit.getMaxAllowedFillPercentage());
 
         change1();
-        assertEquals(31, conduit.getAllowedFillPercentage());
+        assertEquals(31, conduit.getMaxAllowedFillPercentage());
 
         change2();
-        assertEquals(40, conduit.getAllowedFillPercentage());
+        assertEquals(40, conduit.getMaxAllowedFillPercentage());
     }
 
 }

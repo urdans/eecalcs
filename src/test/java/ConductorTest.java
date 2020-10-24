@@ -18,7 +18,7 @@ class ConductorTest {
     void testClone() {
         Tools.printTitle("ConductorTest.testClone");
         Conductor cond1 = new Conductor(Size.AWG_8, Metal.ALUMINUM, Insul.XHHW, 123);
-        Conduit conduit = new Conduit(Type.EMT, Conduit.Nipple.Yes);
+        Conduit conduit = new Conduit(Type.EMT, true);
         conduit.add(cond1);
         cond1.setAmbientTemperatureF(105);
         cond1.setCopperCoated(Coating.COATED);
@@ -97,7 +97,7 @@ class ConductorTest {
     void getAmpacity() {
         Tools.printTitle("ConductorTest.getAmpacity");
         conductor = new Conductor(Size.AWG_12, Metal.COPPER, Insul.THHN, 125);
-        conduit = new Conduit(Type.PVC80, Conduit.Nipple.No);
+        conduit = new Conduit(Type.PVC80, false);
         conduit.add(conductor);
         conduit.add(conductor.clone());
         conduit.add(conductor.clone());
@@ -125,7 +125,7 @@ class ConductorTest {
         conductor.setAmbientTemperatureF(100);
         assertEquals(0.82, conductor.getCorrectionFactor(), 0.001);
 
-        conduit = new Conduit(Type.PVC80, Conduit.Nipple.No);
+        conduit = new Conduit(Type.PVC80, false);
         conduit.add(conductor);
         conduit.setRoofTopDistance(10);
         assertEquals(0.41, conductor.getCorrectionFactor(), 0.001);
@@ -138,7 +138,7 @@ class ConductorTest {
     void getAdjustmentFactor() {
         Tools.printTitle("ConductorTest.getAdjustmentFactor");
         conductor = new Conductor(Size.AWG_4, Metal.COPPER, Insul.THW, 70);
-        conduit = new Conduit(Type.EMT, Conduit.Nipple.No);
+        conduit = new Conduit(Type.EMT, false);
         conduit.add(conductor);
         conduit.add(conductor.clone());
         conduit.add(conductor.clone());
@@ -146,26 +146,26 @@ class ConductorTest {
         assertEquals(0.8, conductor.getAdjustmentFactor());
         assertEquals(0.8, conduit.getConduitables().get(2).getAdjustmentFactor());
 
-        conduit.setNipple(Conduit.Nipple.Yes);
+        conduit.setNipple(true);
         assertEquals(1, conductor.getAdjustmentFactor());
 
-        conduit.setNipple(Conduit.Nipple.No);
+        conduit.setNipple(false);
         assertEquals(0.8, conductor.getAdjustmentFactor());
 
         conduit.getConduitables().get(2).leaveConduit();
         assertEquals(1, conductor.getAdjustmentFactor());
-        assertEquals(3, conduit.getCurrentCarryingNumber());
+        assertEquals(3, conduit.getCurrentCarryingCount());
 
         Conductor conductor1 = conductor.clone();
         conductor1.setConduit(conduit);
         conduit.add(conductor1.clone());
         conduit.add(conductor1.clone());
         conduit.add(conductor1.clone());
-        assertEquals(7, conduit.getCurrentCarryingNumber());
+        assertEquals(7, conduit.getCurrentCarryingCount());
         assertEquals(0.7, conductor.getAdjustmentFactor());
 
         conductor.leaveConduit();
-        assertEquals(6, conduit.getCurrentCarryingNumber());
+        assertEquals(6, conduit.getCurrentCarryingCount());
         assertEquals(0.8, conductor1.getAdjustmentFactor());
 
         conduit.empty();
@@ -179,14 +179,14 @@ class ConductorTest {
         bundle.add(conductor.clone());
         bundle.add(conductor.clone());
         bundle.add(conductor.clone());
-        assertEquals(25, bundle.getDistance());
+        assertEquals(25, bundle.getBundlingLength());
         assertEquals(0.8, conductor.getAdjustmentFactor());
 
         conductor.leaveBundle();
         assertEquals(3, bundle.getCurrentCarryingNumber());
         assertEquals(1, conductor.getAdjustmentFactor());
 
-        bundle.setDistance(24);
+        bundle.setBundlingLength(24);
         assertEquals(1, conductor.getAdjustmentFactor());
 
         conduit.add(conductor1);
@@ -197,7 +197,7 @@ class ConductorTest {
     @Test
     void illustrateGuideExample1Page101(){
         Conductor conductor2 = new Conductor(Size.AWG_2, Metal.COPPER, Insul.THWN2, 10);
-        Conduit raceway = new Conduit(Type.PVC40, Conduit.Nipple.No);
+        Conduit raceway = new Conduit(Type.PVC40, false);
         raceway.setRoofTopDistance(4);
         raceway.add(conductor2);
         raceway.add(conductor2.clone());
@@ -210,7 +210,7 @@ class ConductorTest {
     @Test
     void illustrateGuideExample2Page101(){
         Conductor conductor2 = new Conductor(Size.AWG_2, Metal.COPPER, Insul.XHHW2, 10);
-        Conduit raceway = new Conduit(Type.PVC40, Conduit.Nipple.No);
+        Conduit raceway = new Conduit(Type.PVC40, false);
         raceway.setRoofTopDistance(4);
         raceway.add(conductor2);
         raceway.add(conductor2.clone());
@@ -223,7 +223,7 @@ class ConductorTest {
     @Test
     void illustrateGuideContinuousLoadPage102_case1(){
         Conductor conductor2 = new Conductor(Size.AWG_12, Metal.COPPER, Insul.THHW, 10);
-        Conduit raceway = new Conduit(Type.PVC40, Conduit.Nipple.No);
+        Conduit raceway = new Conduit(Type.PVC40, false);
         conductor2.setAmbientTemperatureF(TempRating.getFahrenheit(43));
         raceway.add(conductor2);
         raceway.add(conductor2.clone());
@@ -232,7 +232,7 @@ class ConductorTest {
         raceway.add(conductor2.clone());
         raceway.add(conductor2.clone());
 
-        Tools.println("Current Carrying Number: "+raceway.getCurrentCarryingNumber());
+        Tools.println("Current Carrying Number: "+raceway.getCurrentCarryingCount());
         Tools.println("Correction Factor: "+conductor2.getCorrectionFactor());
         Tools.println("Adjustment Factor: "+conductor2.getAdjustmentFactor());
         Tools.println("Ampacity: "+conductor2.getAmpacity());
@@ -241,7 +241,7 @@ class ConductorTest {
     @Test
     void illustrateGuideContinuousLoadPage102_case2(){
         Conductor conductor2 = new Conductor(Size.AWG_12, Metal.COPPER, Insul.THHW, 10);
-        Conduit raceway = new Conduit(Type.PVC40, Conduit.Nipple.No);
+        Conduit raceway = new Conduit(Type.PVC40, false);
         conductor2.setAmbientTemperatureF(TempRating.getFahrenheit(43));
         raceway.add(conductor2);
         raceway.add(conductor2.clone());
@@ -250,7 +250,7 @@ class ConductorTest {
         raceway.add(conductor2.clone());
         raceway.add(conductor2.clone());
 
-        Tools.println("Current Carrying Number: "+raceway.getCurrentCarryingNumber());
+        Tools.println("Current Carrying Number: "+raceway.getCurrentCarryingCount());
         Tools.println("Correction Factor: "+conductor2.getCorrectionFactor());
         Tools.println("Adjustment Factor: "+conductor2.getAdjustmentFactor());
         Tools.println("Own Compound Factor: "+conductor2.getCompoundFactor());
@@ -259,7 +259,7 @@ class ConductorTest {
         Tools.println("Compound Factor @90°C : "+conductor2.getCompoundFactor(TempRating.T90));
         Tools.println("Ampacity: "+conductor2.getAmpacity());
 
-        assertEquals(6, raceway.getCurrentCarryingNumber());
+        assertEquals(6, raceway.getCurrentCarryingCount());
         assertEquals(0.87, conductor2.getCorrectionFactor());
         assertEquals(0.8, conductor2.getAdjustmentFactor());
         assertEquals(0.696, conductor2.getCompoundFactor(), 0.0001);

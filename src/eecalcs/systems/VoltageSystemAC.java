@@ -107,4 +107,50 @@ public enum VoltageSystemAC{									   //neutral is CCC
 	public double getFactor(){
 		return Math.sqrt(phases);
 	}
+
+	/**
+	 @return True if this voltage system has a neutral conductor, false
+	 otherwise.
+	 */
+	public boolean hasNeutral(){
+		return this != v208_1ph_2w && this != v208_3ph_3w && this != v240_1ph_2w &&
+				this != v240_3ph_3w && this != v480_1ph_2w && this != v480_3ph_3w;
+	}
+
+	/**
+	 @return True If the system voltage and wires are so that there is only one
+	 phase and one neutral conductors; that is, all the current going through
+	 the phase conductor to the load, returns through the neutral conductor back
+	 to the source.
+	 */
+	public boolean hasHotAndNeutralOnly(){
+		return (this == v120_1ph_2w ||
+				this == v277_1ph_2w ||
+				this == v208_1ph_2wN);
+	}
+
+	/**
+	 @return True if the system voltage is high leg type.
+	 */
+	public boolean isHighLeg(){
+		return this == v208_1ph_2wN;
+	}
+
+	/**
+	 @return True if the system voltage is single phase with two hots.
+	 */
+	public boolean has2HotsOnly(){
+		return this == v208_1ph_2w ||
+				this == v240_1ph_2w ||
+				this == v480_1ph_2w;
+	}
+
+	/**
+	 @return True if the system voltage is 1-phase 3-wires.
+	 */
+	public boolean has2HotsAndNeutralOnly(){
+		return this == v208_1ph_3w ||
+				this == v240_1ph_3w ||
+				this == v480_1ph_3w;
+	}
 }

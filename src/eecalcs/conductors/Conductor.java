@@ -1,6 +1,5 @@
 package eecalcs.conductors;
 
-import eecalcs.circuits.Circuit;
 import eecalcs.conduits.Conduit;
 import eecalcs.systems.TempRating;
 import tools.NotifierDelegate;
@@ -18,7 +17,7 @@ import tools.NotifierDelegate;
  <p>This class uses the NotifierDelegate class which allows it to forecast
  messages to its registered Listeners.
  */
-public class Conductor implements Conduitable, ShareableConductor {
+public class Conductor implements Conduitable, RoConductor {
 
 	/**
 	 Defines the role of a conductor.
@@ -27,7 +26,7 @@ public class Conductor implements Conduitable, ShareableConductor {
 	 conductor as defined by the NEC)</li>
 	 <li><b>NEUCC</b>: means the conductor is a neutral conductor (a grounded
 	 conductor as defined by the NEC) that is also a current-carrying
-	 conductor</li>
+	 conductor per NEC rule 310.15(B)(5)</li>
 	 <li><b>NEUNCC</b>: means the conductor is a neutral conductor that is also
 	 a non current-carrying conductor</li>
 	 <li><b>GND</b>: means the conductor is used for grounding and bonding (EGC,
@@ -63,8 +62,8 @@ public class Conductor implements Conduitable, ShareableConductor {
 		GND("Grounding and bonding conductor"),
 		NCONC("Hot, ungrounded non concurrent conductor");
 
-		private String description;
-		private static String[] descriptions;
+		private final String description;
+		private static final String[] descriptions;
 
 		static{
 			descriptions = new String[values().length];
@@ -95,9 +94,6 @@ public class Conductor implements Conduitable, ShareableConductor {
 			return descriptions;
 		}
 	}
-
-	//private List<Listener> listeners = new ArrayList<>();
-
 	private Size size = Size.AWG_12;
 	private Metal metal = Metal.COPPER;
 	private Insul insulation = Insul.THW;
@@ -107,8 +103,7 @@ public class Conductor implements Conduitable, ShareableConductor {
 	private Role role = Role.HOT;
 	private Conduit conduit;
 	private Bundle bundle;
-	private NotifierDelegate notifier = new NotifierDelegate(this);
-//	private long enablingKey = notifier.getEnablingKey();
+	private final NotifierDelegate notifier = new NotifierDelegate(this);
 
 	/**
 	 Constructs a conductor with the given characteristics. The other properties
@@ -159,6 +154,8 @@ public class Conductor implements Conduitable, ShareableConductor {
 	 @param conductor The passed Conductor to copy from.
 	 */
 	public void copyFrom(Conductor conductor){
+		if(conductor == null)
+			throw new IllegalArgumentException("conductor parameter cannot be null");
 		size = conductor.size;
 		metal = conductor.metal;
 		insulation =conductor.insulation;
@@ -182,60 +179,52 @@ public class Conductor implements Conduitable, ShareableConductor {
 	 */
 	public Conductor(){}
 
-	/**
-	 Gets the size of this conductor.
-
-	 @return The size of this conductor
-	 */
+	@Override
 	public Size getSize() {
 		return size;
 	}
 
 	/**
-	 Sets the size to this conductor.
-
+	 Sets the size of this conductor.
 	 @param size The size of the conductor as defined by {@link Size}
-	 */
+	*/
 	public Conductor setSize(Size size) {
 		this.size = size;
 		notifier.notifyAllListeners();
 		return this;
 	}
 
+	@Override
 	public Metal getMetal() {
 		return metal;
 	}
 
 	/**
 	 Sets the metal to this conductor.
-
 	 @param metal The conductor metal as defined by {@link Metal}
 	 */
-	public Conductor setMetal(Metal metal) {
+	public void setMetal(Metal metal) {
 		this.metal = metal;
 		notifier.notifyAllListeners();
-		return this;
 	}
 
+	@Override
 	public Insul getInsulation() {
 		return insulation;
 	}
 
-	public /*Conductor*/ void setInsulation(Insul insulation) {
+	@Override
+	public void setInsulation(Insul insulation) {
 		this.insulation = insulation;
 		notifier.notifyAllListeners();
-		//return this;
 	}
 
-	/**
-	 Gets the length of this conductor.
-
-	 @return The length of this conductor in feet (on way length).
-	 */
+	@Override
 	public double getLength() {
 		return length;
 	}
 
+	@Override
 	public void setLength(double length) {
 		this.length = Math.abs(length);
 		notifier.notifyAllListeners();
@@ -246,95 +235,7 @@ public class Conductor implements Conduitable, ShareableConductor {
 		return ConductorProperties.getInsulatedAreaIn2(size, insulation);
 	}
 
-	/**
-	 Returns the ampacity of this conductor (for voltages up to 2000v).
-	 <p><br>
-	 The result accounts for the ambient temperature, the insulation of this
-	 conductor, and the number of other conductors or cables that share the
-	 same raceway or bundle with this conductor. That is, the ampacity returned
-	 is corrected for ambient temperature (other than 86°F/30°C), and adjusted
-	 for the number of conductors (including any cable) in the same raceway or
-	 bundle. This is the ampacity for this conductor size, metal and
-	 insulation type under the specified conditions (ambient temperature,
-	 conduit, bundling, rooftop, etc.).
-	 <p><br>
-	 The rule allowing the temperature correction and adjustment factors to be
-	 applied to the ampacity for the temperature rating of the conductor, if the
-	 corrected and adjusted ampacity does not exceed the ampacity for the
-	 temperature rating of the terminals in accordance with 110.14(C), is not
-	 accounted for in this method. It is accounted for at the {@link Circuit}
-	 class level.
-	 <p><br>
-	 If no correction factor is required ({@link #getCorrectionFactor()} returns 1), the
-	 conductor should be sized per 110.14(C), that is:
-	 <p>&emsp;
-	 -per the 60°C column for conductors 14AWG thru 1AWG or circuits up to
-	 100AMPS, UNLESS it's known the terminals are rated for 75°C.
-	 <p>&emsp;
-	 -per the 75°C column for conductors larger than 1AWG or circuits above
-	 100AMPS.
-	 <p>
-	 In both cases, conductors with temperature ratings higher than specified
-	 for terminations shall be permitted to be used for ampacity adjustment,
-	 correction, or both. This is the reason why the rating of the terminals are
-	 specified at a different level.
-	 <p><br>
-	 The ampacity of insulated conductor can be calculated, corrected and
-	 adjusted for insulation rated for 75°C or 90°C but that ampacity shall not //todo to correct!
-	 exceed what would be required for a 60°C insulation. This rule appears
-	 several times throughout the code.
-	 <p><br><br>
-	 A concrete example is as follow:
-	 Suppose a load was calculated at 105 AMPS. The installer is going to use a
-	 surplus of THHW copper conductors (90°C). Let's assume that there are 4
-	 current-carrying conductors in the raceway and that the ambient temperature
-	 is 100°C:
-	 <p>&emsp;
-	 - Temperature correction factor for a 90°C conductor
-	 (TABLE 310.15(B)(2)(a)) = 0.91
-	 <p>&emsp;
-	 - Adjustment factor for four current-carrying conductors
-	 (TABLE 310.15(B)(3)(a)) = 0.8
-	 <p>&emsp;
-	 - Looking for 105/(0.91x0.8)=144.2 Amps in column for 90°C, we find that
-	 # 1 AWG THHW  is 145 Amps, so it's good.
-	 <p>&emsp;
-	 -The corrected ampacity of that conductor is 145x0.91x0.8 = 105.6 Amps.
-	 <p>&emsp;
-	 -105.56 Amps is above the load current of 105 Amps, so it's good for the
-	 load.
-	 since
-	 <p>
-	 The # 1 AWG THHW wire is good because the ampacity for the same wire at
-	 60°C is 110AMP.
-	 <p><br>
-	 The general approach to determine the allowed ampacity is:
-	 <p>&emsp;&emsp;
-	 AllowedAmpacity*TCF*AF {@literal >}= Load Amps
-	 <p>&emsp;&emsp;
-	 AllowedAmpacity {@literal >}= (Load Amps)/(TCF*AF)
-	 <p>&emsp;&emsp;
-	 AllowedAmpacity {@literal >}= (105)/(0.91*0.8)
-	 <p>&emsp;&emsp;
-	 AllowedAmpacity {@literal >}= 144.23 AMPS.
-	 <p>&emsp;&emsp;
-	 Now, a conductor can be selected from table 310.15(B)(16):
-	 <p>&emsp;&emsp;
-	 It could be a #2/0 AWG TW, or a #1/0 AWG THW or a #1 AWG THHW.
-	 <p><br>
-	 This method alone does not calculate the allowed ampacity because the load
-	 amps is not known at this level.
-	 However, the methods {@link #getCorrectionFactor()} and
-	 {@link #getAdjustmentFactor()} will provide the 0.91 &#38; 0.8 value
-	 (from the example) that the {@link Circuit} class would need as reversed
-	 coefficient to multiply the load amperes (to get the 144.23 AMPS from the
-	 example). Then the method
-	 {@link ConductorProperties#getSizeByAmperes(double, Metal, TempRating)} can
-	 provide the proper size of the conductor.
-	 <br>
-
-	 @return The ampacity in amperes.
-	 */
+	@Override
 	public double getAmpacity(){
 		double amp = ConductorProperties.getAmpacity(size, metal, ConductorProperties.getTempRating(insulation));
 		double cf = getCorrectionFactor();
@@ -342,6 +243,7 @@ public class Conductor implements Conduitable, ShareableConductor {
 		return amp * cf * af;
 	}
 
+	@Override
 	public double getCorrectionFactor(){
 		int adjustedTemp = 0;
 		if(hasConduit())
@@ -352,11 +254,12 @@ public class Conductor implements Conduitable, ShareableConductor {
 				getTemperatureRating());
 	}
 
+	@Override
 	public double getAdjustmentFactor() {
 		if(hasConduit())
-			return Factors.getAdjustmentFactor(conduit.getCurrentCarryingNumber(), conduit.isNipple());
+			return Factors.getAdjustmentFactor(conduit.getCurrentCarryingCount(), conduit.isNipple());
 		if(hasBundle()){
-			return Factors.getAdjustmentFactor(bundle.getCurrentCarryingNumber(), bundle.getDistance());
+			return Factors.getAdjustmentFactor(bundle.getCurrentCarryingNumber(), bundle.getBundlingLength());
 		}
 		return 1;
 	}
@@ -396,6 +299,7 @@ public class Conductor implements Conduitable, ShareableConductor {
 		return ambientTemperatureF;
 	}
 
+	@Override
 	public void setAmbientTemperatureF(int ambientTemperatureF) {
 		if(conduit != null)
 			conduit.getConduitables().forEach(conduitable -> {
@@ -488,6 +392,7 @@ public class Conductor implements Conduitable, ShareableConductor {
 		return conduit != null;
 	}
 
+	@Override
 	public TempRating getTemperatureRating() {
 		return ConductorProperties.getTempRating(insulation);
 	}
@@ -519,24 +424,6 @@ public class Conductor implements Conduitable, ShareableConductor {
 			return 0;
 		return 1; //this considers hot and neutral as current carrying conductor.
 	}
-
-/*	@Override
-	public void addListener(Listener listener) {
-		if(listeners.contains(listener))
-			return;
-		listeners.add(listener);
-	}
-
-	@Override
-	public void removeListener(Listener listener) {
-		listeners.remove(listener);
-	}
-
-	@Override
-	public void notifyAllListeners() {
-		for(Listener listener: listeners)
-			listener.notify(this);
-	}*/
 
 	@Override
 	public String getDescription() {

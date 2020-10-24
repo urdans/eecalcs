@@ -4,386 +4,419 @@ import eecalcs.systems.VoltageSystemAC;
 import tools.NotifierDelegate;
 
 /**
- This class represents a generic load.
- The load's properties and their default values are::
- <p>- Voltage: 120V, 1-phase, 2-wires
- <p>- Current: 10A
- <p>- S: 1200VA
- <p>- P: 1200W
- <p>- Power factor is 1.0.
- <p>- Noncontinuous.
- <p>- MCA = Current = 10A
- <p>- Description is "Generic load".
- <p>- Linear
- <br><br>
- From these properties, voltage, and power factor are always independent and can
- be provided by the user in the constructor or in the setters; this means, they
- are never calculated from the other properties.
- <br><br>
- A Load object is constructed from <b>V</b>, <b>S</b> and <b>pf</b> as follow:
- <br>
- <pre>   I = S/(V*SQRT(f)) with f=1 for 1φ and f=3 for 3φ</pre>
- <pre>   P = S*pf</pre>
- <br>
- <p>When the voltage <b>V</b> or the power factor <b>pf</b> are set, the
- apparent power <b>S</b> is assumed to remain.
-
- The other properties are calculated as follow:
- <br><br>
- - Setting <b>S</b> will define <b>I</b> and <b>P</b>:
- <pre>   I = S/(V*SQRT(f)) with f=1 for 1φ and f=3 for 3φ</pre>
- <pre>   P = S*pf</pre>
- <br>
- - Setting <b>I</b> will define <b>S</b> and <b>P</b>:
- <pre>   S = V*I*SQRT(f)) f=1 for 1φ and f=3 for 3φ</pre>
- <pre>   P = S*pf</pre>
- <br>
- - Setting <b>P</b> will define <b>S</b> and <b>I</b>:
- <pre>   S = P/pf</pre>
- <pre>   I = P/(V*SQRT(f)*pf) with f=1 for 1φ and f=3 for 3φ</pre>
- <br>
- <p>Notice that when the current is calculated or set, the load type is set to be
- NONCONTINUOUS and the MCA gets the same value a the current.
- <p>To set the continuousness of the load, call the corresponding methods.
-*/
-
-/* future
-    This could be complicated and should eventually be implemented.
-    I need a class "LoadGroup" that descends from Load and bundles other single
-    loads into one. This class will account for combination of different type of
-    loads in one load (motors, general loads, etc.).
-    Rules for combination of loads shall be applied. The LoadGroup class shall
-    provide a method for requesting if a load (of a particular type) can be
-    added to the group. This will account for combinations that might no be
-    permitted by code or that are no considered a good practice.
-    A load object type receptacle
+ This is the abstract base class for all type of loads.
+ <p>An electric load object provides information about its basic requirements
+ and has the following properties (RO: read only; R&W: read and write):
+ <ol>
+ <li>Voltage, phases and number of wires (voltage system).</li>
+ <dd>(R&W). Expressed in volts. Like 120 volts, single phase, 2-wire.
+ It's a non-null field. Refer to {@link VoltageSystemAC} for details.</dd>
+ <li>Nominal current.</li>
+ <dd>(R&W). In amperes, apply only for the phase (hot) conductors. It's a
+ non-zero positive value. Descendant classes must override this property to
+ recalculate the MCA, if required, like for example for loads having a
+ continuousness behavior.
+ <p>Voltage, nominal current and power factor are independent variables that
+ define the real and apparent power (P & S). Voltage and nominal current can be
+ set when calling the constructor, or later on using their own setters.</dd>
+ <li>Nominal neutral current.</li>
+ <dd>(RO). In amperes. Typically this value is zero for 3Ø, 3-wire loads or
+ the value of the phase current for 1Ø, 2-and-3-wire loads. Descendant
+ classes can override this property and provide setter methods when required.
+ This property provides a current value that is only used for sizing the neutral
+ conductor. It should not be used for any other purpose.
+  <p>For a nonlinear load, this property can return a value that is as big as
+ 173% the nominal current of the phase conductors (for 3Ø balanced
+ non-linear loads) or as big as 200% the nominal current of the
+ phase conductors for 3Ø system feeding only single-phase non-linear
+ loads. Future: more investigation is required for this.<br><br>
+ <p><b>When a load is a panel and thus, fed from a feeder:</b>
+ <p>The NEC-220.61 explains that the load of a feeder or service neutral is the
+ maximum unbalanced load, that is, the maximum net calculated load between
+ the neutral and any one phase conductor, i.e. for phase A load = 25650,
+ phase B load = 32340, and phase C load=28600, the maximum unbalanced load is
+ for phase B, 32340; because of the "net calculated" words, these values are
+ obtained after applying demand factor and other calculation rules.
+ <p>From the feeder or service neutral load, the current is calculated to
+ determine the size of the conductors. However, the code mandates that for
+ 3-wire 2Ø or 5-wire 2Ø systems (very old system not covered by
+ this software) this current must be multiplied by 1.4.
+ <p>The code also permits a reduction of 70% to the neutral current after it
+ is calculated per NEC-220.61(B)(1) (the loads of ranges, ovens,etc. per table
+ 220.55 and dryers per table 220.54) or per NEC-220.61(B)(2) (the excess of
+ 200 amps for system voltages of: 3W DC; 1Ø 3W; 3Ø 4W; or the old 2Ø 3W and
+ 5W systems.
+ <p>The code prohibits any reductions of the neutral current calculated from
+ 220.61(C)(1) (1Ø 3W circuits fed from 3Ø 4W wye-connected systems) or from
+ 220.61(C)(2) (portion consisting of nonlinear loads supplied from 3Ø 4W
+ wye-connected systems).
+ </dd>
+ <li>Apparent power (S).</li>
+ <dd>(RO). In volt-amperes. It's a calculated value from the voltage system and
+ the nominal current of the load.</dd>
+ <li>Real power (P).</li>
+ <dd>(RO). In watts. It's a calculated value from the voltage system, the
+ nominal current and the power factor of the load.</dd>
+ <li>Power factor.</li>
+ <dd>(R&W). A positive number between 0.7 and 1.0. Its setter constrain the
+ provided value to this rage. The default value is 1.0.</dd>
+ <li>MCA: Minimum circuit ampacity.</li>
+ <dd>(RO). In amperes. In the base class, its value is the same as the nominal
+ current. Descendant classes override this property and provide setter methods
+ when required.</dd>
+ <li>The MCA to nominal current ratio.</li>
+ <dd>(RO). Named as MCAMultiplier. It's the quotient between the MCA and the
+ nominal current. This property can be used by other classes (Circuit class, for
+ instance) to compute the size of the conductor feeding this load.</dd>
+ <li>Maximum Overcurrent Protection Device rating.</li>
+ <dd>(RO). Named OCPD. In amperes. Also know as OCPD for some loads.
+ An OCPD provides short-circuit, ground-fault protection and, in some cases,
+ overload protection.
+ <p>It refers to the maximum rating of the device (fuse, circuit breaker,
+ etc.) that provides short-circuit and ground-fault protection to the load,
+ when the device is required by the load. Its value is determine internally
+ based on the type of loads and the NEC rules that apply to the type of load
+ and its electrical characteristics.
+ Notice that for some loads this OCPD device also provides overload protection.
+ <p>For this base class, its value is zero, indicating that no OCPD is
+ required by this load, and thus, the rating of the OCPD must be determined
+ outside of this class (only to protect the conductors feeding this load),
+ i.e., this base class does not have a maximum overcurrent protection device
+ rating requirement. Descendant classes override this property to
+ return the proper value according to the load type.</dd>
+ <li>Minimum disconnect switch rating.</li>
+ <dd>(RO). In amperes. Refers to the minimum rating of the disconnect switch
+ (when required). For this base class load its value is zero, indicating the
+ disconnect switch is not required. Descendant classes override this property
+ to return the proper value according to the load type.</dd>
+ <li>Overload protection rating.</li>
+ <dd>(RO). In amperes. Refer to the rating of the overload protection for this
+ load (when required). For this base class load its value is zero, indicating
+ that a separate overload protection device is not required and that the
+ overload protection is to be provided by the OCPD.
+ Descendant classes override this property to return the proper value according
+ to the load type.</dd>
+ <li>Description of the load.</li>
+ <dd>(R&W). It's a string describing the load. In some cases the description can
+ be arbitrary but in others, it should comply with the requirements for
+ describing a circuit load (load name and location). For this base class
+ load, its a null value.</dd>
+ </ol>
+ <p>Descendant classes are specialized loads and they add specific methods that
+ modify the internals, so the base class methods return the properly
+ calculated value according to the load type. Descendant classes can provided
+ specialized methods and implement extra behaviors.
+ <p>The {@link Continuousness} interface provide enum for load type (continuous,
+ non-continuous and mixed {@link eecalcs.loads.Continuousness.LoadType}, and
+ specify methods to handle the continuousness behavior of a load.
+ <p>To avoid repeated code, the {@link ContinuousBehavior} helper class
+ implements this interface and can be used as a delegated class (in composition)
+ in classes implementing the Continuousness interface.
  */
+public abstract class Load {
+    protected VoltageSystemAC voltageSystem;
+    protected double powerFactor = 1.0;
+	protected final NotifierDelegate notifier = new NotifierDelegate(this);
+	protected String description;
+	/*this is a temporary member that will be redefined or removed depending
+	on what is the best method to determine if a load is linear or not and
+	how to calculate the neutral current*/
+	private boolean _isNonlinear = false;
+	/*A struct like class is necessary for integrating with other helper classes*/
+	protected Currents currents = new Currents();
 
-public class Load {
-    private VoltageSystemAC voltageSystem = VoltageSystemAC.v120_1ph_2w;
-    private double voltAmperes = 120 * 10;
-    private double watts;
-    private double current;
-    private double MCA;
-    private double powerFactor = 1.0;
-    private LoadType loadType = LoadType.NONCONTINUOUS;
-    private String description = "Generic load";
-    private boolean linear = true;
-    private NotifierDelegate notifier = new NotifierDelegate(this);
-
-    //This and other computations are related to one of the phase conductors.
-    private void computeCurrentAndWatts(){
-        current = voltAmperes/(voltageSystem.getVoltage() * voltageSystem.getFactor());
-        watts = voltAmperes * powerFactor;
-        MCA = current;
-        loadType = LoadType.NONCONTINUOUS;
-    }
-
-    /**
-     Constructs a Load object with the given system voltage and apparent
-     power. The power factor is defaulted to 1.
-
-     @param voltageSystem The voltage system that feeds the load
-     @param voltAmperes The apparent power in volt-amperes of the load.
-     @see VoltageSystemAC
-     */
-    public Load(VoltageSystemAC voltageSystem, double voltAmperes) {
+	/**
+	 This is a constructor for a descendant load class object. Do not call this
+	 constructor directly since this is an abstract class.
+	 @param voltageSystem The voltage system of the load. If a null value is
+	 provided, the default value will be assumed.
+	 @param nominalCurrent The nominal current of the load in amperes. It's a
+	 positive non zero value. If zero is provided, the default value will be
+	 assumed.
+	 @see VoltageSystemAC
+	 */
+	public Load(VoltageSystemAC voltageSystem, double nominalCurrent) {
+		if(voltageSystem == null)
+			voltageSystem = VoltageSystemAC.v120_1ph_2w;
+		if(nominalCurrent == 0)
+			nominalCurrent = 10.0;
         this.voltageSystem = voltageSystem;
-        this.voltAmperes = voltAmperes;
-        computeCurrentAndWatts();
+        currents.nominalCurrent = Math.abs(nominalCurrent);
+        currents.MCA = currents.nominalCurrent;
     }
 
-    /**
-     Constructs a Load object with the following default values:
-     <p>- System AC voltage = 120v, 1 phase, 2 wires.
-     <p>- Power S = 1200 va<br>
-     */
+	/**
+	 Constructs a Load object with the following default values:
+	 <p>- System AC voltage = 120v, 1 Ø, 2 wires.
+	 <p>- Nominal current = 10 amperes<br>
+	 */
     public Load(){
-        computeCurrentAndWatts();
+    	this(VoltageSystemAC.v120_1ph_2w, 10);
     }
 
-    /**
-    @return A deep copy of this Load object. The NotifierDelegate object is not
-     copied.
-     */
-    @Override
-    public Load clone(){
-        Load load = new Load();
-        load.voltageSystem = voltageSystem;
-        load.voltAmperes = voltAmperes;
-        load.watts = watts;
-        load.current = current;
-        load.MCA = MCA;
-        load.powerFactor = powerFactor;
-        load.loadType = loadType;
-        load.description = description;
-        load.linear = linear;
-        return load;
-    }
+	/**
+	 Sets the voltage system of this load.
+	 Registered listeners receive notification of this change.
+	 @param voltageSystem The new voltage system for this load. If this
+	 parameter is null, nothing is set.
+	 @see VoltageSystemAC
+	 */
+    public void setVoltageSystem(VoltageSystemAC voltageSystem) {
+    	if(this.voltageSystem == voltageSystem || voltageSystem == null)
+    		return;
+    	notifier.info.addFieldChange("voltageSystem", this.voltageSystem, voltageSystem );
+    	this.voltageSystem = voltageSystem;
+    	notifier.notifyAllListeners();
+	}
 
-    /**
-     @return The voltage system that feeds this load.
-     @see VoltageSystemAC
-     */
-    public VoltageSystemAC getVoltageSystem() {
+	/**
+	 @return The voltage system of this load.
+	 @see VoltageSystemAC
+	 */
+	public VoltageSystemAC getVoltageSystem() {
         return voltageSystem;
     }
 
-    /**
-     Sets the voltage system of this load. Current and real power are
-     recalculated. Registered listeners receive notification of these changes.
-
-     @param voltageSystem The new voltage system for this load.
-     @see VoltageSystemAC
-     */
-    public void setVoltageSystem(VoltageSystemAC voltageSystem) {
-        if(this.voltageSystem == voltageSystem)
-            return;
-        notifier.info.addFieldChange("voltageSystem", this.voltageSystem, voltageSystem);
-        this.voltageSystem = voltageSystem;
-        double oc = this.current;
-        double ow = this.watts;
-        computeCurrentAndWatts();
-        notifier.info.addFieldChange("current", oc, this.current);
-        notifier.info.addFieldChange("watts", ow, this.watts);
-        notifier.notifyAllListeners();
+	/**
+	 Sets a non-zero positive value for this load nominal current.
+	 Registered listeners receive notification of this change.
+	 @param nominalCurrent The new current of the load, in amperes. If this
+	 value is zero, nothing is set.
+	 */
+    public void setNominalCurrent(double nominalCurrent){
+    	if(currents.nominalCurrent == nominalCurrent || nominalCurrent == 0)
+    		return;
+    	nominalCurrent = Math.abs(nominalCurrent);
+	    notifier.info.addFieldChange("nominalCurrent", currents.nominalCurrent, nominalCurrent);
+    	currents.nominalCurrent = nominalCurrent;
+	    notifier.notifyAllListeners();
     }
 
-    /**
-     @return The apparent power of this load, in volt-amperes.
-     */
-    public double getVoltAmperes() {
-        return voltAmperes;
+	/**
+	 @return The nominal current of this load, in amperes.
+	 */
+	public double getNominalCurrent() {
+        return currents.nominalCurrent;
     }
 
-    /**
-     Sets the apparent power of this load. Current and real power are
-     recalculated. Registered listeners receive notification of these changes.
+	/**
+	 @return The neutral current of this load, in amperes, for the only
+	 purpose of determining the size of the neutral conductor.<br><br>
+	 <p>The criteria for determining this current at this base class, is as
+	 follows:
+	 <p>- All 1φ loads having a neutral and all 3φ having a neutral will have a
+	 neutral current equal to the phase current.
+	 <p>- For all the other loads (the ones that do not have a neutral
+	 conductor), the returned value is zero.<br><br>
+	 <p><b>Descendant classes that account for harmonics and/or behave as
+	 panels, should override this method so that for 3φ loads having a
+	 neutral, the value of the current can be lower or higher than the phase
+	 current, accordingly.</b>
+	 */
+	public double getNeutralCurrent() {
+		//The 3φ-4W loads have a neutral that even if it is not a CCC, is
+		//sized the same as the phase conductors.
+		//todo refactor this by using VoltageSystemAC.hasNeutral()
+		if (voltageSystem == VoltageSystemAC.v120_1ph_2w ||
+				voltageSystem == VoltageSystemAC.v208_1ph_2wN || //high leg
+				voltageSystem == VoltageSystemAC.v277_1ph_2w ||
+				voltageSystem == VoltageSystemAC.v208_1ph_3w ||
+				voltageSystem == VoltageSystemAC.v208_3ph_4w ||
+				voltageSystem == VoltageSystemAC.v240_1ph_3w ||
+				voltageSystem == VoltageSystemAC.v240_3ph_4w ||
+				voltageSystem == VoltageSystemAC.v480_1ph_3w ||
+				voltageSystem == VoltageSystemAC.v480_3ph_4w)
+			return currents.nominalCurrent;
+		//no neutral, no current.
+		return 0;
+	}
 
-     @param voltAmperes The new apparent power for this load.
-     */
-    public void setVoltAmperes(double voltAmperes) {
-        if(this.voltAmperes == voltAmperes)
-            return;
-        notifier.info.addFieldChange("voltAmperes", this.voltAmperes, voltAmperes);
-        this.voltAmperes = voltAmperes;
-        double oc = this.current;
-        double ow = this.watts;
-        computeCurrentAndWatts();
-        notifier.info.addFieldChange("current", oc, this.current);
-        notifier.info.addFieldChange("watts", ow, this.watts);
-        notifier.notifyAllListeners();
+	/**
+	 @return The apparent power of this load, in volt-amperes.
+	 */
+	public double getVoltAmperes() {
+		return voltageSystem.getVoltage() * currents.nominalCurrent * voltageSystem.getFactor();
+	}
+
+	/**
+	 @return The real power of this load, in watts.
+	 */
+	public double getWatts() {
+		return getVoltAmperes() * powerFactor;
+	}
+
+	/**
+	 Sets the power factor of this load and thus changing indirectly the
+	 value of the real power of this load.
+	 <p>Registered listeners receive notification of these changes (pf & P).
+	 @param powerFactor A value >= 0.7  and <=1.0 representing the new power
+	 factor of the load. Any value above or below the acceptable limits will be
+	 trimmed to the limit values, without notice.
+	 */
+	public void setPowerFactor(double powerFactor) {
+		if(this.powerFactor == powerFactor)
+			return;
+		powerFactor = Math.abs(powerFactor);
+		if(powerFactor < 0.7)
+			powerFactor = 0.7;
+		else if(powerFactor > 1.0)
+			powerFactor = 1.0;
+		double oldWatts = getWatts();
+		notifier.info.addFieldChange("powerFactor", this.powerFactor, powerFactor);
+		this.powerFactor = powerFactor;
+		notifier.info.addFieldChange("watts", oldWatts, getWatts());
+		notifier.notifyAllListeners();
     }
 
-    /**
-     @return The real power of this load, in watts.
-     */
-    public double getWatts() {
-        return watts;
+	/**
+	 @return The power factor of this load. A positive number between 0.7 and
+	 1.0 inclusive.
+	 */
+	public double getPowerFactor() {
+		return powerFactor;
+	}
+
+	/**
+	 @return The Minimum Circuit Ampacity of this loads, in amperes.
+	 */
+    public abstract double getMCA();
+
+	/**
+	 @return The quotient between the MCA and the load nominal current. Notice
+	 this value is greater or equal to 1.
+	 */
+    public double getMCAMultiplier() {
+        return currents.MCA / currents.nominalCurrent;
     }
 
-    /**
-     Sets the real power of this load. Current and apparent power are
-     recalculated. Registered listeners receive notification of these changes.
-
-     @param watts The new real power of this load, in watts.
-     */
-    public void setWatts(double watts) {
-        if(this.watts == watts)
-            return;
-        notifier.info.addFieldChange("watts", this.watts, watts);
-        this.watts = watts;
-        double nva = watts / powerFactor;
-        notifier.info.addFieldChange("voltAmperes", this.voltAmperes, nva);
-        voltAmperes = nva;
-        double nc = watts/(voltageSystem.getVoltage()* voltageSystem.getFactor()*powerFactor);
-        notifier.info.addFieldChange("current", this.current, nc);
-        current = nc;
-        notifier.notifyAllListeners();
+	/**
+	 @return The maximum overcurrent protection device (OCPD) rating
+	 (protection for short-circuit, ground-fault and overload), in amperes.
+	 If the returned value is 0, it means that a particular OCDP device is
+	 not required for this load and thus, the rating of the device must be
+	 determined at the circuit level to protect the conductors feeding this
+	 load.
+	 <p>The is100PercentRated parameter may look trivial. It is up to the
+	 load object to decide to use it or not. For some load types, the NEC
+	 allows to skip the 1.25*I_continuous increase in OCDP size if the OCDP
+	 and its enclosure are 100% rated. As this exception does not apply to
+	 all loads, each load object must decide to account for it or ignore it.
+	 <p>Descendant load classes having particular requirements for an OCPD,
+	 must override this method to return the proper OCPD rating.
+	 @param is100PercentRated Tells the load if the requested value is for an
+	 OCPD that is 100% rated.
+	 */
+	public double getMaxOCPDRating(boolean is100PercentRated){
+		return 0;
+		/*When is100PercentRated is accounted for, use this:
+		* if(is100PercentRated || !isContinuous)
+		*   return Inom
+		* else
+		*   return 1.25*Inom
+		* Few loads would use this approach!*/
     }
 
-    /**
-     @return The nominal current of this load. It's calculated based on the
-     voltage system of the load and its apparent power.
-     */
-    public double getCurrent() {
-        return current;
+	/**
+	 @return The minimum rating, in amperes, of the disconnect switch for this
+	 load, if required. If the returned value is 0, it means a disconnect switch
+	 is not required for this load.
+	 <p>Descendant load classes requiring or possibly having a DS (Disconnect
+	 Switch) must override this method to return the proper DS rating.
+	 */
+	public double getDSRating(){
+		return 0;
+	}
+
+	/**
+	 @return True if the Next Higher Standard Rating rule can be applied to
+	 this load, False otherwise.
+	 <p>The returned value is meaningful only if {@link #getDSRating()}
+	 return a non zero value.
+	 <p>Descendant load classes that do not allow the application of
+	 this rule must override this method to return false.
+	 */
+	public boolean NHSRRuleApplies(){
+		return true;
+	}
+
+	/**
+	 @return The maximum ampere rating of the overload protection device.
+	 If the returned value is 0, it means a separate overload protection device
+	 is not required for this load and that the overcurrent protection is
+	 provided by the OCPD (Short-Circuit and Ground-Fault Protection).
+	 <p>Descendant load classes requiring a separate overload protection
+	 device must override this method to return the proper overload rating.
+	 */
+    public double getOverloadRating(){
+    	return 0;
     }
 
-    /**
-     Sets a non-zero current value for this load. Apparent and real power are
-     recalculated. Registered listeners receive notification of these changes.
-     If the load is mixed, setting its current will make it to become
-     noncontinuous.
+	/**
+	 Sets the description of this load.
+	 @param description The description of the load. This should comply with the
+	 NEC requirements for describing a load circuit for panel circuit
+	 identification.
+	 */
+	public void setDescription(String description){
+		if(this.description != null)
+			if(this.description.equals(description))
+				return;
+		notifier.info.addFieldChange("description", this.description, description);
+		this.description = description;
+		notifier.notifyAllListeners();
+	}
 
-     @param current The new current of the load, in amperes. If this value is
-     zero, nothing is set.
-     */
-    public void setCurrent(double current) {
-        if(this.current == current || current == 0)
-            return;
-        notifier.info.addFieldChange("current", this.current, current);
-        this.current = current;
-        double nva = voltageSystem.getVoltage() * current * voltageSystem.getFactor();
-        notifier.info.addFieldChange("voltAmperes", this.voltAmperes, nva);
-        voltAmperes = nva;
-        double nw = voltAmperes * powerFactor;
-        notifier.info.addFieldChange("watts", this.watts, nw);
-        watts = nw;
-        notifier.info.addFieldChange("MCA", this.MCA, current);
-        if(loadType == LoadType.NONCONTINUOUS)
-            MCA = current;
-        else if(loadType == LoadType.CONTINUOUS)
-            MCA = 1.25 * current;
-        else {
-            MCA = current;
-            loadType = LoadType.NONCONTINUOUS;
-        }
-        notifier.notifyAllListeners();
-    }
+	/**
+	 @return The description of this load.
+	 */
+	public String getDescription() {
+		return description;
+	}
 
-    /**
-     @return The power factor of the load. A number between 0.7 and 1 inclusive.
-     */
-    public double getPowerFactor() {
-        return powerFactor;
-    }
+	/**
+	 @return The notifier delegate object for this object.
+	 */
+	public NotifierDelegate getNotifier() {
+		return notifier;
+	}
 
-    /**
-     Sets the power factor of the load. Current and real power are recalculated.
-     Registered listeners receive notification of this changes.
+	/**
+	 @return True if the neutral conductor of this load is a current-carrying
+	 conductor as defined by the NEC rule 310.15(B)(5). False otherwise or if
+	 this load voltage system does not have a neutral.<br>
+	 */
+	public boolean isNeutralCurrentCarrying(){
+		if(isNonlinear()) //the neutral carries the harmonics in all configurations
+			return voltageSystem.hasNeutral();
+		if(voltageSystem.hasNeutral()){ //almost all are CCC except the 4w
+			return voltageSystem.getWires() != 4;
+		}
+		return false;
+	}
 
-     @param powerFactor A value >= 0.7  and <=1.0 representing the new power
-     factor of the load. Any value above or below the acceptable limits will be
-     trimmed to the limit value, without notice.
-     */
-    public void setPowerFactor(double powerFactor) {
-        if(this.powerFactor == powerFactor)
-            return;
-        if(powerFactor < 0.7)
-            powerFactor = 0.7;
-        else if(powerFactor > 1.0)
-            powerFactor = 1.0;
-        notifier.info.addFieldChange("powerFactor", this.powerFactor, powerFactor);
-        this.powerFactor = powerFactor;
-        double oc = this.current;
-        double ow = this.watts;
-        computeCurrentAndWatts();
-        notifier.info.addFieldChange("current", oc, this.current);
-        notifier.info.addFieldChange("watts", ow, this.watts);
-        notifier.notifyAllListeners();
-    }
+	/**
+	 @return True if this is a nonlinear load (a load with harmonics); false
+	 otherwise.
+	 * Future: to be refactored to abstract when the proper method for dealing
+	 *  with nonlinear loads is developed.
+	 */
+	public boolean isNonlinear(){
+		return _isNonlinear;
+	}
 
-    /**
-     @return The type of the load in regards to its continuousness.
-     @see LoadType
-     */
-    public LoadType getLoadType() {
-        return loadType;
-    }
-
-    /**
-     Makes this load a continuous load.
-     */
-    public void setContinuous(){
-        if(loadType == LoadType.CONTINUOUS)
-            return;
-        notifier.info.addFieldChange("loadType", this.loadType, LoadType.CONTINUOUS);
-        loadType = LoadType.CONTINUOUS;
-        double newMCA = 1.25 * current;
-        notifier.info.addFieldChange("MCA", MCA, newMCA);
-        MCA = newMCA;
-        notifier.notifyAllListeners();
-    }
-
-    /**
-     Makes this load a non continuous load.
-     */
-    public void setNonContinuous(){
-        if(loadType == LoadType.NONCONTINUOUS)
-            return;
-        notifier.info.addFieldChange("loadType", this.loadType, LoadType.NONCONTINUOUS);
-        loadType = LoadType.NONCONTINUOUS;
-        notifier.info.addFieldChange("MCA", MCA, current);
-        MCA = current;
-        notifier.notifyAllListeners();
-    }
-
-    /**
-     Sets explicitly the MCA for this load and mark this load as a mixed load.
-     Notice that MCA should always be equal or greater than the load nominal
-     current. An attempt to set an MCA lesser than the load nominal current will
-     convert this load to a NONCONTINUOUS one, with an MCA equal to the load
-     nominal current.
-     Also notice that there is no limitation on how bigger the MCA can be, in
-     regards to the load current.
-     @param MCA The new minimum circuit ampacity (MCA) for this load.
-     */
-    public void setMixed(double MCA){
-        if(MCA == this.MCA)
-            return;
-        if(MCA <= current) { //this should never happen
-            setNonContinuous();
-            return;
-        }
-        notifier.info.addFieldChange("loadType", this.loadType, LoadType.MIXED);
-        notifier.info.addFieldChange("MCA", this.MCA, MCA);
-        loadType = LoadType.MIXED;
-        this.MCA = MCA;
-        notifier.notifyAllListeners();
-    }
-
-    /**
-     @return The quotient between the MCA and the load current. Notice MCA >=1.
-     */
-    public double getMCAMultiplier(){
-        return MCA/current;
-    }
-    /**
-     @return The description of this load.
-     */
-    public String getDescription() {
-        return description;
-    }
-
-    /**
-     Sets the description of this load.
-     @param description The new description of this load.
-     */
-    public void setDescription(String description) {
-        if(this.description.equals(description))
-            return;
-        notifier.info.addFieldChange("description", this.description, description);
-
-        this.description = description;
-        notifier.notifyAllListeners();
-    }
-
-    /**
-     @return The minimum circuit ampacity of this load.
-     */
-    public double getMCA(){
-        return MCA;
-    }
-
-    /**
-     @return The neutral current of this load. The returned value for this base
-     class is either 0 or the value of the current of the phases.
-     Load classes derived from this class should override this
-     method to reflect the neutral current according to the load type.
-     */
-    public double getNeutralCurrent() {
-        if(voltageSystem == VoltageSystemAC.v120_1ph_2w ||
-           voltageSystem == VoltageSystemAC.v208_1ph_2wN || //high leg
-           voltageSystem == VoltageSystemAC.v277_1ph_2w)
-            return current;
-        return 0;
-    }
-
-    /**
-     @return The notifier delegate object for this object.
-     */
-    public NotifierDelegate getNotifier() {
-        return notifier;
-    }
+	/**
+	 Sets the nonlinear behavior of this load.
+	 @param flag If true, the load is set to nonlinear (load with harmonics).
+	 If false, the load is set as a linear one (the default).
+	 * Future: This is a temporary method. It should be removed once the
+	 *  proper method of determining if a load is linear or not is developed
+	  * and how much is the neutral current.
+	 */
+	public void setNonlinear(boolean flag){
+		if(_isNonlinear == flag)
+			return;
+		notifier.info.addFieldChange("_isNonlinear", _isNonlinear, flag);
+		_isNonlinear = flag;
+		notifier.notifyAllListeners();
+	}
 }

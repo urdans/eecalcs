@@ -281,6 +281,8 @@ public class ConduitProperties {
 	 area in table 4.
 	 */
 	public static boolean hasArea(Type conduitType, Trade tradeSize){
+		if(conduitType == null || tradeSize == null)
+			return false;
 		return dimensions.get(conduitType).containsKey(tradeSize);
 	}
 
@@ -299,11 +301,9 @@ public class ConduitProperties {
 	}
 
 	/**
-	 Returns the map of trade-size-and-area pair values corresponding to the
+	 @return The map of trade-size-and-area pair values corresponding to the
 	 given conduit type.
-
 	 @param conduitType The conduit type for which the areas are requested.
-	 @return The map with trade sizes and areas for the requesting conduit type.
 	 */
 	public static Map<Trade, Double> getAreasForType(Type conduitType){
 		return dimensions.get(conduitType);

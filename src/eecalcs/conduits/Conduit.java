@@ -2,263 +2,328 @@ package eecalcs.conduits;
 
 import eecalcs.conductors.Conduitable;
 import tools.Message;
+import tools.NotifierDelegate;
 import tools.ResultMessages;
 
 import java.util.*;
 
 
 /**
- This class represents an electrical conduit object.
- Conduit objects have a type as defined by {@link Type} and a trade size as
- defined by {@link Trade}. The conduit trade size is automatically increased to
- accommodate the conductors/cables it contains, in order to meet the NEC chapter
- 9 requirements for conduit sizing. Likewise, its size is decreased
- automatically when removing conductor/cables from it. A minimum trade size can
- be set to avoid the conduit to decrease below a desired valued; it's a way to
- account for spare use.
+ This class represents an electrical conduit object. Conduit objects have a type
+ as defined by {@link Type} and a trade size as defined by {@link Trade}. The
+ conduit trade size is automatically increased to accommodate the
+ conductors/cables it contains, in order to meet the NEC chapter 9 requirements
+ for conduit sizing. Likewise, its size is decreased automatically when removing
+ conductor/cables from it. A minimum trade size can be set to avoid the conduit
+ to decrease below a desired valued; it's a way to account for spare use.
 
  <p>When a conductor or cable inside a conduit object changes one of its
  properties and that property affects the conduit size (like the size and number
- of the conductors or the outer diameter of the cable) the size of the conduit
- is updated accordingly.
+ of the conductors or the outer diameter of the cable) the size of the
+ conduit is
+ updated accordingly. */
+public class Conduit implements ROConduit {
+	private Trade minimumTrade = Trade.T1$2;
+	/*Indicates if a conduit is a nipple or not  (nipple: length < 24").
+	 The length of the conduit is not of interest at this stage.*/
+	private boolean isNipple = false;
+	private Type type;
+//	private int allowedFillPercentage;
+	private final List<Conduitable> conduitables = new ArrayList<>();
+	private double roofTopDistance = -1.0; //means no rooftop condition
+	private static final Message ERROR100 = new Message(
+	"The calculated trade size for this conduit is not recognized by" +
+			" NEC Table 4 (not available).", -100);
+	private static final Message ERROR110 = new Message(
+	"The minimum conduit trade size is not valid.", -110);
+	private static final Message ERROR120 = new Message(
+	"The type of this conduit is not valid.", -120);
+	protected final NotifierDelegate notifier = new NotifierDelegate(this);
 
- */
-public class Conduit implements ShareableConduit {
-    /**
-     Indicates if a conduit is a nipple or not  (nipple: length < 24").
-     <br>
-     <ul>
-     <li><b>Yes</b></li>
-     <li><b>No</b></li>
-     </ul>
-     */
-    public enum Nipple{Yes, No }
+	/*Check that the input data is valid (minimum size, conduit type and nipple
+	condition.*/
+	private boolean checkInput() {
+		resultMessages.clearMessages();
+		if (minimumTrade == null)
+			resultMessages.add(ERROR110);
+		if (type == null)
+			resultMessages.add(ERROR120);
+		return !resultMessages.hasErrors();
+	}
 
-    private Trade minimumTrade = Trade.T1$2; //1/2"
-    //the length of the conduit might no be of interest at this stage.
-    private Nipple nipple;
-    private Type type;
-    private int allowedFillPercentage;
-    private List<Conduitable> conduitables = new ArrayList<>();
-    private double roofTopDistance = -1.0; //means no rooftop condition
-    private static Message ERROR100	= new Message("The calculated trade size for this conduit is not recognized by" +
-            " NEC Table 4 (not available.", -100);
-    private static Message ERROR110	= new Message("The minimum conduit trade size is not valid.", -110);
-    private static Message ERROR120	= new Message("The type of this conduit is not valid.", -120);
-    private static Message ERROR130	= new Message("The nipple condition of this conduit is not valid.", -130);
+	/**
+	 Container for messages resulting from validation of input variables and
+	 calculations performed by this class.
+	 @see ResultMessages
+	 */
+	public ResultMessages resultMessages = new ResultMessages();
 
-    /*
-    Check that the input data is valid (minimum size, conduit type and nipple
-    condition.
-     */
-    private boolean checkInput(){
-        resultMessages.clearMessages();
-        if(minimumTrade == null)
-            resultMessages.add(ERROR110);
-        if(type == null)
-            resultMessages.add(ERROR120);
-        if(nipple == null)
-            resultMessages.add(ERROR130);
-        return !resultMessages.hasErrors();
-    }
+	/**
+	 Returns the list of all conduitable objects that are inside this conduit
+	 (for instance, conductors and cables).
+	 @return The list of conduitable objects.
+	 @see Conduitable
+	 */
+	public List<Conduitable> getConduitables() {
+		return conduitables;
+	}
 
-    /**
-     Container for messages resulting from validation of input variables and
-     calculations performed by this class.
+	/**
+	 Creates a Conduit object of the type specified and indicating if it's a
+	 nipple or not. The trade size of this conduit is initially 1/2".
+	 @param type The type of the conduit to be created.
+	 @param isNipple Indicates if the conduit is a nipple or not.
+	 @see Type
+	 */
+	public Conduit(Type type, boolean isNipple) {
+		this.type = type;
+		setNipple(isNipple);
+	}
 
-     @see ResultMessages
-     */
-    public ResultMessages resultMessages = new ResultMessages();
+	/**
+	 Creates a default conduit, type PVC40, non nipple.
+	 */
+	public Conduit() {
+		this.type = Type.PVC40;
+		setNipple(false);
+	}
 
-    /**
-     Returns the list of all conduitable objects that are inside this conduit
-     (for instance, conductors and cables).
+	/**
+	 Adds a conduitable object to this conduit.
+	 <p>If the conduitable was inside another conduit, it will be removed
+	 from it. If the conduitable was part of a bundle, it will be removed from
+	 it.
+	 <p>The ambient temperature of the given conduitable will be set to the
+	 ambient temperature of any of the existing conduitables already in the
+	 conduit.
+	 <p>The given conduitable's conduit is set to this conduit
+	 @param conduitable The conduitable object to be added to this conduit.
+	 @see Conduitable
+	 */
+	public void add(Conduitable conduitable) {
+		if (conduitable == null)
+			return;
 
-     @return The list of conduitable objects.
-     @see Conduitable
-     */
-    public List<Conduitable> getConduitables() {
-        return conduitables;
-    }
+		if (conduitables.contains(conduitable))
+			return;
 
-    /**
-     Creates a Conduit object of the type specified and indicating if it's a
-     nipple or not. The trade size of this conduit is initially 1/2".
+		conduitable.leaveConduit();
+		conduitable.leaveBundle();
 
-     @param type The type of the conduit to be created.
-     @param nipple Indicates if the conduit is a nipple or not.
-     @see Type
-     @see Nipple
-     */
-    public Conduit(Type type, Nipple nipple) {
-        this.type = type;
-        setNipple(nipple);
-    }
+		/*the new conduitable is set the ambient temperature of the existing
+		conduitables in this conduit*/
+		if (conduitables.size() > 0)
+			conduitable.setAmbientTemperatureF(conduitables.get(0).getAmbientTemperatureF());
 
-    /**
-     Creates a default conduit, type PVC40, non nipple.
-     */
-    public Conduit() {
-        this.type = Type.PVC40;
-        setNipple(Nipple.No);
-    }
+		/*it has to be in this order, otherwise a recursive call and stack
+		overflow will occur*/
+		conduitables.add(conduitable);
+		conduitable.setConduit(this);
 
-    /**
-     Adds a conduitable object to this conduit.
+		notifier.info.addFieldChange("conduitables", null, null);
+		notifier.notifyAllListeners();
+	}
 
-     If the conduitable was inside another conduit, it will be removed from it.
-     If the conduitable was part of a bundle, it will be removed from it.
-     <p>The ambient temperature of the given conduitable will be set to the
-     ambient temperature of any of the existing conduitables already in the
-     conduit.
+	/**
+	 Removes the given conduitable from this conduit.
+	 @param conduitable The conduitable object to be removed.
+	 @see Conduitable
+	 */
+	public void remove(Conduitable conduitable) {
+		if (conduitable == null)
+			return;
 
-     @param conduitable The conduitable object to be added.
-     @see Conduitable
-     */
-    public void add(Conduitable conduitable){
-        if(conduitable == null)
-            return;
+		if (conduitables.remove(conduitable))
+			conduitable.leaveConduit();
 
-        if(conduitables.contains(conduitable))
-            return;
+		notifier.info.addFieldChange("conduitables", null, null);
+		notifier.notifyAllListeners();
+	}
 
-        conduitable.leaveConduit();
-        conduitable.leaveBundle();
-
-        conduitables.add(conduitable);
-        conduitable.setConduit(this);
-
-        //setting the ambient temperature of this conduitable
-        if(conduitables.size() > 0)
-            conduitable.setAmbientTemperatureF(conduitables.get(0).getAmbientTemperatureF());
-    }
-
-    /**
-     Removes the given conduitable from this conduit.
-
-     @param conduitable The conduitable object to be removed.
-     @see Conduitable
-     */
-    public void remove(Conduitable conduitable){
-        if(conduitable == null)
-            return;
-
-        if(conduitables.remove(conduitable))
-            conduitable.leaveConduit();
-    }
-
-    /**
-     Removes all conduitables from this conduit. After a call to this method,
-     this conduit will be empty.
-     */
-    public void empty() {
+	/**
+	 Removes all conduitables from this conduit. After a call to this method,
+	 this conduit will be empty.
+	 */
+	public void empty() {
 /*      Conduitable[] conduitableArray = new Conduitable[conduitables.size()];
         conduitableArray = conduitables.toArray(conduitableArray);
-        for(Conduitable conduitable: conduitableArray) conduitable.leaveConduit();*/
-        Object[] c = conduitables.toArray();
-        for(Object o:c) ((Conduitable) o).leaveConduit();
-    }
+        for(Conduitable conduitable: conduitableArray) conduitable
+        .leaveConduit();*/
+		Object[] c = conduitables.toArray();
+		for (Object o : c) ((Conduitable) o).leaveConduit();
+		notifier.info.addFieldChange("conduitables", null, null);
+		notifier.notifyAllListeners();
+	}
 
-    public boolean isEmpty(){
-        return conduitables.isEmpty();
-    }
+	@Override
+	public boolean isEmpty() {
+		return conduitables.isEmpty();
+	}
 
-    public boolean hasConduitable(Conduitable conduitable){
-        return conduitables.contains(conduitable);
-    }
+	@Override
+	public boolean hasConduitable(Conduitable conduitable) {
+		return conduitables.contains(conduitable);
+	}
 
-    public Trade getMinimumTrade() {
-        return minimumTrade;
-    }
+	@Override
+	public Trade getMinimumTrade() {
+		return minimumTrade;
+	}
 
-    public void setMinimumTrade(Trade minimumTrade) {
-        this.minimumTrade = minimumTrade;
-    }
+	/**
+	 Sets the minimum trade size this conduit can reach.
+	 @param minimumTrade The trade size to be set as minimum for this conduit.
+	 @see Trade
+	 */
+	public void setMinimumTrade(Trade minimumTrade) {
+		if (this.minimumTrade == minimumTrade)
+			return;
+		notifier.info.addFieldChange("minimumTrade", this.minimumTrade,
+				minimumTrade);
+		this.minimumTrade = minimumTrade;
+		notifier.notifyAllListeners();
+	}
 
-    public int getFillingConductorCount(){
-        return conduitables.size();
-    }
+	@Override
+	public int getFillingConductorCount() {
+		return conduitables.size();
+	}
 
-    public int getCurrentCarryingNumber(){
-        int currentCarrying = 0;
-        for(Conduitable conduitable: conduitables)
-            currentCarrying += conduitable.getCurrentCarryingCount();
-        return currentCarrying;
-    }
+	@Override
+	public int getCurrentCarryingCount() {
+		int currentCarrying = 0;
+		for (Conduitable conduitable : conduitables)
+			currentCarrying += conduitable.getCurrentCarryingCount();
+		return currentCarrying;
+	}
 
-    public double getConduitablesArea(){
-        double conduitablesArea = 0;
-        for(Conduitable conduitable: conduitables)
-            conduitablesArea += conduitable.getInsulatedAreaIn2();
-        return conduitablesArea;
-    }
+	@Override
+	public double getConduitablesArea() {
+		double conduitablesArea = 0;
+		for (Conduitable conduitable : conduitables)
+			conduitablesArea += conduitable.getInsulatedAreaIn2();
+		return conduitablesArea;
+	}
 
-    public Trade getTradeSize() {
-        if(!checkInput())
-            return null;
-        double conduitableAreas = getConduitablesArea();
-        int conductorsNumber = getFillingConductorCount();
-        if(isNipple()) {
-            allowedFillPercentage = 60;
-        }
-        else
-        /*if(!isNipple())*/{
-            if(conductorsNumber <= 1)
-                allowedFillPercentage = 53;
-            else if(conductorsNumber == 2)
-                allowedFillPercentage = 31;
-            else
-                allowedFillPercentage = 40;
-        }
-        conduitableAreas /= (allowedFillPercentage * 0.01);
-        Map<Trade, Double> areasForType = ConduitProperties.getAreasForType(type);
-        for (int i = minimumTrade.ordinal(); i < Trade.values().length; i++)
-            if(ConduitProperties.hasArea(type, Trade.values()[i])){
-                if(areasForType.get(Trade.values()[i]) >= conduitableAreas)
-                    return Trade.values()[i];
-            }
-        resultMessages.add(ERROR100);
-        return null;
-    }
+	@Override
+	public Trade getTradeSize() {
+		if (!checkInput())
+			return null;
+		double conduitableAreas = getConduitablesArea();
+		conduitableAreas /= (getMaxAllowedFillPercentage() * 0.01);
+		Map<Trade, Double> areasForType =
+				ConduitProperties.getAreasForType(type);
+		for (int i = minimumTrade.ordinal(); i < Trade.values().length; i++)
+			if (ConduitProperties.hasArea(type, Trade.values()[i])) {
+				if (areasForType.get(Trade.values()[i]) >= conduitableAreas)
+					return Trade.values()[i];
+			}
+		resultMessages.add(ERROR100);
+		return null;
+	}
 
-    public int getAllowedFillPercentage() {
-        getTradeSize();
-        return allowedFillPercentage;
-    }
+	@Override
+	public int getMaxAllowedFillPercentage() {
+		if (isNipple())
+			return 60;
+		int conductorsNumber = getFillingConductorCount();
+		int allowedFillPercentage;
+		if (conductorsNumber <= 1)
+			allowedFillPercentage = 53;
+		else if (conductorsNumber == 2)
+			allowedFillPercentage = 31;
+		else
+			allowedFillPercentage = 40;
+		return allowedFillPercentage;
+	}
 
-    public Type getType() {
-        return type;
-    }
+	@Override
+	public Type getType() {
+		return type;
+	}
 
-    public void setType(Type type) {
-        this.type = type;
-    }
+	@Override
+	public double getArea() {
+		return ConduitProperties.getArea(type, getTradeSize());
+	}
 
-    public boolean isNipple() {
-        return nipple == Nipple.Yes;
-    }
+	@Override
+	public double getFillPercentage() {
+		double a = getArea();
+		if(a != 0)
+			return 100*getConduitablesArea()/getArea();
+		return 0;
+	}
 
-    public void setNipple(Nipple nipple) {
-        this.nipple = nipple;
-/*        if(isNipple())
-            allowedFillPercentage = 60;
-        else
-            allowedFillPercentage = 53;*/
-    }
+	/**
+	 Sets the type of this conduit.
+	 @param type The new type of this conduit.
+	 @see Type
+	 */
+	public void setType(Type type) {
+		if (this.type == type)
+			return;
+		notifier.info.addFieldChange("type", this.type, type);
+		this.type = type;
+		notifier.notifyAllListeners();
+	}
 
-    public void setRoofTopDistance(double roofTopDistance){
-        this.roofTopDistance = roofTopDistance;
-    }
+	@Override
+	public boolean isNipple() {
+		return isNipple;
+	}
 
-    public void resetRoofTop(){
-        setRoofTopDistance(-1);
-    }
+	/**
+	 Marks/unmark this conduit as a nipple, that is, its length is 24" or less.
+	 @param isNipple boolean flag indicating if this conduit is a nipple or
+	 not.
+	 */
+	public void setNipple(boolean isNipple) {
+		if (this.isNipple == isNipple)
+			return;
+		notifier.info.addFieldChange("isNipple", this.isNipple, isNipple);
+		this.isNipple = isNipple;
+		notifier.notifyAllListeners();
+	}
 
-    public boolean isRooftopCondition(){
-        return (roofTopDistance > 0 && roofTopDistance <= 36) ;
-    }
+	/**
+	 Sets the rooftop condition for this conduit.
+	 @param roofTopDistance The distance in inches above roof to bottom of this
+	 conduit. If a negative value is indicated, the behavior of this method is
+	 the same as when calling resetRoofTop, which eliminates the roof top
+	 condition from this conduit.
+	 */
+	public void setRoofTopDistance(double roofTopDistance) {
+		if (this.roofTopDistance == roofTopDistance)
+			return;
+		notifier.info.addFieldChange("roofTopDistance", this.roofTopDistance,
+				roofTopDistance);
+		this.roofTopDistance = roofTopDistance;
+		notifier.notifyAllListeners();
+	}
 
-    public double getRoofTopDistance(){
-        return roofTopDistance;
-    }
+	/**
+	 Resets the rooftop condition for this conduit, that is, no roof top
+	 condition.
+	 */
+	public void resetRoofTop() {
+		setRoofTopDistance(-1);
+	}
+
+	@Override
+	public boolean isRooftopCondition() {
+		return (roofTopDistance > 0 && roofTopDistance <= 36);
+	}
+
+	@Override
+	public double getRoofTopDistance() {
+		return roofTopDistance;
+	}
+
+	/**
+	 @return The notifier delegate object for this object.
+	 */
+	public NotifierDelegate getNotifier() {
+		return notifier;
+	}
 }

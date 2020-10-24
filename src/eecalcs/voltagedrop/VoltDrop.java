@@ -2,7 +2,7 @@ package eecalcs.voltagedrop;
 
 import eecalcs.conductors.Conductor;
 import eecalcs.conductors.ConductorProperties;
-import eecalcs.conductors.ShareableConductor;
+import eecalcs.conductors.RoConductor;
 import eecalcs.conductors.Size;
 import eecalcs.conduits.ConduitProperties;
 import eecalcs.conduits.Material;
@@ -32,7 +32,7 @@ import tools.ResultMessages;
  See {@link ResultMessages} class for how to use it.
  */
 
-public class VoltDrop implements ShareableVoltDrop {
+public class VoltDrop implements ROVoltDrop {
 	private VoltageSystemAC sourceVoltage = VoltageSystemAC.v120_1ph_2w;
 	private Conductor conductor;
 	private int sets = 1;
@@ -42,22 +42,22 @@ public class VoltDrop implements ShareableVoltDrop {
 	private Material conduitMaterial = Material.PVC;
 
 	//region Predefined messages
-	private static Message ERROR01	= new Message("Source voltage must be greater that zero.",-1);
-	private static Message ERROR02	= new Message("Invalid conduit material.",-2);
-	private static Message ERROR03	= new Message("Invalid conductor size.",-3);
-	private static Message ERROR04	= new Message("Number of sets must be between 1 and 10.",-4);
-	private static Message ERROR05	= new Message("One way conductor length must be greater than 0.",-5);
-	private static Message ERROR06	= new Message("Load current must be greater than 0.",-6);
-	private static Message ERROR07	= new Message("Power factor must be between 0.7 and 1.",-7);
-	private static Message ERROR08	= new Message("Voltage drop for determining conductor sizing must be between 0.5% and 25%",-8);
-	private static Message ERROR09	= new Message("Invalid conductor object.",-9);
-	private static Message ERROR20	= new Message("Load current exceeds maximum allowed ampacity of the set.",-20);
-	private static Message ERROR21	= new Message("Paralleled power conductors in sizes smaller than 1/0 AWG are not permitted. NEC-310" +
+	private static final Message ERROR01	= new Message("Source voltage must be greater that zero.",-1);
+	private static final Message ERROR02	= new Message("Invalid conduit material.",-2);
+	private static final Message ERROR03	= new Message("Invalid conductor size.",-3);
+	private static final Message ERROR04	= new Message("Number of sets must be between 1 and 10.",-4);
+	private static final Message ERROR05	= new Message("One way conductor length must be greater than 0.",-5);
+	private static final Message ERROR06	= new Message("Load current must be greater than 0.",-6);
+	private static final Message ERROR07	= new Message("Motor factor must be between 0.7 and 1.",-7);
+	private static final Message ERROR08	= new Message("Voltage drop for determining conductor sizing must be between 0.5% and 25%",-8);
+	private static final Message ERROR09	= new Message("Invalid conductor object.",-9);
+	private static final Message ERROR20	= new Message("Load current exceeds maximum allowed ampacity of the set.",-20);
+	private static final Message ERROR21	= new Message("Paralleled power conductors in sizes smaller than 1/0 AWG are not permitted. NEC-310" +
 			".10(H)(1)",-21);
-	private static Message ERROR30	= new Message("No length can achieve that voltage drop under the given conditions.", -30);
-	private static Message ERROR31	= new Message("No building conductor can achieve that voltage drop under the given conditions.",
+	private static final Message ERROR30	= new Message("No length can achieve that voltage drop under the given conditions.", -30);
+	private static final Message ERROR31	= new Message("No building conductor can achieve that voltage drop under the given conditions.",
 			-31);
-	private static Message WARNN21	= new Message(ERROR21.message,21);
+	private static final Message WARNN21	= new Message(ERROR21.message,21);
 	private double maxLengthAC;	//maximum length of a circuit for the given max AC voltage drop
 	private double maxLengthDC;	//maximum length of a circuit for the given max DC voltage drop
 	private double actualVoltageDropPercentageAC; //actual AC voltage drop percentage for the calculated conductor size.
@@ -178,7 +178,7 @@ public class VoltDrop implements ShareableVoltDrop {
 	 <p><b>Conductor</b>: provided in the constructor.
 	 <p><b>Sets</b>: defaults to 1 set.
 	 <p><b>Load current</b>: defaults to 10 amps.
-	 <p><b>Power factor</b>: defaults to 1.0.
+	 <p><b>Motor factor</b>: defaults to 1.0.
 	 <p><b>Conduit material</b>: defaults to PVC.
 	 <p><b>Maximum allowed voltage drop</b>: defaults to 3 percent.
 	 <br><br>
@@ -201,7 +201,7 @@ public class VoltDrop implements ShareableVoltDrop {
 	 #setConductor(Conductor)}
 	 <p><b>Sets</b>: defaults to 1 set.
 	 <p><b>Load current</b>: defaults to 10 amps.
-	 <p><b>Power factor</b>: defaults to 1.0.
+	 <p><b>Motor factor</b>: defaults to 1.0.
 	 <p><b>Conduit material</b>: defaults to PVC.
 	 <p><b>Maximum allowed voltage drop</b>: defaults to 3 percent.
 	 <br><br>
@@ -223,7 +223,7 @@ public class VoltDrop implements ShareableVoltDrop {
 	 Gets the conductor that this voltage drop object uses.
 	 @return The conductor that this voltage drop object uses.
 	 */
-	public ShareableConductor getConductor() {
+	public RoConductor getConductor() {
 		return conductor;
 	}
 
@@ -277,6 +277,16 @@ public class VoltDrop implements ShareableVoltDrop {
 		this.powerFactor = powerFactor;
 	}
 
+	/**
+	 Sets the maximum allowed voltage drop. This value is used to compute the
+	 the size and the maximum length of the circuit conductors that would have a
+	 voltage drop less or equal to the specified value.
+
+	 @param maxVoltageDropPercent The maximum voltage drop in percentage.
+	 Notice that no validation is performed at this point. The user
+	 must check for the presence of errors or warnings after obtaining a
+	 calculation result of zero.
+	 */
 	public void setMaxVoltageDropPercent(double maxVoltageDropPercent) {
 		this.maxVoltageDropPercent = maxVoltageDropPercent;
 	}
@@ -299,30 +309,35 @@ public class VoltDrop implements ShareableVoltDrop {
 	}
 
 	//----AC Calculations
+	@Override
 	public double getACVoltageDropPercentage() {
 		if(checkInputForACVoltageDrop())
 			return 100.0 * getACVoltageDrop()/sourceVoltage.getVoltage();
 		return 0;
 	}
 
+	@Override
 	public double getACVoltageDrop() {
 		if(checkInputForACVoltageDrop())
 			return sourceVoltage.getVoltage() - getACVoltageAtLoad();
 		return 0;
 	}
 
+	@Override
 	public double getACVoltageAtLoad(){
 		if(checkInputForACVoltageDrop())
 			return getGenericACVoltageAtLoad(conductor.getSize());
 		return 0;
 	}
 
+	@Override
 	public Size getCalculatedSizeAC(){
 		if(checkInputForACSizeCalculation())
 			return computeSizeAC();
 		return null;
 	}
 
+	@Override
 	public double getMaxLengthACForCalculatedSize(){
 		getCalculatedSizeAC();
 		if(resultMessages.hasErrors())
@@ -330,6 +345,7 @@ public class VoltDrop implements ShareableVoltDrop {
 		return maxLengthAC;
 	}
 
+	@Override
 	public double getMaxLengthACForActualConductor(){
 		if(checkInputForACSizeCalculation()){
 			maxLengthAC = computeMaxLengthAC(conductor.getSize());
@@ -341,6 +357,7 @@ public class VoltDrop implements ShareableVoltDrop {
 		return maxLengthAC;
 	}
 
+	@Override
 	public double getActualVoltageDropPercentageAC(){
 		getCalculatedSizeAC();
 		if(resultMessages.hasErrors())
@@ -436,30 +453,35 @@ public class VoltDrop implements ShareableVoltDrop {
 	}
 
 	//----DC Calculations
+	@Override
 	public double getDCVoltageDropPercentage() {
 		if(checkInputForDCVoltageDrop())
 			return 100.0 * getDCVoltageDrop()/sourceVoltage.getVoltage();
 		return 0;
 	}
 
+	@Override
 	public double getDCVoltageDrop() {
 		if(checkInputForDCVoltageDrop())
 			return sourceVoltage.getVoltage() - getDCVoltageAtLoad();
 		return 0;
 	}
 
+	@Override
 	public double getDCVoltageAtLoad(){
 		if(checkInputForDCVoltageDrop())
 			return getGenericDCVoltageAtLoad(conductor.getSize());
 		return 0;
 	}
 
+	@Override
 	public Size getCalculatedSizeDC(){
 		if(checkInputForDCSizeCalculation())
 			return computeSizeDC();
 		return null;
 	}
 
+	@Override
 	public double getMaxLengthDCForCalculatedSize(){
 		getCalculatedSizeDC();
 		if(resultMessages.hasErrors())
@@ -467,6 +489,7 @@ public class VoltDrop implements ShareableVoltDrop {
 		return maxLengthDC;
 	}
 
+	@Override
 	public double getMaxLengthDCForActualConductor(){
 		if(checkInputForDCSizeCalculation()) {
 			maxLengthDC = computeMaxLengthDC(conductor.getSize());
@@ -478,6 +501,7 @@ public class VoltDrop implements ShareableVoltDrop {
 		return maxLengthDC;
 	}
 
+	@Override
 	public double getActualVoltageDropPercentageDC(){
 		getCalculatedSizeDC();
 		if(resultMessages.hasErrors())
@@ -540,7 +564,7 @@ public class VoltDrop implements ShareableVoltDrop {
 		return sourceVoltage.getVoltage() * maxVoltageDropPercent * conductor.getLength() / (200 * loadCurrent * dCResistance);
 	}
 
-
+	@Override
 	public double getMaxVoltageDropPercent() {
 		return maxVoltageDropPercent;
 	}

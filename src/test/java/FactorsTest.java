@@ -27,8 +27,8 @@ class FactorsTest {
 
     @Test
     void getAdjustmentFactor() {
-        conduit = new Conduit(Type.EMT, Conduit.Nipple.No);
+        conduit = new Conduit(Type.EMT, false);
         Tools.printTitle("FactorsTest.getAdjustmentFactor");
-        assertEquals(1.0, Factors.getAdjustmentFactor(conduit.getCurrentCarryingNumber(), conduit.isNipple()));
+        assertEquals(1.0, Factors.getAdjustmentFactor(conduit.getCurrentCarryingCount(), conduit.isNipple()));
     }
 }

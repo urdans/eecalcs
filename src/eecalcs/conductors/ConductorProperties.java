@@ -635,6 +635,13 @@ public class ConductorProperties {
 		return sizeLeft.ordinal()-sizeRight.ordinal();
 	}
 
+	public static Size getBiggestSize(Size size1, Size size2){
+		if(ConductorProperties.compareSizes(size1, size2) < 0)//size2 is bigger
+			return size2;
+		else
+			return size1;
+	}
+
 	/**
 	Returns the reactance property of this conductor under the given magnetic
 	conduit condition.

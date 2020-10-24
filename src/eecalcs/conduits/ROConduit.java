@@ -13,7 +13,7 @@ import eecalcs.conductors.Conduitable;
  <p><code>void empty()</code>
  <p><code>Trade getTradeSize()</code>
  */
-public interface ShareableConduit {
+public interface ROConduit {
     /**
      * Asks if this conduit is empty (contains no conduitable)
 
@@ -38,14 +38,6 @@ public interface ShareableConduit {
     Trade getMinimumTrade();
 
     /**
-     * Sets the minimum trade size this conduit can reach.
-
-     @param minimumTrade The trade size to be set as minimum for this conduit.
-     @see Trade
-     */
-    void setMinimumTrade(Trade minimumTrade);
-
-    /**
      * Returns the number of conductor that fills this conduit as set forth in
      NEC chapter 9, Table 1. Cables always count as one conductor.
      The returned number is used to compute the percentage of
@@ -60,7 +52,7 @@ public interface ShareableConduit {
 
      @return The number of current-carrying conductors inside this conduit.
      */
-    int getCurrentCarryingNumber();
+    int getCurrentCarryingCount();
 
     /**
      * Returns the total area of the conductors filling this conduit, including
@@ -76,7 +68,7 @@ public interface ShareableConduit {
 
      @return The allowed fill percentage of this conduit.
      */
-    int getAllowedFillPercentage();
+    int getMaxAllowedFillPercentage();
 
     /**
      * Asks for the type of this conduit.
@@ -86,44 +78,12 @@ public interface ShareableConduit {
     Type getType();
 
     /**
-     * Sets the type of this conduit.
-
-     @param type The new type of this conduit.
-     @see Type
-     */
-    void setType(Type type);
-
-    /**
      * Asks if this conduit is a nipple, that is, its length is equal or less
      than 24".
 
      @return True if it's a nipple, false otherwise.
      */
     boolean isNipple();
-
-    /**
-     * Marks/unmark this conduit has a nipple, that is, its length is 24" or
-     * less.
-
-     @param nipple The nipple value as defined in {@link Conduit.Nipple}.
-     */
-    void setNipple(Conduit.Nipple nipple);
-
-    /**
-     * Sets the rooftop condition for this conduit.
-
-     @param roofTopDistance The distance in inches above roof to bottom of this
-     conduit. If a negative value is indicated, the behavior of this method is
-     the same as when calling resetRoofTop, which eliminates the roof top
-     condition from this conduit.
-     */
-    void setRoofTopDistance(double roofTopDistance);
-
-    /**
-     * Resets the rooftop condition for this conduit, that is, no roof top
-     condition.
-     */
-    void resetRoofTop();
 
     /**
      * Asks if this conduit is in a rooftop condition as defined by
@@ -148,4 +108,17 @@ public interface ShareableConduit {
      @return The calculated trade size of this conduit.
      */
     Trade getTradeSize();
+
+    /**
+     @return The area in square inches of this conduit or zero if the trade
+     size is null.
+     */
+    double getArea();
+
+    /**
+     @return The ratio between the total conduitable areas and the conduit
+     area as a percentage. This is how much a conduit is filled. It may
+     return 0 if the trade size is null.
+     */
+    double getFillPercentage();
 }
