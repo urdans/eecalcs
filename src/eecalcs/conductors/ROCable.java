@@ -5,8 +5,7 @@ import eecalcs.systems.VoltageSystemAC;
 
 /**
  This interface is intended to be implemented by the class {@link Cable} in
- order
- to hide some public methods in the <i>Cable</i> class; specifically, the
+ order to hide some public methods in the <i>Cable</i> class; specifically, the
  following methods are hidden:<br><br>
 
  <p><code>void setConduit(Conduit conduit)</code>

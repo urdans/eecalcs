@@ -55,20 +55,20 @@ public class OCPD {
 	 next higher standard rating rule.
 
 	 @param ampacity Is the ampacity rating of a conduitable or the maximum
-	 OCPD
-	 rating of a load.
+	 OCPD rating imposed by a load.
 	 @param NHSR_Rule True if the next higher standard rating rule can be
 	 applied, false otherwise.
 	 @return The rating of a standard OCPD.<br> Notice the ampacity parameter
-	 must correspond to:<br> - The ampacity of a conduitable once corrected and
-	 adjusted, or<br> - The maximum OCPD rating allowed by a load, when an OCDP
-	 is required.<br> Do not use a value having a different meaning, like for
-	 example a nominal current. This is a general method to determine the OCPD
-	 rating based on the NEC 240.4 rule. When combined with the proper
-	 meaning of
-	 the ampacity parameter it offers a complete method for selecting the
-	 correct
-	 OCDP based on the all articles of the NEC-2014.
+	 should correspond to:<br>
+	 - The ampacity of a conduitable once corrected and adjusted, or<br>
+	 - The maximum OCPD rating allowed by a load, when an OCDP is required.<br>
+
+	 Do not use a value having a different meaning, like for example a
+	 nominal current.
+	 This is a general method to determine the OCPD rating based on the
+	 NEC 240.4 rule. When combined with the proper meaning of the ampacity
+	 parameter it offers a complete method for selecting the correct OCDP based
+	 on the all articles of the NEC-2014.
 	 */
 	public static int getRatingFor(double ampacity, boolean NHSR_Rule) {
 		int nextHigher = standardRatings[standardRatings.length - 1]; //6000
@@ -102,21 +102,22 @@ public class OCPD {
 	}
 
 	/**
-	 @return The rating of the owner circuit's OCPD.
+	 @return The rating of this OCPD when owned by a circuit.
 	 The rating is decided as follows: if the circuit's load has OCPD
 	 requirements ({@link eecalcs.loads.Load#getMaxOCPDRating(boolean)}
-	 returns a non zero value), it determines the OCPD rating per load
+	 returns a non zero value), it determines the OCPD rating per these load's
 	 requirements, otherwise it determines the OCPD rating to protect the
-	 circuit's conductors only.
+	 circuit's conductors only, based on the ampacity of the circuit
+	 conductors under all the existing conditions of installations.
 	 */
 	public int getRating() {
 		double maxOCPD = circuit.getLoad().getMaxOCPDRating(_100PercentRated);
-		//if the circuit's load has an OCPD requirement, use it.
+		//if the circuit's load has an OCPD requirement, use it!.
 		if (maxOCPD != 0)
 			return getRatingFor(maxOCPD, circuit.getLoad().NHSRRuleApplies());
 
 		//No load OCPD requirement. So, select rating to protect conduitables.
-		return getRatingFor(circuit.getConduitable().getAmpacity(),
+		return getRatingFor(circuit.getCircuitAmpacity(),
 				circuit.getLoad().NHSRRuleApplies());
 	}
 

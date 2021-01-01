@@ -3,9 +3,8 @@ package eecalcs.conductors;
 import eecalcs.systems.TempRating;
 
 /**
- This interface is intended to be used by the class {@link Conductor} in
- order to
- hide some of its public methods.
+ This interface defines the read-only properties of the {@link Conductor}
+ class.
  */
 public interface RoConductor {
 

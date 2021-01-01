@@ -2,7 +2,7 @@ package eecalcs.conductors;
 
 import eecalcs.circuits.Circuit;
 import eecalcs.systems.TempRating;
-import tools.NotifierDelegate;
+
 
 /**
  This interface defines the read-only properties of the {@link Conduitable}
@@ -33,30 +33,21 @@ public interface ROConduitable {
 	 @return Returns the ampacity of this conduitable (for voltages up to
 	 2000v) in amperes.<br>
 	 <p>The result accounts for the ambient temperature, the temperature
-	 ratings for the insulation of this conductor, the number of other
+	 ratings for the insulation of this conductor, and the number of other
 	 conductors or cables that share the same raceway or bundle with this
-	 conductor and the temperature rating of the terminations. That is, the
-	 returned ampacity accounts for installation conditions,'its corrected for
-	 ambient temperature (other than 86°F/30°C), and adjusted for the number of
-	 conductors (including any cable) in the same raceway or bundle. This is
-	 the ampacity for this conductor size, metal and insulation type under
-	 the specified conditions (ambient temperature, conduit, bundling,
-	 rooftop, terminations temperature ratings, etc.).<br>
+	 conductor.
 
-	 todo: this method does not account for the case where the temperature
-	 rating of the termination if unknown, and the conductor insulation
-	 temperature is selected based on if it is <=100 (T60) or >100 (T75). If
-	 the adjusted and corrected ampacity for the 75 column (this could happen
-	 for T60) is higher than the ampacity for the T90 column, the conductor
-	 must be increased. This is because, the maximum ampacity of a conductor
-	 must also account for if the termination temperature rating.
+	 <p>Two factors are not accounted for in this method: the temperature
+	 rating of the terminations, and the continuous behavior of the load.
+	 These two factors are accounted for at the circuit level which will
+	 consider all the installation conditions.
 
-	 <p> The rule allowing the temperature correction and adjustment factors
-	 to be applied to the ampacity for the temperature rating of the
-	 conductor, if the corrected and adjusted ampacity does not exceed the
-	 ampacity for the temperature rating of the terminals in accordance with
-	 110.14(C), is not accounted for in this method. It is accounted for at
-	 the {@link Circuit} class level.<br>
+	 <p>For example, the rule allowing the temperature correction and
+	 adjustment factors to be applied to the ampacity for the temperature
+	 rating of the conductor, if the corrected and adjusted ampacity does not
+	 exceed the ampacity for the temperature rating of the terminals in
+	 accordance with 110.14(C), is not accounted for in this method. It is
+	 accounted for at the {@link Circuit} class level.<br>
 
 	 <p>If no correction factor is required ({@link #getCorrectionFactor()}
 	 returns 1), the conductor should be sized per 110.14(C), that is:
@@ -70,6 +61,7 @@ public interface ROConduitable {
 	 for terminations shall be permitted to be used for ampacity adjustment,
 	 correction, or both. This is the reason why the rating of the terminals
 	 are accounted for outside of this class.<br>
+
 	 <p>Conductors rated for a temperature higher than termination can be
 	 used for correction and adjustment only if the corrected and adjusted
 	 ampacity does not exceed the ampacity of the conductor for the
@@ -170,12 +162,12 @@ public interface ROConduitable {
 	double getCompoundFactor();
 
 	/**
-	 @param terminationTempRating The temperature rating of the termination.
+	 @param tempRating The temperature rating of the termination.
 	 @return The product of the correction and adjustment factor of this
-	 conduitable when calculated based on the given termination temperature
-	 rating. If terminationTempRating is zero the returned value is 1.
+	 conduitable when calculated based on the given temperature
+	 rating. If tempRating is null the returned value is 1.
 	 */
-	double getCompoundFactor(TempRating terminationTempRating);
+	double getCompoundFactor(TempRating tempRating);
 
 	/**
 	 @return The temperature rating of this conduitable per its insulator, as

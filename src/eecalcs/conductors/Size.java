@@ -63,8 +63,8 @@ public enum Size {
 	KCMIL_1500("1500 KCMIL"),
 	KCMIL_1750("1750 KCMIL"),
 	KCMIL_2000("2000 KCMIL");
-	private String name;
-	private static String[] names;
+	private final String name;
+	private static final String[] names;
 
 	static{
 		names = new String[values().length];

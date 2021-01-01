@@ -188,7 +188,9 @@ public class Circuit {
 	private boolean usingCable = false;
 	private final VoltDrop voltageDrop = new VoltDrop();
 	private TempRating terminationTempRating;
-	//private boolean neutralCurrentCarrying = false;
+	private double circuitAmpacity; /*the ampacity of the calculated size
+	under the installation conditions*/
+
 	//private static Message ERROR200	= new Message("The provided load is not valid.", -200);
 	private static final Message ERROR210 = new Message(
 	"More than one set of conductors or cables cannot be in a shared " +
@@ -404,29 +406,47 @@ public class Circuit {
 	}
 
 	/**
-	 Calculates the size of this circuit cable or conductor under the preset
+	 @return The ampacity of the circuit conductors/cables under the
+	 circuit's installation conditions; The temperature rating of the
+	 terminations and the continuous behavior of the load are accounted for
+	 in the result. Other factors are accounted as described in
+	 {@link Conduitable#getAmpacity()}.
+	 If the returned value is zero it means that the size of the circuit
+	 conductors has not being determined. Check for {@link #resultMessages}
+	 for more information about the causes.
+	 */
+	public double getCircuitAmpacity(){
+		calculateCircuit();
+		return circuitAmpacity;
+	}
+
+	/**
+	 Calculates the size of this circuit cable or conductor under the present
 	 conditions, that is able to handle its full load current (per ampacity).
 	 It accounts for rules NEC 210.19(A) for branch circuits and 215.2(A) for
 	 feeders.
 	 @return The size of the conductors/cable calculated per ampacity or null if
-	 an error occurred, in which case, check ResultMessages for errors and
-	 warning messages.
+	 an error occurred, in which case, check {@link #resultMessages} for errors
+	 and warning messages.
 	 @param forNeutral If True, the size is calculated for the neutral
 	 conductor based on the neutral current, otherwise the size is calculated
 	 for the phase conductors. Notice that for 1φ-2w system the neutral
-	 current is always equal to the phase current.
+	 current is always equal to the phase current so this method should not
+	 be used in such cases. The size calculation for the neutral conductor is
+	 meant for 3-phase, 4-wire systems where the load is non-linear and the
+	 neutral behaves as a current carrying conductor.
 	 */
 	public Size getSizePerAmpacity(boolean forNeutral){
 		Function<Size, Boolean> checkError260 = (size) ->{
 			if(size == null) {
-				resultMessages.add(ERROR260);
+				resultMessages.add(ERROR260);//ampacity too high
 				return true;
 			}
 			return false;
 		};
 		Function<Size, Boolean> checkError270 = (size) ->{
 			if(ConductorProperties.compareSizes(size, Size.AWG_1$0) < 0 && numberOfSets > 1) {
-				resultMessages.add(ERROR270);
+				resultMessages.add(ERROR270);//paralleled conductors < 1/0
 				return true;
 			}
 			return false;
@@ -444,7 +464,7 @@ public class Circuit {
 			factor1 = Math.min(1 / load.getMCAMultiplier(), conduitable.getCompoundFactor());
 
 		if(factor1 == 0) {
-			//temp. rating of conductor not suitable for conditions of use.
+			//temp. rating of conductor not suitable for the ambient temperature
 			resultMessages.add(ERROR290);
 			return null;
 		}
@@ -459,7 +479,7 @@ public class Circuit {
 		);
 		if(checkError260.apply(size1))
 			return null;
-		if(terminationTempRating != null) {
+		if (terminationTempRating != null) {
 			//termination temperature rating is known
 			if(terminationTempRating.getValue() >= conduitable.getTemperatureRating().getValue()) {
 				if(checkError270.apply(size1))
@@ -467,63 +487,49 @@ public class Circuit {
 				return size1;
 			}
 			/*conductor temperature rating is higher than equipment
-			temperature rating*/
-			double ampacity1 = ConductorProperties.getAmpacity(
-					size1,
-					conduitable.getMetal(),
-					conduitable.getTemperatureRating()
-			);
-			double corrected_amp1 = ampacity1 * factor1;
-			double ampacity2 = ConductorProperties.getAmpacity(
-					size1,
-					conduitable.getMetal(),
-					terminationTempRating
-			);
-			if(corrected_amp1 <= ampacity2){
-				if(checkError270.apply(size1))
+			temperature rating. Applying rule 310.15(B)*/
+			//revised on Dec 2020
+			if (
+					ConductorProperties.getAmpacity(
+							size1,
+							conduitable.getMetal(),
+							conduitable.getTemperatureRating()
+					) * factor1
+					<=
+					ConductorProperties.getAmpacity(
+							size1,
+							conduitable.getMetal(),
+							terminationTempRating
+					)
+			) {
+				if (checkError270.apply(size1))
 					return null;
 				return size1;
 			}
-
-			double factor2 = conduitable.getCompoundFactor(terminationTempRating);
-			double lookup_current2 = loadCurrentPerSet / factor2;
-			Size size2 = ConductorProperties.getSizeByAmperes(
-					lookup_current2,
+			size1 = ConductorProperties.getSizeByAmperes(
+					lookup_current1,
 					conduitable.getMetal(),
 					terminationTempRating
 			);
-			if(checkError260.apply(size2))
-				return null;
-			if(checkError270.apply(size2))
-				return null;
-			return size2;
 		}
 		else {
 			/*termination temperature rating is unknown*/
-			/*future:
-			implement: 110.14(C)(1)(4) motors design letter B, C or D...*/
-			TempRating t_rating;
-			if(loadCurrentPerSet <= 100)
-				t_rating = TempRating.T60;
-			else {
-				if(conduitable.getTemperatureRating().getValue() >= 75)
+			//future: implement 110.14(C)(1)(4) motors design letter B, C or D..
+			TempRating t_rating = TempRating.T60;
+			if(loadCurrentPerSet > 100 && conduitable.getTemperatureRating().getValue() >= 75)
 					t_rating = TempRating.T75;
-				else
-					t_rating = TempRating.T60;
-			}
-			factor1 = conduitable.getCompoundFactor(t_rating);
-			lookup_current1 = loadCurrentPerSet / factor1;
+			lookup_current1 = loadCurrentPerSet / conduitable.getCompoundFactor(t_rating);
 			size1 = ConductorProperties.getSizeByAmperes(
 					lookup_current1,
 					conduitable.getMetal(),
 					t_rating
 			);
-			if(checkError260.apply(size1))
-				return null;
-			if(checkError270.apply(size1))
-				return null;
-			return size1;
 		}
+		if(checkError260.apply(size1))
+			return null;
+		if(checkError270.apply(size1))
+			return null;
+		return size1;
 	}
 
 	/**
@@ -538,9 +544,9 @@ public class Circuit {
 		else if(circuitMode == CircuitMode.SHARED_CONDUIT)
 			numberOfCurrentCarrying = sharedConduit.getCurrentCarryingCount();
 		else if(circuitMode == CircuitMode.PRIVATE_BUNDLE)
-			numberOfCurrentCarrying = privateBundle.getCurrentCarryingNumber();
+			numberOfCurrentCarrying = privateBundle.getCurrentCarryingCount();
 		else if(circuitMode == CircuitMode.SHARED_BUNDLE)
-			numberOfCurrentCarrying = sharedBundle.getCurrentCarryingNumber();
+			numberOfCurrentCarrying = sharedBundle.getCurrentCarryingCount();
 		else {//it's in free air circuitMode
 			numberOfCurrentCarrying = 0;
 			for(Conduitable conduitable: conduitables)
@@ -722,7 +728,7 @@ public class Circuit {
 
 	@Override
 	public Circuit clone(){
-		//todo to be implemented.
+		//todo implement clone method.
 		return null;
 	}
 
@@ -937,12 +943,15 @@ public class Circuit {
 			return true;
 		if(!calculatePhase())
 			return false;
+		if(!calculateCircuitAmpacity())
+			return false;
 		if(!calculateNeutral())
 			return false;
 		/*The OCPD object is available by calling getOcpd(). It will provide
 		the proper ratings. No calculation is done for the OCPD at the
 		circuit level*/
 		//calculateOCPD();
+		//Quedé aquí 2
 		//calculateEGC();
 		//calculateConduit();
 		if(!resultMessages.hasErrors()) {
@@ -973,6 +982,81 @@ public class Circuit {
 				((Cable) conduitable).setPhaseConductorSize(phasesSize));
 		else
 			phaseAConductor.setSize(phasesSize);
+		return true;
+	}
+
+	/*calculate the ampacity of the selected conductor accounting for all the
+	conditions of use. It's for phases only, not for neutral*/
+	private boolean calculateCircuitAmpacity(){
+		circuitAmpacity = 0;
+		Conduitable conduitable = _getConduitable();
+		Size size;
+		if(usingCable)
+			size = cable.getPhaseConductorSize();
+		else
+			size = phaseAConductor.getSize();
+		double factor1;
+		if(ocdp.is100PercentRated())
+			factor1 = conduitable.getCompoundFactor();
+		else
+			factor1 = Math.min(1 / load.getMCAMultiplier(), conduitable.getCompoundFactor());
+		if(factor1 == 0) //this should never happen
+			return false;
+
+		if (terminationTempRating != null) {
+			//termination temperature rating is known
+			if(terminationTempRating.getValue() >= conduitable.getTemperatureRating().getValue()) {
+				circuitAmpacity = ConductorProperties.getAmpacity(
+						size,
+						conduitable.getMetal(),
+						conduitable.getTemperatureRating()
+				) * factor1;
+				return true;
+			}
+			/*conductor temperature rating is higher than equipment
+			temperature rating. Applying rule 310.15(B)*/
+			double ampacity1 = ConductorProperties.getAmpacity(
+					size,
+					conduitable.getMetal(),
+					conduitable.getTemperatureRating()
+			);
+			double corrected_amp1 = ampacity1 * factor1;
+			double ampacity2 = ConductorProperties.getAmpacity(
+					size,
+					conduitable.getMetal(),
+					terminationTempRating
+			);
+			if(corrected_amp1 <= ampacity2){
+				circuitAmpacity = ampacity2;
+				return true;
+			}
+			//factor1 = conduitable.getCompoundFactor(terminationTempRating);
+			circuitAmpacity = ConductorProperties.getAmpacity(
+					size,
+					conduitable.getMetal(),
+					terminationTempRating
+			);
+		}
+		else {
+			/*termination temperature rating is unknown*/
+			//future: implement 110.14(C)(1)(4) motors design letter B, C or D..
+			TempRating t_rating;
+			double loadCurrentPerSet = load.getNominalCurrent() / numberOfSets;
+			if(loadCurrentPerSet <= 100)
+				t_rating = TempRating.T60;
+			else {
+				if(conduitable.getTemperatureRating().getValue() >= 75)
+					t_rating = TempRating.T75;
+				else
+					t_rating = TempRating.T60;
+			}
+			factor1 = conduitable.getCompoundFactor(t_rating);
+			circuitAmpacity = ConductorProperties.getAmpacity(
+					size,
+					conduitable.getMetal(),
+					t_rating
+			) * factor1;
+		}
 		return true;
 	}
 
@@ -1050,7 +1134,7 @@ public class Circuit {
 	 <p>- Fifth line, the circuit number, including the panel name
 	 */
 /*
-future
+future: implement circuit descriptor string
 Circuits should return a string composed of several lines (separated by
 returns and line feed), of the form:
 First line, circuit description:

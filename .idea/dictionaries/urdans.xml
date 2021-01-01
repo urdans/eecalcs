@@ -3,6 +3,7 @@
     <words>
       <w>ampacities</w>
       <w>ampacity</w>
+      <w>aquí</w>
       <w>busways</w>
       <w>cablebuses</w>
       <w>conduitable</w>
@@ -11,6 +12,7 @@
       <w>continuousness</w>
       <w>eecalcs</w>
       <w>emtal</w>
+      <w>fepb</w>
       <w>fmcal</w>
       <w>hdpe</w>
       <w>hexafluoride</w>
@@ -20,6 +22,7 @@
       <w>kcmil</w>
       <w>lfmc</w>
       <w>lfmcal</w>
+      <w>lfnc</w>
       <w>lfnca</w>
       <w>lfncb</w>
       <w>liquidtight</w>
@@ -36,16 +39,20 @@
       <w>phasor</w>
       <w>pvca</w>
       <w>pvceb</w>
+      <w>quedé</w>
       <w>reactance</w>
       <w>reactances</w>
       <w>rmcal</w>
       <w>scgfp</w>
+      <w>thhn</w>
       <w>thhw</w>
+      <w>thwn</w>
       <w>uncoated</w>
       <w>unmark</w>
       <w>voltampere</w>
       <w>warnn</w>
       <w>wireways</w>
+      <w>xhhw</w>
     </words>
   </dictionary>
 </component>

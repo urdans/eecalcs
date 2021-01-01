@@ -15,9 +15,9 @@ public enum CableType {
     NMC("Non Metallic Jacket Corrosion Resistant Cable", Material.PVC),
     NMS("Non Metallic Jacket Cable with Motor or Signaling Data Conductors", Material.PVC);
     //TC("Motor and Control Tray Cable"); Not covered for now
-    private String name;
-    private static String[] names;
-    private Material material;
+    private final String name;
+    private static final String[] names;
+    private final Material material;
 
     static{
         names = new String[values().length];

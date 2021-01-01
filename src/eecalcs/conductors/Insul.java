@@ -53,8 +53,8 @@ public enum Insul{
 	XHHW("XHHW"),
 	XHHW2("XHHW-2"),
 	ZW2("ZW-2");
-	private String name;
-	private static String[] names;
+	private final String name;
+	private static final String[] names;
 
 	static{
 		names = new String[values().length];

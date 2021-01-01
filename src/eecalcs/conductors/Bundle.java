@@ -6,24 +6,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- This class represents a conduitable bundle. This bundle is a group of cables or
+ This class represents a bundle. A bundle is a group of cables or
  a group of insulated conductors, or a group made of a mix of both, that are
  installed in free air (not in a conduit) next to each other (paralleled)
- without
- maintaining space (staked, bundled, supported on bridled rings or simply tied
- together), along a defined distance.
- <p><br>
+ without maintaining space (staked, bundled, supported on bridled rings or
+ simply tied together), along a defined distance.<p><br>
+
  When cables or conductors are bundled, the heat produced by the current (joule
  effect) does not dissipate as easy as when they are separated. For this reason,
  the ampacity of the cable must be adjusted. The procedure to adjust the
- ampacity
- is described in <b>NEC-310.15(B)(3)</b>.
- <p>
+ ampacity is described in <b>NEC-310.15(B)(3)</b>.<p>
+
  A bundle of insulated conductors are not common. The NEC does not prohibit it
  and rules 310.15(B)(a)(4) and (5) mention conductors as possible members of a
  bundle, therefore recognizing they can also form bundles. But, because of its
  rareness (insulated conductors not in raceway), it is subject to AHJ approval.
- <p><br>
+ Having insulated conductors in free air would be considered a bad
+ practice but since it is not forbidden by the code, it is considered in this
+ software.<p><br>
+
  This class provides the methods to set up a bundle of cables or conductors and
  to calculate its ampacity adjustment factor. */
 public class Bundle implements ROBundle {
@@ -142,7 +143,7 @@ public class Bundle implements ROBundle {
 	}
 
 	@Override
-	public int getCurrentCarryingNumber() {
+	public int getCurrentCarryingCount() {
 		int currentCarrying = 0;
 		for (Conduitable conduitable : conduitables)
 			currentCarrying += conduitable.getCurrentCarryingCount();
@@ -162,7 +163,7 @@ public class Bundle implements ROBundle {
 	@Override
 	public boolean complyWith310_15_B_3_a_4() {
 		//testing condition e. on all cables and conductors
-		if (getCurrentCarryingNumber() > 20)
+		if (getCurrentCarryingCount() > 20)
 			return false;
 		for (Conduitable conduitable : getConduitables()) {
 			if (conduitable instanceof Cable) { //testing on cables only
@@ -195,7 +196,7 @@ public class Bundle implements ROBundle {
 		if (getBundlingLength() <= 24)
 			return false;
 		//testing condition c. on all cables and conductors
-		if (getCurrentCarryingNumber() <= 20)
+		if (getCurrentCarryingCount() <= 20)
 			return false;
 		//testing condition a and b on cables only.
 		for (Conduitable conduitable : getConduitables()) {

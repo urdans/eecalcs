@@ -1,5 +1,9 @@
 package eecalcs.conductors;
 
+/**
+ This interface defines the read-only properties of the {@link Bundle}
+ class.
+ */
 public interface ROBundle {
 
 	/**
@@ -61,7 +65,7 @@ public interface ROBundle {
 	/**
 	 @return The number of current-carrying conductors inside this bundle.
 	 */
-	int getCurrentCarryingNumber();
+	int getCurrentCarryingCount();
 
 	/**
 	 @return The distance or length of the bundle.

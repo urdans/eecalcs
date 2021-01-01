@@ -6,6 +6,9 @@ import eecalcs.systems.VoltageSystemAC;
 import eecalcs.voltagedrop.VoltDrop;
 import org.junit.jupiter.api.Test;
 import test.Tools;
+import tools.Message;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 

@@ -96,9 +96,9 @@ class BundleTest {
         bundle.add(conductor.clone());
         bundle.add(cable);
         bundle.add(cable.clone());
-        assertEquals(9, bundle.getCurrentCarryingNumber());
+        assertEquals(9, bundle.getCurrentCarryingCount());
         cable.setNeutralCarryingConductor(true);
-        assertEquals(10, bundle.getCurrentCarryingNumber());
+        assertEquals(10, bundle.getCurrentCarryingCount());
     }
 
     @Test
@@ -112,7 +112,7 @@ class BundleTest {
         bundle.add(conductor.clone());
         bundle.add(cable);
         bundle.add(cable.clone());
-        assertEquals(9, bundle.getCurrentCarryingNumber());
+        assertEquals(9, bundle.getCurrentCarryingCount());
 
         //case 1
         assertTrue(bundle.complyWith310_15_B_3_a_4());
@@ -176,7 +176,7 @@ class BundleTest {
         bundle.add(conductor.clone());
         bundle.add(conductor.clone());
         bundle.add(conductor.clone());
-        assertEquals(20, bundle.getCurrentCarryingNumber());
+        assertEquals(20, bundle.getCurrentCarryingCount());
         assertEquals(0.5, conductor.getAdjustmentFactor()); //because d>24", #ccc=20 and conductors don't have
         // exceptions
         assertEquals(1.0, cable.getAdjustmentFactor()); //because d>24" and the exception is satisfied
@@ -226,7 +226,7 @@ class BundleTest {
         bundle.add(conductor.clone());
         bundle.add(conductor.clone());
         bundle.add(conductor.clone());
-        assertEquals(21, bundle.getCurrentCarryingNumber());
+        assertEquals(21, bundle.getCurrentCarryingCount());
         assertEquals(25, bundle.getBundlingLength());
 
         //case 1

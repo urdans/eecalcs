@@ -204,8 +204,10 @@ public abstract class Load {
 	 purpose of determining the size of the neutral conductor.<br><br>
 	 <p>The criteria for determining this current at this base class, is as
 	 follows:
-	 <p>- All 1φ loads having a neutral and all 3φ having a neutral will have a
-	 neutral current equal to the phase current.
+	 <p>- All 1φ loads having a neutral and all 3φ loads having a neutral will
+	 have a neutral current equal to the phase current. The 3φ-4W loads have
+	 a neutral that even if it is not a CCC, it is sized the same as the
+	 phase conductors.
 	 <p>- For all the other loads (the ones that do not have a neutral
 	 conductor), the returned value is zero.<br><br>
 	 <p><b>Descendant classes that account for harmonics and/or behave as
@@ -214,18 +216,7 @@ public abstract class Load {
 	 current, accordingly.</b>
 	 */
 	public double getNeutralCurrent() {
-		//The 3φ-4W loads have a neutral that even if it is not a CCC, is
-		//sized the same as the phase conductors.
-		//todo refactor this by using VoltageSystemAC.hasNeutral()
-		if (voltageSystem == VoltageSystemAC.v120_1ph_2w ||
-				voltageSystem == VoltageSystemAC.v208_1ph_2wN || //high leg
-				voltageSystem == VoltageSystemAC.v277_1ph_2w ||
-				voltageSystem == VoltageSystemAC.v208_1ph_3w ||
-				voltageSystem == VoltageSystemAC.v208_3ph_4w ||
-				voltageSystem == VoltageSystemAC.v240_1ph_3w ||
-				voltageSystem == VoltageSystemAC.v240_3ph_4w ||
-				voltageSystem == VoltageSystemAC.v480_1ph_3w ||
-				voltageSystem == VoltageSystemAC.v480_3ph_4w)
+		if (voltageSystem.hasNeutral())
 			return currents.nominalCurrent;
 		//no neutral, no current.
 		return 0;
@@ -329,9 +320,10 @@ public abstract class Load {
 
 	/**
 	 @return True if the Next Higher Standard Rating rule can be applied to
-	 this load, False otherwise.
-	 <p>The returned value is meaningful only if {@link #getDSRating()}
-	 return a non zero value.
+	 this load's OCPD, False otherwise.
+	 <p>The returned value is meaningful only if
+	 {@link #getMaxOCPDRating(boolean)} return a non zero value.
+
 	 <p>Descendant load classes that do not allow the application of
 	 this rule must override this method to return false.
 	 */

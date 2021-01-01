@@ -1,5 +1,7 @@
 package tools;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,8 +12,9 @@ import java.util.List;
  are warnings that doesn't affect the calculation result but that the user
  needs to be aware of.
  */
-public class ResultMessages {
-	private List<Message> messages =  new ArrayList<>();
+public class ResultMessages implements ROResultMessages {
+	private final List<Message> messages =  new ArrayList<>();
+	//private Message[] mensaje;
 
 	/**
 	 Adds a new message to this result message container; if the message number
@@ -43,13 +46,7 @@ public class ResultMessages {
 		messages.add(msg);
 	}
 
-	/**
-	 Gets the message string corresponding to the given message number.
-
-	 @param number The number of the message.
-	 @return The message string. If the number if not in the container returns
-	 an empty string.
-	 */
+	@Override
 	public String getMessage(int number) {
 		for(Message msg: messages){
 			if(msg.number == number) return msg.message;
@@ -57,65 +54,32 @@ public class ResultMessages {
 		return "";
 	}
 
-	/**
-	 Asks if this result message container already contains the given message
-	 number.
-
-	 @param number The message number to check.
-	 @return True if this container contains that message number,
-	 false otherwise.
-	 */
+	@Override
 	public boolean containsMessage(int number){
 		return !getMessage(number).equals("");
 	}
 
-	/**
-	 Asks if this result message container already contains the given message
-	 object.
-
-	 @param msg The message object to check.
-	 @return True if this container contains that message object, false
-	 otherwise.
-	 */
+	@Override
 	public boolean containsMessage(Message msg){
 		return messages.contains(msg);
 	}
 
-	/**
-	 Asks if the container has messages.
-
-	 @return True if there is at least one message in the container, false
-	 otherwise.
-	 */
+	@Override
 	public boolean hasMessages() {
 		return messages.size() > 0;
 	}
 
-	/**
-	 Asks if the container has error messages, that is, any message whose number
-	 is negative.
-
-	 @return True if there is at least one error message, false otherwise.
-	 */
+	@Override
 	public boolean hasErrors() {
 		return errorCount() > 0;
 	}
 
-	/**
-	 Asks if the container has warning messages, that is, any message whose
-	 number is positive.
-
-	 @return True if there is at least one warning message, false otherwise.
-	 */
+	@Override
 	public boolean hasWarnings() {
 		return warningCount() > 0;
 	}
 
-	/**
-	 Returns the number of error messages in this container.
-
-	 @return The number of error messages in this container.
-	 */
+	@Override
 	public int errorCount() {
 		int result = 0;
 		for(Message msg: messages){
@@ -124,11 +88,7 @@ public class ResultMessages {
 		return result;
 	}
 
-	/**
-	 Returns the number of warning messages in this container.
-
-	 @return The number of warning messages in this container.
-	 */
+	@Override
 	public int warningCount() {
 		int result = 0;
 		for(Message msg: messages){
@@ -163,13 +123,13 @@ public class ResultMessages {
 		messages.remove(msg);
 	}
 
-	/**
-	 Returns the list containing all the registered message objects.
-
-	 @return The list containing all the registered message objects.
-	 */
+	@Override
 	public List<Message> getMessages() {
-		return messages;
+		List<Message> m = new ArrayList<>();
+		for (Message mes:messages) {
+			m.add(new Message(mes.message, mes.number));
+		}
+		return m;
 	}
 
 	/**
@@ -179,7 +139,12 @@ public class ResultMessages {
 		messages.clear();
 	}
 
-	public int copyFrom(ResultMessages source){
+	/**
+	 Copies all the messages from the given source into this object
+	 @param source The ResultMessages object from which messages are copied.
+	 @return The number of messages copied.
+	 */
+	public int copyFrom(@NotNull ResultMessages source){
 		int count = 0;
 		for(Message sourceMessage: source.getMessages()) {
 			if (!containsMessage(sourceMessage.number)){

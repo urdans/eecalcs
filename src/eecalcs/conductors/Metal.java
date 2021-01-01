@@ -11,8 +11,8 @@ package eecalcs.conductors;
 public enum Metal {
 	COPPER("CU"),
 	ALUMINUM("AL");
-	private String symbol;
-	private static String[] symbols;
+	private final String symbol;
+	private static final String[] symbols;
 
 	static{
 		symbols = new String[values().length];

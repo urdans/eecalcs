@@ -10,7 +10,7 @@ package eecalcs.conductors;
 public enum Coating {
 	COATED(true),
 	UNCOATED(false);
-	private boolean coating;
+	private final boolean coating;
 
 	Coating(boolean coating){
 		this.coating = coating;

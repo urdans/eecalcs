@@ -184,15 +184,15 @@ class CableTest {
         assertEquals(25*1.11*1.0, cable.getAmpacity());
 
         Bundle bundle = new Bundle(cable, 5, 10);
-        assertEquals(10, bundle.getCurrentCarryingNumber());
+        assertEquals(10, bundle.getCurrentCarryingCount());
 
         cable.setBundle(bundle);
-        assertEquals(12, bundle.getCurrentCarryingNumber());
+        assertEquals(12, bundle.getCurrentCarryingCount());
         assertTrue(cable.isJacketed());
         assertTrue(((Cable)bundle.getConduitables().get(4)).isJacketed());
         assertEquals(65, cable.getAmbientTemperatureF());
         assertEquals(65, bundle.getConduitables().get(4).getAmbientTemperatureF());
-        assertEquals(1, Factors.getAdjustmentFactor(bundle.getCurrentCarryingNumber(), bundle.getBundlingLength()));
+        assertEquals(1, Factors.getAdjustmentFactor(bundle.getCurrentCarryingCount(), bundle.getBundlingLength()));
         assertEquals(1.11, Factors.getTemperatureCorrectionF(cable.getAmbientTemperatureF(), cable.getTemperatureRating()));
         assertEquals(1, cable.getAdjustmentFactor());
         assertEquals(25*1.11*1, cable.getAmpacity());
@@ -202,7 +202,7 @@ class CableTest {
         assertEquals(Size.AWG_12, cable.getPhaseConductorSize());
         assertEquals(Metal.COPPER, cable.getMetal());
         assertEquals(2, cable.getCurrentCarryingCount());
-        assertEquals(12, bundle.getCurrentCarryingNumber());
+        assertEquals(12, bundle.getCurrentCarryingCount());
         assertFalse(bundle.complyWith310_15_B_3_a_4());
         assertEquals(25*1.11*1, cable.getAmpacity());
         bundle.setBundlingLength(25);
@@ -218,7 +218,7 @@ class CableTest {
         bundle.add(cable.clone());
         bundle.add(cable.clone());
         bundle.add(cable.clone());
-        assertEquals(22, bundle.getCurrentCarryingNumber());
+        assertEquals(22, bundle.getCurrentCarryingCount());
         assertFalse(bundle.complyWith310_15_B_3_a_4());
         assertTrue(bundle.complyWith310_15_B_3_a_5());
         assertEquals(25*1.11*0.6, cable.getAmpacity(), 0.01);
@@ -246,7 +246,7 @@ class CableTest {
         bundle.add(cable.clone());
         bundle.add(cable.clone());
         bundle.add(cable);
-        assertEquals(21, bundle.getCurrentCarryingNumber());
+        assertEquals(21, bundle.getCurrentCarryingCount());
         assertTrue(bundle.complyWith310_15_B_3_a_5());
         assertEquals(86, cable.getAmbientTemperatureF());
         assertEquals(1, Factors.getTemperatureCorrectionF(cable.getAmbientTemperatureF(), cable.getTemperatureRating()));
@@ -256,7 +256,7 @@ class CableTest {
         assertEquals(30*1*1, cable.getAmpacity(), 0.01);
 
         bundle.empty();
-        assertEquals(0, bundle.getCurrentCarryingNumber());
+        assertEquals(0, bundle.getCurrentCarryingCount());
 
     }
 

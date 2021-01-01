@@ -18,6 +18,8 @@ public class Main {
 
 	public static void main(String[] args) {
 
+
+		if(true) return;
 		//testing generating integer divider
 		int NumberOfSets = 10;
 		int NumberOfConduits = 10;
@@ -44,7 +46,7 @@ public class Main {
 		System.out.println("Next down number of conduits: " + NumberOfConduits);
 
 
-		if(true) return;
+		//if(true) return;
 
 		//testing the use of instance of
 		Conduitable cable = new Cable();
@@ -66,7 +68,7 @@ public class Main {
 
 
 
-		if(true) return;
+		//if(true) return;
 
 
 		cab1.setJacketed(true);

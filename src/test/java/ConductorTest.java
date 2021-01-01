@@ -183,7 +183,7 @@ class ConductorTest {
         assertEquals(0.8, conductor.getAdjustmentFactor());
 
         conductor.leaveBundle();
-        assertEquals(3, bundle.getCurrentCarryingNumber());
+        assertEquals(3, bundle.getCurrentCarryingCount());
         assertEquals(1, conductor.getAdjustmentFactor());
 
         bundle.setBundlingLength(24);

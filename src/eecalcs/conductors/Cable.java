@@ -86,15 +86,14 @@ public class Cable implements Conduitable, ROCable {
 	/*TODO *************************
 	 *  URGENT: the outer diameter of a cable should adjust automatically to a
 	 *  minimum value once its phase conductors or neutral or ground
-	 *  changes its size. A new property must be included to indicates if this
+	 *  changes its size. A new property must be included to indicate if this
 	 *  diameter is implicit (estimated) or explicit (indicated by the user).
 	 *  Investigate on internet, how is the outer diameter of cables
-	 * AC/MC/NM/etc as per the size of its conductors.
+	 *  AC/MC/NM/etc as per the size of its conductors.
 	 *  ADDITIONALLY, once the phase conductor is sized, the neutral size
-	 * should size automatically following certain rules like what is
-	 * available in the
-	 *  market. Same should apply for grounding conductors. TO THINK ABOUT
-	 * IT!!!!!!!!!! */
+	 *  should size automatically following certain rules like what is
+	 *  available in the market. Same should apply for grounding conductors.
+	 *  TO THINK ABOUT IT!!!!!!!!!! */
 
 	private Conduit conduit;
 	private double roofTopDistance = -1.0; //means no rooftop condition
@@ -203,7 +202,7 @@ public class Cable implements Conduitable, ROCable {
                - this protection does not exceed 10 ft.
                - there is no more than 4 current-carrying conductors.
             */
-			return Factors.getAdjustmentFactor(bundle.getCurrentCarryingNumber(), bundle.getBundlingLength());
+			return Factors.getAdjustmentFactor(bundle.getCurrentCarryingCount(), bundle.getBundlingLength());
 		}
 		return 1;
 	}

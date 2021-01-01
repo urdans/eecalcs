@@ -11,24 +11,27 @@ import java.util.Map;
 public class ConduitProperties {
 	public static final boolean Magnetic = true;
 	public static final boolean nonMagnetic = false;
-	private static Map<Trade, Double> areaEMT;
-	private static Map<Trade, Double> areaENT;
-	private static Map<Trade, Double> areaFMT;
-	private static Map<Trade, Double> areaIMC;
-	private static Map<Trade, Double> areaLFNCA;
-	private static Map<Trade, Double> areaLFNCB;
-	private static Map<Trade, Double> areaLFMC;
-	private static Map<Trade, Double> areaRMC;
-	private static Map<Trade, Double> areaPVC80;
-	private static Map<Trade, Double> areaPVC40;
-	private static Map<Trade, Double> areaHDPE;
-	private static Map<Trade, Double> areaPVCA;
-	private static Map<Trade, Double> areaPVCEB;
+	private static final Map<Trade, Double> areaEMT;
+	private static final Map<Trade, Double> areaENT;
+	private static final Map<Trade, Double> areaFMT;
+	private static final Map<Trade, Double> areaIMC;
+	private static final Map<Trade, Double> areaLFNCA;
+	private static final Map<Trade, Double> areaLFNCB;
+	private static final Map<Trade, Double> areaLFMC;
+	private static final Map<Trade, Double> areaRMC;
+	private static final Map<Trade, Double> areaPVC80;
+	private static final Map<Trade, Double> areaPVC40;
+	private static final Map<Trade, Double> areaHDPE;
+	private static final Map<Trade, Double> areaPVCA;
+	private static final Map<Trade, Double> areaPVCEB;
 	private static Map<Trade, Double> areaINVALID;
-	private static Map<Type, Map<Trade, Double>> dimensions;
-	private static Message ERROR40	= new Message("Invalid conduit type.", -40);
-	private static Message ERROR41	= new Message("Trade size not available for this conduit type.", -41);
-	private static Message ERROR42	= new Message("Area of conduit not available.", -42);
+	private static final Map<Type, Map<Trade, Double>> dimensions;
+	private static final Message ERROR40 = new Message("Invalid conduit type" +
+			".", -40);
+	private static final Message ERROR41 = new Message("Trade size not " +
+			"available for this conduit type.", -41);
+	private static final Message ERROR42 = new Message("Area of conduit " +
+			"not available.", -42);
 
 	static {
 		//region EMT

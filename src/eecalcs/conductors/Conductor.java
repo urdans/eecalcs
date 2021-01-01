@@ -237,10 +237,12 @@ public class Conductor implements Conduitable, RoConductor {
 
 	@Override
 	public double getAmpacity(){
-		double amp = ConductorProperties.getAmpacity(size, metal, ConductorProperties.getTempRating(insulation));
+/*		double amp = ConductorProperties.getAmpacity(size, metal, ConductorProperties.getTempRating(insulation));
 		double cf = getCorrectionFactor();
 		double af = getAdjustmentFactor();
-		return amp * cf * af;
+		return amp * cf * af;*/
+		return ConductorProperties.getAmpacity(size, metal,
+				ConductorProperties.getTempRating(insulation)) * getCompoundFactor();
 	}
 
 	@Override
@@ -259,7 +261,7 @@ public class Conductor implements Conduitable, RoConductor {
 		if(hasConduit())
 			return Factors.getAdjustmentFactor(conduit.getCurrentCarryingCount(), conduit.isNipple());
 		if(hasBundle()){
-			return Factors.getAdjustmentFactor(bundle.getCurrentCarryingNumber(), bundle.getBundlingLength());
+			return Factors.getAdjustmentFactor(bundle.getCurrentCarryingCount(), bundle.getBundlingLength());
 		}
 		return 1;
 	}
@@ -270,13 +272,13 @@ public class Conductor implements Conduitable, RoConductor {
 	}
 
 	@Override
-	public double getCompoundFactor(TempRating terminationTempRating) {
-		if(terminationTempRating == null)
+	public double getCompoundFactor(TempRating tempRating) {
+		if(tempRating == null)
 			return 1;
 		Insul temp_insul;
-		if(terminationTempRating == TempRating.T60)
+		if(tempRating == TempRating.T60)
 			temp_insul = Insul.TW;
-		else if(terminationTempRating == TempRating.T75)
+		else if(tempRating == TempRating.T75)
 			temp_insul = Insul.THW;
 		else
 			temp_insul = Insul.THHW;
