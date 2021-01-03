@@ -171,8 +171,8 @@ class ConduitTest {
 
         conduit.setType(Type.ENT);
         assertNull(conduit.getTradeSize());
-        assertTrue(conduit.resultMessages.containsMessage(-100));
-        conduit.resultMessages.getMessages().forEach(message -> System.out.println(message.message));
+        assertTrue(conduit.getResultMessages().containsMessage(-100));
+        conduit.getResultMessages().getMessages().forEach(message -> System.out.println(message.message));
         System.out.println("-----");
 
 /*        conduit.setNipple(null);
@@ -181,12 +181,12 @@ class ConduitTest {
 
         conduit.setType(null);
         assertNull(conduit.getTradeSize());
-        assertTrue(conduit.resultMessages.containsMessage(-120));
+        assertTrue(conduit.getResultMessages().containsMessage(-120));
 
         conduit.setMinimumTrade(null);
         assertNull(conduit.getTradeSize());
-        assertTrue(conduit.resultMessages.containsMessage(-110));
-        conduit.resultMessages.getMessages().forEach(message -> System.out.println(message.message));
+        assertTrue(conduit.getResultMessages().containsMessage(-110));
+        conduit.getResultMessages().getMessages().forEach(message -> System.out.println(message.message));
     }
 
     @Test

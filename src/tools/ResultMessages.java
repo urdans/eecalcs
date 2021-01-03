@@ -140,11 +140,13 @@ public class ResultMessages implements ROResultMessages {
 	}
 
 	/**
-	 Copies all the messages from the given source into this object
+	 Copies all the messages from the given source into this object. The
+	 existing messages are preserved. If the source has messages that already
+	 exists in this object, such messages are not copied.
 	 @param source The ResultMessages object from which messages are copied.
 	 @return The number of messages copied.
 	 */
-	public int copyFrom(@NotNull ResultMessages source){
+	public int copyFrom(@NotNull ROResultMessages source){
 		int count = 0;
 		for(Message sourceMessage: source.getMessages()) {
 			if (!containsMessage(sourceMessage.number)){

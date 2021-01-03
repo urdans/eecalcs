@@ -887,20 +887,22 @@ public class ConductorProperties {
 	 */
 	public static double getAmpacity(Size conductorSize, Metal metal,
 	                                 TempRating temperatureRating) {
-		if (metal == Metal.COPPER) {
-			if (temperatureRating == TempRating.T60)
-				return bySize(conductorSize).CuAmp60;
-			else if (temperatureRating == TempRating.T75)
-				return bySize(conductorSize).CuAmp75;
-			else if (temperatureRating == TempRating.T90)
-				return bySize(conductorSize).CuAmp90;
-		} else if (metal == Metal.ALUMINUM) {
-			if (temperatureRating == TempRating.T60)
-				return bySize(conductorSize).AlAmp60;
-			else if (temperatureRating == TempRating.T75)
-				return bySize(conductorSize).AlAmp75;
-			else if (temperatureRating == TempRating.T90)
-				return bySize(conductorSize).AlAmp90;
+		if(conductorSize != null) {
+			if (metal == Metal.COPPER) {
+				if (temperatureRating == TempRating.T60)
+					return bySize(conductorSize).CuAmp60;
+				else if (temperatureRating == TempRating.T75)
+					return bySize(conductorSize).CuAmp75;
+				else if (temperatureRating == TempRating.T90)
+					return bySize(conductorSize).CuAmp90;
+			} else if (metal == Metal.ALUMINUM) {
+				if (temperatureRating == TempRating.T60)
+					return bySize(conductorSize).AlAmp60;
+				else if (temperatureRating == TempRating.T75)
+					return bySize(conductorSize).AlAmp75;
+				else if (temperatureRating == TempRating.T90)
+					return bySize(conductorSize).AlAmp90;
+			}
 		}
 		return 0;
 	}

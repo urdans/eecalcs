@@ -16,8 +16,8 @@ public interface RoConductor {
 	/** Refer to {@link ROConduitable#getInsulation()} ()} */
 	Insul getInsulation();
 
-	/** Refer to {@link ROConduitable#getAmpacity()} ()} */
-	double getAmpacity();
+	/** Refer to {@link ROConduitable#getCorrectedAndAdjustedAmpacity()} ()} */
+	double getCorrectedAndAdjustedAmpacity();
 
 	/** Refer to {@link ROConduitable#getCorrectionFactor()} ()} */
 	double getCorrectionFactor();

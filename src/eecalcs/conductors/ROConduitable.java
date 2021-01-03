@@ -109,7 +109,7 @@ public interface ROConduitable {
 	 {@link ConductorProperties#getSizeByAmperes(double,
 			 Metal, TempRating)} can provide the proper size of the conductor.
 	 */
-	double getAmpacity();
+	double getCorrectedAndAdjustedAmpacity();
 
 	/**
 	 @return True if it's contained in a conduit, false otherwise.

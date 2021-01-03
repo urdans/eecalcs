@@ -19,7 +19,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class CircuitTest {
     private final Circuit circuit = new Circuit(new GeneralLoad());
     private final Conduit sharedConduit = new Conduit(Type.RMC, false);
+    private String getState(){
+        Tools.startRecording();
+        printState();
+        return Tools.retrieveStateAndStopRecording();
+    }
     private void printState(){
+        Tools.println("\n");
         Tools.println("################################ Load ################################");
         Tools.println("Voltage: " + circuit.getLoad().getVoltageSystem());
         Tools.println("Load current: " + circuit.getLoad().getNominalCurrent());
@@ -37,13 +43,13 @@ class CircuitTest {
         Tools.println("################################ Ampacity ################################");
         s = circuit.getSizePerAmpacity(false);
         Tools.println("Size per ampacity: " + s);
-        Tools.println("Circuit ampacity: " + circuit.getCircuitAmpacity());
-        Tools.println("Circuit length: " + circuit.getCircuitLength());
-        Tools.println("Number Of Sets: " + circuit.getNumberOfSets());
-        Tools.println("Termination Temperature Rating: " + circuit.getTerminationTempRating());
         Tools.println("################################ Circuit Conductor " +
                 "Characteristics ################################");
+        Tools.println("Number Of Sets: " + circuit.getNumberOfSets());
         Tools.println("Circuit size: " + circuit.getCircuitSize());
+        Tools.println("Circuit ampacity: " + circuit.getCircuitAmpacity());
+        Tools.println("Circuit length: " + circuit.getCircuitLength());
+        Tools.println("Termination Temperature Rating: " + circuit.getTerminationTempRating());
         if(circuit.isUsingCable()) {
             Tools.println("**** Using a cable ****");
             s = circuit.getCable().getNeutralConductorSize();
@@ -55,7 +61,11 @@ class CircuitTest {
             Tools.println("Correction Factor: " + circuit.getCable().getCorrectionFactor());
             Tools.println("Adjustment Factor: " + circuit.getCable().getAdjustmentFactor());
             Tools.println("Compound Factor: " + circuit.getCable().getCompoundFactor());
-            Tools.println("Nominal Ampacity: " + circuit.getCable().getAmpacity());
+            Tools.println("Corrected and adjusted ampacity: " + circuit.getCable().getCorrectedAndAdjustedAmpacity());
+            Tools.println("Nominal Ampacity: " + ConductorProperties.getAmpacity(
+                    circuit.getCircuitSize(),
+                    circuit.getCable().getMetal(),
+                    circuit.getCable().getTemperatureRating()));
         }
         else {
             Tools.println("**** Using conductors ****");
@@ -69,7 +79,10 @@ class CircuitTest {
             Tools.println("Correction Factor: " + circuit.getPhaseConductor().getCorrectionFactor());
             Tools.println("Adjustment Factor: " + circuit.getPhaseConductor().getAdjustmentFactor());
             Tools.println("Compound Factor: " + circuit.getPhaseConductor().getCompoundFactor());
-            Tools.println("Nominal Ampacity: " + circuit.getPhaseConductor().getAmpacity());
+            Tools.println("Corrected and adjusted ampacity: " + circuit.getPhaseConductor().getCorrectedAndAdjustedAmpacity());
+            Tools.println("Nominal Ampacity: " + ConductorProperties.getAmpacity(
+                    circuit.getCircuitSize(),circuit.getPhaseConductor().getMetal(),
+                    circuit.getPhaseConductor().getTemperatureRating()));
         }
         //PRIVATE_CONDUIT, FREE_AIR, SHARED_CONDUIT, PRIVATE_BUNDLE, SHARED_BUNDLE
         Tools.println("################################ Circuit Conduit Characteristics ################################");
@@ -116,10 +129,126 @@ class CircuitTest {
         }
         else
             Tools.println("Free air mode");
+        Tools.println("------------------------------ RESULT MESSAGES ------------------------------");
+        circuit.getResultMessages().getMessages().forEach(message -> Tools.println(message.message+": "+message.number));
         Tools.println("");
-
-
+        Tools.println("");
+//        return "\n";
     }
+    /*
+    private String getState(){
+        String msg = "\n################################ Load " +
+            "################################\n" +
+            "Voltage: " + circuit.getLoad().getVoltageSystem()+"\n"+
+            "Load current: " + circuit.getLoad().getNominalCurrent()+"\n"+
+            "Load MCA: " + circuit.getLoad().getMCA()+"\n"+
+            "Load type: " + ((GeneralLoad) circuit.getLoad()).getLoadType()+"\n"+
+            "Load non-linear(harmonics): " + (circuit.getLoad()).isNonlinear()+"\n"+
+            "################################ Voltage Drop " +
+                "################################"+"\n";
+        Size s = circuit.getSizePerVoltageDrop(false);
+        msg = msg + "Max voltage drop: " + circuit.getVoltageDrop().getMaxVoltageDropPercent()+"\n"+
+        "Size per voltage drop: " + s+"\n";
+        NumberFormat nf = NumberFormat.getPercentInstance();
+        nf.setMinimumFractionDigits(2);
+        String vdp = nf.format(0.01*circuit.getVoltageDrop().getActualVoltageDropPercentageAC());
+        msg = msg + "Actual voltage drop: " + vdp+"\n"+
+        "################################ Ampacity " +
+                "################################"+"\n";
+        s = circuit.getSizePerAmpacity(false);
+        msg = msg + "Size per ampacity: " + s +"\n"+
+        "################################ Circuit Conductor " +
+        "Characteristics ################################"+"\n"+
+        "Number Of Sets: " + circuit.getNumberOfSets()+"\n"+
+        "Circuit size: " + circuit.getCircuitSize()+"\n"+
+        "Circuit ampacity: " + circuit.getCircuitAmpacity()+"\n"+
+        "Circuit length: " + circuit.getCircuitLength()+"\n"+
+        "Termination Temperature Rating: " + circuit.getTerminationTempRating()+"\n";
+        if(circuit.isUsingCable()) {
+            s = circuit.getCable().getNeutralConductorSize();
+            msg = msg + "**** Using a cable ****" +"\n"+
+            "Neutral size: " + (s == null? "No neutral" : s)+"\n"+
+            "Insulation: " + circuit.getCable().getInsulation().getName()+"\n"+
+            "Ambient Temperature: " + circuit.getCable().getAmbientTemperatureF()+"\n"+
+            "Temperature Rating: " + circuit.getCable().getTemperatureRating()+"\n"+
+            "Metal: " + circuit.getCable().getMetal()+"\n"+
+            "Correction Factor: " + circuit.getCable().getCorrectionFactor()+"\n"+
+            "Adjustment Factor: " + circuit.getCable().getAdjustmentFactor()+"\n"+
+            "Compound Factor: " + circuit.getCable().getCompoundFactor()+"\n"+
+            "Corrected and adjusted ampacity: " + circuit.getCable().getCorrectedAndAdjustedAmpacity()+"\n"+
+            "Nominal Ampacity: " + ConductorProperties.getAmpacity(
+                    circuit.getCircuitSize(),
+                    circuit.getCable().getMetal(),
+                    circuit.getCable().getTemperatureRating())+"\n";
+        }
+        else {
+            RoConductor RoC = circuit.getNeutralConductor();
+            msg = msg + "**** Using conductors ****" +"\n"+
+            "Neutral size: " + (RoC == null? "No neutral" : RoC.getSize())+"\n"+
+            "Insulation: " + circuit.getPhaseConductor().getInsulation().getName()+"\n"+
+            "Ambient Temperature: " + circuit.getPhaseConductor().getAmbientTemperatureF()+"\n"+
+            "Temperature Rating: " + circuit.getPhaseConductor().getTemperatureRating()+"\n"+
+            "Metal: " + circuit.getPhaseConductor().getMetal()+"\n"+
+            "Correction Factor: " + circuit.getPhaseConductor().getCorrectionFactor()+"\n"+
+            "Adjustment Factor: " + circuit.getPhaseConductor().getAdjustmentFactor()+"\n"+
+            "Compound Factor: " + circuit.getPhaseConductor().getCompoundFactor()+"\n"+
+            "Corrected and adjusted ampacity: " + circuit.getPhaseConductor().getCorrectedAndAdjustedAmpacity()+"\n"+
+            "Nominal Ampacity: " + ConductorProperties.getAmpacity(
+                    circuit.getCircuitSize(),circuit.getPhaseConductor().getMetal(),
+                    circuit.getPhaseConductor().getTemperatureRating())+"\n";
+        }
+        //PRIVATE_CONDUIT, FREE_AIR, SHARED_CONDUIT, PRIVATE_BUNDLE, SHARED_BUNDLE
+        Tools.println("################################ Circuit Conduit Characteristics ################################");
+        if(circuit.getCircuitMode() == CircuitMode.PRIVATE_CONDUIT) {
+            Tools.println("**** PRIVATE_CONDUIT ****");
+            Tools.println("Number of conduits in this circuit: " + circuit.getNumberOfConduits());
+            Tools.println("Is a nipple: " + circuit.getPrivateConduit().isNipple());
+            Tools.println("Type: " + circuit.getPrivateConduit().getType());
+            Tools.println("Minimum size: " + circuit.getPrivateConduit().getMinimumTrade());
+            Tools.println("Actual size: " + circuit.getPrivateConduit().getTradeSize());
+            Tools.println("Number of filling-counting Conductors: " + circuit.getPrivateConduit().getFillingConductorCount());
+            Tools.println("Number of current carrying conductors: " + circuit.getPrivateConduit().getCurrentCarryingCount());
+            Tools.println("Rooftop distance: " + circuit.getPrivateConduit().getRoofTopDistance());
+            Tools.println("Internal area: " + circuit.getPrivateConduit().getArea());
+            Tools.println("Total filled area: " + circuit.getPrivateConduit().getConduitablesArea());
+            Tools.println("Max. allowed fill percentage: " + circuit.getPrivateConduit().getMaxAllowedFillPercentage());
+            Tools.println("Fill percentage: " + nf.format(0.01*circuit.getPrivateConduit().getFillPercentage()));
+        }
+        else if(circuit.getCircuitMode() == CircuitMode.SHARED_CONDUIT) {
+            Tools.println("**** SHARED_CONDUIT ****");
+            Tools.println("Number of conduits in this circuit: " + circuit.getNumberOfConduits());
+            Tools.println("Is a nipple: " + circuit.getSharedConduit().isNipple());
+            Tools.println("Type: " + circuit.getSharedConduit().getType());
+            Tools.println("Minimum size: " + circuit.getSharedConduit().getMinimumTrade());
+            Tools.println("Actual size: " + circuit.getSharedConduit().getTradeSize());
+            Tools.println("Number of filling-counting Conductors: " + circuit.getSharedConduit().getFillingConductorCount());
+            Tools.println("Number of current carrying conductors: " + circuit.getSharedConduit().getCurrentCarryingCount());
+            Tools.println("Rooftop distance: " + circuit.getSharedConduit().getRoofTopDistance());
+            Tools.println("Internal area: " + circuit.getSharedConduit().getArea());
+            Tools.println("Total filled area: " + circuit.getSharedConduit().getConduitablesArea());
+            Tools.println("Max. allowed fill percentage: " + circuit.getSharedConduit().getMaxAllowedFillPercentage());
+            Tools.println("Fill percentage: " + nf.format(0.01*circuit.getSharedConduit().getFillPercentage()));
+        }
+        else if(circuit.getCircuitMode() == CircuitMode.PRIVATE_BUNDLE) {
+            Tools.println("**** PRIVATE_BUNDLE ****");
+            Tools.println("Number of current-carrying conductors: " + circuit.getPrivateBundle().getCurrentCarryingCount());
+            Tools.println("Bundle length: " + circuit.getPrivateBundle().getBundlingLength());
+
+        }
+        else if(circuit.getCircuitMode() == CircuitMode.SHARED_BUNDLE) {
+            Tools.println("**** SHARED_BUNDLE ****");
+            Tools.println("Number of current-carrying conductors: " + circuit.getSharedBundle().getCurrentCarryingCount());
+            Tools.println("Bundle length: " + circuit.getSharedBundle().getBundlingLength());
+        }
+        else
+            Tools.println("Free air mode");
+        Tools.println("------------------------------ RESULT MESSAGES ------------------------------");
+        circuit.getResultMessages().getMessages().forEach(message -> System.out.println(message.message+": "+message.number));
+        Tools.println("");
+        Tools.println("");
+        return msg;
+    }
+     */
 /*    private void printResultMessages(){
         for(Message m: circuit.resultMessages.getMessages()){
             Tools.println(m.number + ": " + m.message);
@@ -321,10 +450,9 @@ class CircuitTest {
          size of the conductor to be accounted for, the re-computation is not
          required and the oscillation disappeared.
          */
-        printState();
         assertEquals(110, circuit.getOcdp().getRating());
 
-        //Quedé aquí 1
+        //Quedé aquí 3
         /*
         I need to implement the Circuit.calculateEGC() method before
         proceeding with this test. The size of the equipment grounding
@@ -346,7 +474,8 @@ class CircuitTest {
 
          */
         //grounding
-        assertEquals(Size.AWG_6, circuit.getGroundingConductor().getSize());
+        assertEquals(Size.AWG_6, circuit.getGroundingConductor().getSize(),
+                getState());
 
         //conduit
         assertEquals(Trade.T3$4, circuit.getPrivateConduit().getTradeSize());
@@ -490,9 +619,18 @@ ALl the parameters of the circuit are obtained through the read only objects.
 */
     }
 
+    @Test
+    void multipleEGCPerConduitWhenMoreThanOneConduit_PrivateMode(){
+        circuit.getLoad().setNominalCurrent(300);
+        circuit.setNumberOfSets(2);
+        printState();
+        circuit.moreConduits();
+        printState();
+//Quedé aquí 2
+    }
 
     @Test
-    void lessConduits(){
+    void lessAndMoreConduits(){
         Tools.printTitle("CircuitTest.lessConduits");
         circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         assertEquals(1, circuit.getNumberOfConduits());
@@ -586,7 +724,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         //todo the correct one here is 149.148amps, not 123.76
         //update once getAmpacity is revised to account for the termination
         // temp. ratings.
-        assertEquals(/*105.56*//*163.8*/123.76, circuit.getPhaseConductor().getAmpacity(), 0.01);
+        assertEquals(/*105.56*//*163.8*/123.76, circuit.getPhaseConductor().getCorrectedAndAdjustedAmpacity(), 0.01);
 
         //termination temperature rating is unknown
         circuit.setTerminationTempRating(null);
@@ -824,7 +962,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         Tools.println("Load MCA: " + circuit.getLoad().getMCA());
         Tools.println("CircuitSize: " + circuit.getCircuitSize().getName());
         Tools.println("Selected by MCA: " + circuit.getResultMessages().containsMessage(230));
-        Tools.println("Ampacity: " + circuit.getPhaseConductor().getAmpacity());
+        Tools.println("Ampacity: " + circuit.getPhaseConductor().getCorrectedAndAdjustedAmpacity());
         Tools.println("CorrectionFactor: " + circuit.getPhaseConductor().getCorrectionFactor());
         Tools.println("AdjustmentFactor: " + circuit.getPhaseConductor().getAdjustmentFactor());
         Tools.println("----------");
@@ -839,7 +977,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         Tools.println("Load current: " + circuit.getLoad().getNominalCurrent());
         Tools.println("Load MCA: " + circuit.getLoad().getMCA());
         Tools.println("CircuitSize: " + circuit.getCircuitSize().getName());
-        Tools.println("Ampacity: " + circuit.getPhaseConductor().getAmpacity());
+        Tools.println("Ampacity: " + circuit.getPhaseConductor().getCorrectedAndAdjustedAmpacity());
         Tools.println("Selected by MCA: " + circuit.getResultMessages().containsMessage(230));
         Tools.println("CorrectionFactor: " + circuit.getPhaseConductor().getCorrectionFactor());
         Tools.println("AdjustmentFactor: " + circuit.getPhaseConductor().getAdjustmentFactor());
@@ -854,7 +992,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         Tools.println("Load current: " + circuit.getLoad().getNominalCurrent());
         Tools.println("Load MCA: " + circuit.getLoad().getMCA());
         Tools.println("CircuitSize: " + circuit.getCircuitSize().getName());
-        Tools.println("Ampacity: " + circuit.getPhaseConductor().getAmpacity());
+        Tools.println("Ampacity: " + circuit.getPhaseConductor().getCorrectedAndAdjustedAmpacity());
         Tools.println("Selected by MCA: " + circuit.getResultMessages().containsMessage(230));
         Tools.println("CorrectionFactor: " + circuit.getPhaseConductor().getCorrectionFactor());
         Tools.println("AdjustmentFactor: " + circuit.getPhaseConductor().getAdjustmentFactor());
@@ -888,7 +1026,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         Tools.println("Load current: " + circuit.getLoad().getNominalCurrent());
         Tools.println("Load MCA: " + circuit.getLoad().getMCA());
         Tools.println("CircuitSize: " + circuit.getCircuitSize().getName());
-        Tools.println("Ampacity: " + circuit.getPhaseConductor().getAmpacity());
+        Tools.println("Ampacity: " + circuit.getPhaseConductor().getCorrectedAndAdjustedAmpacity());
         Tools.println("Selected by MCA: " + circuit.getResultMessages().containsMessage(230));
         Tools.println("CorrectionFactor: " + circuit.getPhaseConductor().getCorrectionFactor());
         Tools.println("AdjustmentFactor: " + circuit.getPhaseConductor().getAdjustmentFactor());
@@ -1196,6 +1334,43 @@ ALl the parameters of the circuit are obtained through the read only objects.
     }
 
     @Test
+    void getCircuitSize_Conductor_Free_Air_Case_15(){
+        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_15");
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        circuit.getLoad().setNominalCurrent(600);
+        circuit.getLoad().setNonlinear(true);
+        circuit.setFreeAirMode();
+        assertEquals(Size.KCMIL_1500, circuit.getCircuitSize(), getState());
+        assertEquals(1, circuit.getNumberOfSets(), getState());
+        assertEquals(1, circuit.getNumberOfConduits(), getState());
+
+        circuit.setNumberOfSets(2);
+        assertEquals(Size.KCMIL_350, circuit.getCircuitSize(), getState());
+        assertEquals(2, circuit.getNumberOfSets(), getState());
+
+        circuit.setNumberOfSets(3);
+        assertEquals(Size.AWG_3$0, circuit.getCircuitSize(), getState());
+        assertEquals(3, circuit.getNumberOfSets(), getState());
+
+        circuit.setNumberOfSets(4);
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize(), getState());
+        assertEquals(4, circuit.getNumberOfSets(), getState());
+
+        circuit.setConduitMode();
+        assertEquals(1, circuit.getNumberOfConduits(), getState());
+        assertEquals(Size.KCMIL_350, circuit.getCircuitSize(), getState());
+
+        circuit.moreConduits();
+        assertEquals(Size.AWG_4$0, circuit.getCircuitSize(), getState());
+        assertEquals(2, circuit.getNumberOfConduits(), getState());
+
+        circuit.setNumberOfSets(1);
+        circuit.setFreeAirMode();
+        assertEquals(Size.KCMIL_1500, circuit.getCircuitSize(), getState());
+        assertEquals(1, circuit.getNumberOfSets(), getState());
+    }
+
+    @Test
     void getCircuitSize_Conductor_Shared_Conduit_Case_01(){
         Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Shared_Conduit_Case_01");
         //Shared conduit is empty
@@ -1487,7 +1662,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         //todo the correct one here is 149.148amps, not 123.76
         //update once getAmpacity is revised to account for the termination
         // temp. ratings.
-        assertEquals(/*105.56*//*163.8*/123.76, circuit.getCable().getAmpacity(), 0.01);
+        assertEquals(/*105.56*//*163.8*/123.76, circuit.getCable().getCorrectedAndAdjustedAmpacity(), 0.01);
 
         //termination temperature rating is unknown
         circuit.setTerminationTempRating(null);

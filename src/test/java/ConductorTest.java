@@ -103,7 +103,7 @@ class ConductorTest {
         conduit.add(conductor.clone());
         conduit.add(conductor.clone());
         conductor.setAmbientTemperatureF(100);
-        assertEquals(30*0.91*0.8, conductor.getAmpacity());
+        assertEquals(30*0.91*0.8, conductor.getCorrectedAndAdjustedAmpacity());
 
         bundle = new Bundle(null, 0, 25);
         bundle.add(conductor);
@@ -113,7 +113,7 @@ class ConductorTest {
         bundle.add(conductor.clone());
         bundle.add(conductor.clone());
         bundle.add(conductor.clone());
-        assertEquals(30*0.91*0.7, conductor.getAmpacity());
+        assertEquals(30*0.91*0.7, conductor.getCorrectedAndAdjustedAmpacity());
     }
 
     @Test
@@ -204,7 +204,7 @@ class ConductorTest {
         conductor2.setAmbientTemperatureF(110);
         assertEquals(1.0,conductor2.getAdjustmentFactor());
         assertEquals(0.71,conductor2.getCorrectionFactor());
-        assertEquals(92.3,conductor2.getAmpacity());
+        assertEquals(92.3,conductor2.getCorrectedAndAdjustedAmpacity());
     }
 
     @Test
@@ -217,7 +217,7 @@ class ConductorTest {
         conductor2.setAmbientTemperatureF(110);
         assertEquals(1.0,conductor2.getAdjustmentFactor());
         assertEquals(0.87,conductor2.getCorrectionFactor());
-        assertEquals(113.1,conductor2.getAmpacity());
+        assertEquals(113.1,conductor2.getCorrectedAndAdjustedAmpacity());
     }
 
     @Test
@@ -235,7 +235,7 @@ class ConductorTest {
         Tools.println("Current Carrying Number: "+raceway.getCurrentCarryingCount());
         Tools.println("Correction Factor: "+conductor2.getCorrectionFactor());
         Tools.println("Adjustment Factor: "+conductor2.getAdjustmentFactor());
-        Tools.println("Ampacity: "+conductor2.getAmpacity());
+        Tools.println("Ampacity: "+conductor2.getCorrectedAndAdjustedAmpacity());
     }
 
     @Test
@@ -257,7 +257,7 @@ class ConductorTest {
         Tools.println("Compound Factor @60°C : "+conductor2.getCompoundFactor(TempRating.T60));
         Tools.println("Compound Factor @75°C : "+conductor2.getCompoundFactor(TempRating.T75));
         Tools.println("Compound Factor @90°C : "+conductor2.getCompoundFactor(TempRating.T90));
-        Tools.println("Ampacity: "+conductor2.getAmpacity());
+        Tools.println("Ampacity: "+conductor2.getCorrectedAndAdjustedAmpacity());
 
         assertEquals(6, raceway.getCurrentCarryingCount());
         assertEquals(0.87, conductor2.getCorrectionFactor());
@@ -266,7 +266,7 @@ class ConductorTest {
         assertEquals(0.568, conductor2.getCompoundFactor(TempRating.T60));
         assertEquals(0.656, conductor2.getCompoundFactor(TempRating.T75));
         assertEquals(0.696, conductor2.getCompoundFactor(TempRating.T90), 0.0001);
-        assertEquals(20.880, conductor2.getAmpacity(), 0.0001);
+        assertEquals(20.880, conductor2.getCorrectedAndAdjustedAmpacity(), 0.0001);
     }
 
     @Test

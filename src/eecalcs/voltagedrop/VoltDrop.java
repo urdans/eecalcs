@@ -9,6 +9,7 @@ import eecalcs.conduits.Material;
 import eecalcs.systems.VoltageSystemAC;
 import org.apache.commons.math3.complex.Complex;
 import tools.Message;
+import tools.ROResultMessages;
 import tools.ResultMessages;
 
 /**
@@ -58,6 +59,12 @@ public class VoltDrop implements ROVoltDrop {
 	private static final Message ERROR31	= new Message("No building conductor can achieve that voltage drop under the given conditions.",
 			-31);
 	private static final Message WARNN21	= new Message(ERROR21.message,21);
+	//Quedé aquí 6: why am I using a warning message that is also an error?
+	// when is an error and when is a warning? This must be refactored to be
+	// consistent with the way the size per ampacity is performed. But also,
+	// how to tell the user that the actual size is under 1/0? shouldn't the
+	// calculated size be included in the message as part of the error
+	// message or as a warning message?
 	private double maxLengthAC;	//maximum length of a circuit for the given max AC voltage drop
 	private double maxLengthDC;	//maximum length of a circuit for the given max DC voltage drop
 	private double actualVoltageDropPercentageAC; //actual AC voltage drop percentage for the calculated conductor size.
@@ -70,7 +77,15 @@ public class VoltDrop implements ROVoltDrop {
 
 	 @see ResultMessages
 	 */
-	public ResultMessages resultMessages = new ResultMessages();
+	private final ResultMessages resultMessages = new ResultMessages();
+
+	/**
+	 @return The {@link ROResultMessages} object containing all the error and
+	 warning messages of this object.
+	 */
+	public ROResultMessages getResultMessages(){
+		return resultMessages;
+	}
 
 	/*
 	Checks that all input values are valid for the calculation of AC voltage
@@ -87,7 +102,7 @@ public class VoltDrop implements ROVoltDrop {
 			else {
 				if (ConductorProperties.compareSizes(conductor.getSize(), Size.AWG_1$0) < 0 && sets > 1)
 					resultMessages.add(ERROR21);
-				if(loadCurrent > sets * conductor.getAmpacity())
+				if(loadCurrent > sets * conductor.getCorrectedAndAdjustedAmpacity())
 					resultMessages.add(ERROR20);
 			}
 			if(conductor.getLength() <= 0)

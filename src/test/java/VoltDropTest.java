@@ -53,7 +53,7 @@ class VoltDropTest {
         assertEquals(7.8228, voltDrop.getACVoltageDrop(), 0.0001);
         assertEquals(480-7.8228, voltDrop.getACVoltageAtLoad(), 0.0001);
         assertEquals(100*7.8228/480, voltDrop.getACVoltageDropPercentage(), 0.0001);
-        voltDrop.resultMessages.getMessages().forEach(message -> System.out.println(message.message+": "+message.number));
+        voltDrop.getResultMessages().getMessages().forEach(message -> System.out.println(message.message+": "+message.number));
     }
 
     @Test
@@ -68,7 +68,7 @@ class VoltDropTest {
         assertEquals(7.1990, voltDrop.getDCVoltageDrop(), 0.0001);
         assertEquals(480-7.1990, voltDrop.getDCVoltageAtLoad(), 0.0001);
         assertEquals(100*7.1990/480, voltDrop.getDCVoltageDropPercentage(), 0.0001);
-        voltDrop.resultMessages.getMessages().forEach(message -> System.out.println(message.message+": "+message.number));
+        voltDrop.getResultMessages().getMessages().forEach(message -> System.out.println(message.message+": "+message.number));
     }
 
     @Test
@@ -147,94 +147,94 @@ class VoltDropTest {
         Tools.printTitle("VoltDropTest.getErrorMessages");
         VoltDrop voltDrop2 = new VoltDrop(null);
         assertEquals(0, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertTrue(voltDrop2.resultMessages.containsMessage(-9));
+        assertTrue(voltDrop2.getResultMessages().containsMessage(-9));
 
         voltDrop2 = new VoltDrop(new Conductor());
-        assertFalse(voltDrop2.resultMessages.containsMessage(-9));
+        assertFalse(voltDrop2.getResultMessages().containsMessage(-9));
 
         Conductor conductor2 = new Conductor(null, Metal.COPPER, Insul.THW, 0);
         voltDrop2 = new VoltDrop(conductor2);
         assertEquals(0, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertTrue(voltDrop2.resultMessages.containsMessage(-3));
-        assertTrue(voltDrop2.resultMessages.containsMessage(-5));
+        assertTrue(voltDrop2.getResultMessages().containsMessage(-3));
+        assertTrue(voltDrop2.getResultMessages().containsMessage(-5));
 
         conductor2 = new Conductor(Size.AWG_3, Metal.COPPER, Insul.THW, 80);
         voltDrop2 = new VoltDrop(conductor2);
-        assertFalse(voltDrop2.resultMessages.containsMessage(-3));
-        assertFalse(voltDrop2.resultMessages.containsMessage(-5));
+        assertFalse(voltDrop2.getResultMessages().containsMessage(-3));
+        assertFalse(voltDrop2.getResultMessages().containsMessage(-5));
 
         voltDrop2.setSourceVoltage(null);
         assertEquals(0, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertTrue(voltDrop2.resultMessages.containsMessage(-1));
+        assertTrue(voltDrop2.getResultMessages().containsMessage(-1));
 
         voltDrop2.setSourceVoltage(VoltageSystemAC.v277_1ph_2w);
         assertEquals(0.3999, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertFalse(voltDrop2.resultMessages.containsMessage(-1));
+        assertFalse(voltDrop2.getResultMessages().containsMessage(-1));
 
         voltDrop2.setSets(11);
         assertEquals(0, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertTrue(voltDrop2.resultMessages.containsMessage(-4));
+        assertTrue(voltDrop2.getResultMessages().containsMessage(-4));
 
         voltDrop2.setSets(8);
         assertEquals(0, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertFalse(voltDrop2.resultMessages.containsMessage(-4));
+        assertFalse(voltDrop2.getResultMessages().containsMessage(-4));
 
         conductor2 = new Conductor();
         voltDrop2 = new VoltDrop(conductor2);
         voltDrop2.setSets(2);
         assertEquals(0, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertTrue(voltDrop2.resultMessages.containsMessage(-21));
+        assertTrue(voltDrop2.getResultMessages().containsMessage(-21));
 
         voltDrop2.setSets(1);
         assertEquals(3.9999, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertFalse(voltDrop2.resultMessages.containsMessage(-21));
+        assertFalse(voltDrop2.getResultMessages().containsMessage(-21));
 
         voltDrop2.setLoadCurrent(0);
         assertEquals(0, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertTrue(voltDrop2.resultMessages.containsMessage(-6));
+        assertTrue(voltDrop2.getResultMessages().containsMessage(-6));
 
         voltDrop2.setLoadCurrent(35);
         assertEquals(0, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertTrue(voltDrop2.resultMessages.containsMessage(-20));
+        assertTrue(voltDrop2.getResultMessages().containsMessage(-20));
 
         voltDrop2.setLoadCurrent(20);
         assertEquals(7.9997, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertFalse(voltDrop2.resultMessages.containsMessage(-20));
+        assertFalse(voltDrop2.getResultMessages().containsMessage(-20));
 
         voltDrop2.setPowerFactor(0.69);
         assertEquals(0, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertTrue(voltDrop2.resultMessages.containsMessage(-7));
+        assertTrue(voltDrop2.getResultMessages().containsMessage(-7));
 
         voltDrop2.setPowerFactor(1.1);
         assertEquals(0, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertTrue(voltDrop2.resultMessages.containsMessage(-7));
+        assertTrue(voltDrop2.getResultMessages().containsMessage(-7));
 
         voltDrop2.setPowerFactor(0.9);
         assertEquals(7.2460, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertFalse(voltDrop2.resultMessages.containsMessage(-7));
+        assertFalse(voltDrop2.getResultMessages().containsMessage(-7));
 
         voltDrop2.setMaxVoltageDropPercent(0.4);
         assertEquals(0, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertTrue(voltDrop2.resultMessages.containsMessage(-8));
+        assertTrue(voltDrop2.getResultMessages().containsMessage(-8));
 
         voltDrop2.setMaxVoltageDropPercent(26);
         assertEquals(0, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertTrue(voltDrop2.resultMessages.containsMessage(-8));
+        assertTrue(voltDrop2.getResultMessages().containsMessage(-8));
 
         voltDrop2.setMaxVoltageDropPercent(6);
         assertEquals(7.2460, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertFalse(voltDrop2.resultMessages.containsMessage(-8));
+        assertFalse(voltDrop2.getResultMessages().containsMessage(-8));
 
         voltDrop2.setConduitMaterial(null);
         assertEquals(0, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertTrue(voltDrop2.resultMessages.containsMessage(-2));
+        assertTrue(voltDrop2.getResultMessages().containsMessage(-2));
 
         voltDrop2.setConduitMaterial(Material.STEEL);
         assertEquals(7.2719, voltDrop2.getACVoltageDrop(), 0.0001);
-        assertFalse(voltDrop2.resultMessages.containsMessage(-2));
+        assertFalse(voltDrop2.getResultMessages().containsMessage(-2));
 
         voltDrop2.setSourceVoltage(VoltageSystemAC.v277_1ph_2w);
-        assertFalse(voltDrop2.resultMessages.hasErrors());
+        assertFalse(voltDrop2.getResultMessages().hasErrors());
         assertEquals(7.2991, voltDrop2.getACVoltageDrop(), 0.0001);
         assertEquals(100*7.2991/277, voltDrop2.getACVoltageDropPercentage(), 0.0001);
     }

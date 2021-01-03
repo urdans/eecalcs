@@ -1,8 +1,10 @@
 package eecalcs.conduits;
 
 import eecalcs.conductors.Conduitable;
+import eecalcs.conductors.Size;
 import tools.Message;
 import tools.NotifierDelegate;
+import tools.ROResultMessages;
 import tools.ResultMessages;
 
 import java.util.*;
@@ -56,7 +58,15 @@ public class Conduit implements ROConduit {
 	 calculations performed by this class.
 	 @see ResultMessages
 	 */
-	public ResultMessages resultMessages = new ResultMessages();
+	private final ResultMessages resultMessages = new ResultMessages();
+
+	/**
+	 @return The {@link ROResultMessages} object containing all the error and
+	 warning messages of this object.
+	 */
+	public ROResultMessages getResultMessages(){
+		return resultMessages;
+	}
 
 	/**
 	 Returns the list of all conduitable objects that are inside this conduit
@@ -253,6 +263,18 @@ public class Conduit implements ROConduit {
 		if(a != 0)
 			return 100*getConduitablesArea()/getArea();
 		return 0;
+	}
+
+	@Override
+	public Trade getTradeSizeForOneEGC() {
+		//Quedé aquí 4: implement this
+		return null;
+	}
+
+	@Override
+	public Size getOneEGCSize() {
+		//Quedé aquí 5: implement this
+		return null;
 	}
 
 	/**

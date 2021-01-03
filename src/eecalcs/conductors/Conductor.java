@@ -236,7 +236,7 @@ public class Conductor implements Conduitable, RoConductor {
 	}
 
 	@Override
-	public double getAmpacity(){
+	public double getCorrectedAndAdjustedAmpacity(){
 /*		double amp = ConductorProperties.getAmpacity(size, metal, ConductorProperties.getTempRating(insulation));
 		double cf = getCorrectionFactor();
 		double af = getAdjustmentFactor();

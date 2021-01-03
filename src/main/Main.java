@@ -214,7 +214,7 @@ public class Main {
 				conductor1.getTemperatureRating()));
 		System.out.println("       Correction factor: " + conductor1.getCorrectionFactor());
 		System.out.println("       Adjustment factor: " + conductor1.getAdjustmentFactor());
-		System.out.println("          Final Ampacity: " + df.format(conductor1.getAmpacity())/*String.format("%.2f", conductor1.getAmpacity())*/ + " AMPS");
+		System.out.println("          Final Ampacity: " + df.format(conductor1.getCorrectedAndAdjustedAmpacity())/*String.format("%.2f", conductor1.getAmpacity())*/ + " AMPS");
 
 		System.out.println("**************** CABLES ****************");
 
@@ -236,7 +236,7 @@ public class Main {
 		System.out.println("       Correction factor: " + Factors.getTemperatureCorrectionF(cable1.getAmbientTemperatureF(),
 				cable1.getTemperatureRating()));
 		/*System.out.println("       Adjustment factor: " + Factors.getAdjustmentFactor(cable1.getConduit()));*/
-		System.out.println("          Final Ampacity: " + df.format(cable1.getAmpacity())/*String.format("%.2f", cable1.getAmpacity())*/ + " AMPS");
+		System.out.println("          Final Ampacity: " + df.format(cable1.getCorrectedAndAdjustedAmpacity())/*String.format("%.2f", cable1.getAmpacity())*/ + " AMPS");
 		System.out.println("**************** CONTAINER CONDUIT ****************");
 		if(conductor1.hasConduit()) {
 			System.out.println("       Conduit is nipple: " + conductor1.getConduit().isNipple());
@@ -313,21 +313,21 @@ public class Main {
 		double prevArea;
 		double incAmp = 0;
 		double prevAmp;
-		System.out.println(String.format("%5s", myc.getSize()) + ": " + String.format("%5.0f", myc.getAmpacity()) + "\t CM: " +
+		System.out.println(String.format("%5s", myc.getSize()) + ": " + String.format("%5.0f", myc.getCorrectedAndAdjustedAmpacity()) + "\t CM: " +
 				String.format("%7d", ConductorProperties.getAreaCM(myc.getSize())) + "\t Size inc: " + String.format("%4.0f", incArea) + "%\t Ampacity" +
 				"inc: " + String.format("%7.0f", incAmp) + "% \tArea/Amp: " + String.format("%4.0f CM/AMP",
-				ConductorProperties.getAreaCM(myc.getSize())/myc.getAmpacity()));
+				ConductorProperties.getAreaCM(myc.getSize())/myc.getCorrectedAndAdjustedAmpacity()));
 
 		System.out.println("\n**************** Testing incremental ampacity and areas of conductors ****************");
 		System.out.println("Conductor metal: "+ myc.getMetal() + "\tInsulation: " + myc.getInsulation() + "\tTemp.rating: " +
 				ConductorProperties.getTempRating(myc.getInsulation()) + "°C");
 		myc.setSize(Size.AWG_14);
 		prevArea = ConductorProperties.getAreaCM(myc.getSize());
-		prevAmp = myc.getAmpacity();
+		prevAmp = myc.getCorrectedAndAdjustedAmpacity();
 		for(Size conductorSize : Size.values()){
 			myc.setSize(conductorSize);
 			double area = ConductorProperties.getAreaCM(myc.getSize());
-			double ampacity = myc.getAmpacity();
+			double ampacity = myc.getCorrectedAndAdjustedAmpacity();
 			incArea = 100 * area/prevArea;
 			prevArea = area;
 			incAmp = 100 * ampacity/prevAmp;

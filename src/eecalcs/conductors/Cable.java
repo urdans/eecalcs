@@ -398,7 +398,7 @@ public class Cable implements Conduitable, ROCable {
 	}
 
 	@Override
-	public double getAmpacity() {
+	public double getCorrectedAndAdjustedAmpacity() {
 		//int adjustedTemp = roofTopDistance <= 0 ? 0 : Factors
         // .getRoofTopTempAdjustment(roofTopDistance);
 		return ConductorProperties.getAmpacity(phaseAConductor.getSize(),

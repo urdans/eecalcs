@@ -166,6 +166,7 @@ public class Circuit {
 	private CircuitMode circuitMode = CircuitMode.PRIVATE_CONDUIT;
 //	private static final int maxNumberOfSets = 10;
 	//list of all conduitables owned by this circuit.
+	/**List of all conduitables that goes inside one conduit or bundle*/
 	private final List<Conduitable> conduitables = new ArrayList<>();
 	//the overcurrent protection device owned by the circuit.
 	private final OCPD ocdp = new OCPD(this);
@@ -188,7 +189,7 @@ public class Circuit {
 	private boolean usingCable = false;
 	private final VoltDrop voltageDrop = new VoltDrop();
 	private TempRating terminationTempRating;
-	private double circuitAmpacity; /*the ampacity of the calculated size
+	private double circuitAmpacity; /**the ampacity of the circuit size
 	under the installation conditions*/
 
 	//private static Message ERROR200	= new Message("The provided load is not valid.", -200);
@@ -241,22 +242,27 @@ public class Circuit {
 			"temp rating exceeds the ampacity for the temperature rating of " +
 			"the termination.\nConductor/cable size has been selected per " +
 			"the termination temp rating.", 220);
-	/*creates a listener to listen for changes in the neutral conductors.
+	/**creates a listener to listen for changes in the neutral conductors.
 	This listener is not used if the load doesn't require a neutral.*/
 	private final Listener neutralListener;
-	/*creates a listener to listen for changes in the sharedConduit.
+	/**creates a listener to listen for changes in the sharedConduit.
 	This listener is not used if this circuit is not in shared conduit mode.*/
 	private final Listener sharedConduitListener;
-	/*creates a listener to listen for changes in the sharedBundle.
+	/**creates a listener to listen for changes in the sharedBundle.
 	This listener is not used if this circuit is not in shared bundle mode.*/
 	private final Listener sharedBundleListener;
-	/*Container for messages resulting from validation of input variables and
+	/**Container for messages resulting from validation of input variables and
 	 calculations performed by this class.*/
 	private final ResultMessages resultMessages = new ResultMessages();
-	//Indicates that something changed and the circuit needs to be recalculated
+	/**Indicates that something changed and the circuit needs to be
+	 recalculated*/
 	private boolean circuitChangedRecalculationNeeded = true;
 
-	public ResultMessages getResultMessages(){
+	/**
+	 @return The {@link ROResultMessages} object containing all the error and
+	 warning messages of this object.
+	 */
+	public ROResultMessages getResultMessages(){
 		return resultMessages;
 	}
 
@@ -272,7 +278,7 @@ public class Circuit {
 	 This method is called after the model conductor is updated by the
 	 setupModelConductor() method, or whenever any of the following properties
 	 changes:<br>
-	 - numberOfSets & setsPerConduit from setNumberOfSets()<br>
+	 - numberOfSets & setsPerConduit from setNumberOfSets()<br><br>
 	*/
 	private void prepareConduitableList(){
 		if(usingCable){
@@ -282,18 +288,20 @@ public class Circuit {
 				conduitables.add(cable.clone());
 		}else{//using conductors
 			if(circuitMode == CircuitMode.SHARED_CONDUIT) {
+				sharedConduit.getNotifier().enable(false);
 				conduitables.forEach(conduitable -> {
-					sharedConduit.getNotifier().enable(false);
-					if(sharedConduit.hasConduitable(conduitable))
+					/*if(sharedConduit.hasConduitable(conduitable))*/
 						sharedConduit.remove(conduitable);
-					sharedConduit.getNotifier().enable(true);
 				});
+				sharedConduit.getNotifier().enable(true);
 			}
 			if(circuitMode == CircuitMode.SHARED_BUNDLE) {
+				sharedBundle.getNotifier().enable(false);
 				conduitables.forEach(conduitable -> {
-					if(!sharedBundle.hasConduitable(conduitable))
+					/*if(sharedBundle.hasConduitable(conduitable))*/
 						sharedBundle.remove(conduitable);
 				});
+				sharedBundle.getNotifier().enable(true);
 			}
 			conduitables.clear();
 			conduitables.add(phaseAConductor);
@@ -318,9 +326,7 @@ public class Circuit {
 		setupMode();
 	}
 
-	/*
-	Returns the neutral role based on the load criteria.
-	 */
+	/**Returns the neutral role based on the load criteria.*/
 	private Conductor.Role getNeutralRole(){
 		return load.isNeutralCurrentCarrying() ?  Conductor.Role.NEUCC:
 				Conductor.Role.NEUNCC;
@@ -410,7 +416,7 @@ public class Circuit {
 	 circuit's installation conditions; The temperature rating of the
 	 terminations and the continuous behavior of the load are accounted for
 	 in the result. Other factors are accounted as described in
-	 {@link Conduitable#getAmpacity()}.
+	 {@link Conduitable#getCorrectedAndAdjustedAmpacity()}.
 	 If the returned value is zero it means that the size of the circuit
 	 conductors has not being determined. Check for {@link #resultMessages}
 	 for more information about the causes.
@@ -597,11 +603,11 @@ public class Circuit {
 		voltageDrop.setPowerFactor(load.getPowerFactor());
 		voltageDrop.setSets(numberOfSets);
 		voltageDrop.setSourceVoltage(load.getVoltageSystem());
-		resultMessages.copyFrom(voltageDrop.resultMessages);
+		/*resultMessages.copyFrom(voltageDrop.getResultMessages());*/
 		return voltageDrop.getCalculatedSizeAC();
 	}
 
-	/*Clears all the error and warning messages related to putting the circuit
+	/**Clears all the error and warning messages related to putting the circuit
 	 in different modes (private/public conduit/bundle and free air).*/
 	private void clearModeMsg(){
 		resultMessages.remove(WARNN200);
@@ -756,15 +762,15 @@ public class Circuit {
 		circuitChangedRecalculationNeeded = true;
 	}
 
-	/*Sets the circuit mode*/
+	/**Sets the circuit mode*/
 	private void setupMode(){
-		Runnable setupSharedConduit = () -> {
+		Runnable detachFromSharedConduit = () -> {
 			if(sharedConduit != null) {
 				sharedConduit.getNotifier().removeListener(sharedConduitListener);
 				sharedConduit = null;
 			}
 		};
-		Runnable setupSharedBundle = () -> {
+		Runnable detachFromSharedBundle = () -> {
 			if(sharedBundle != null) {
 				sharedBundle.getNotifier().removeListener(sharedBundleListener);
 				sharedBundle = null;
@@ -774,38 +780,38 @@ public class Circuit {
 		privateConduit.empty();
 		privateBundle.empty();
 		if(circuitMode == CircuitMode.PRIVATE_CONDUIT) {
-			setupSharedConduit.run();
-			setupSharedBundle.run();
+			detachFromSharedConduit.run();
+			detachFromSharedBundle.run();
 			conduitables.forEach(conduitable -> privateConduit.add(conduitable));
 			if(usingCable)
 				//using cables in conduit, bad practice
 				resultMessages.add(WARNN210);
 		}
 		else if(circuitMode == CircuitMode.SHARED_CONDUIT) {
-			setupSharedBundle.run();
+			detachFromSharedBundle.run();
 			conduitables.forEach(conduitable -> sharedConduit.add(conduitable));
 			if(usingCable)
 				//using cables in conduit, bad practice
 				resultMessages.add(WARNN210);
 		}
 		else if(circuitMode == CircuitMode.PRIVATE_BUNDLE) {
-			setupSharedConduit.run();
-			setupSharedBundle.run();
+			detachFromSharedConduit.run();
+			detachFromSharedBundle.run();
 			conduitables.forEach(conduitable -> privateBundle.add(conduitable));
 			if(!usingCable)
 				//using conductors in bundle, bad practice
 				resultMessages.add(WARNN205);
 		}
 		else if(circuitMode == CircuitMode.SHARED_BUNDLE) {
-			setupSharedConduit.run();
+			detachFromSharedConduit.run();
 			conduitables.forEach(conduitable -> sharedBundle.add(conduitable));
 			if(!usingCable)
 				//using conductors in bundle, bad practice
 				resultMessages.add(WARNN205);
 		}
 		else /*CircuitMode.FREE_AIR)*/ {
-			setupSharedConduit.run();
-			setupSharedBundle.run();
+			detachFromSharedConduit.run();
+			detachFromSharedBundle.run();
 			if(!usingCable)
 				//conductors in free air, bad practice
 				resultMessages.add(WARNN200);
@@ -842,7 +848,10 @@ public class Circuit {
 	/**
 	 Sets the circuit in a shared public conduit. This circuit starts
 	 listening to changes in that shared conduit, to update this circuit
-	 accordingly.
+	 accordingly. Notice that this circuit adds to the shared conduit its own
+	 EGC so the shared conduit will contain several EGC, one per each circuit
+	 plus any other that is added by the user using
+	 {@link Conduit#add(Conduitable)}.
 	 @param sharedConduit The public conduit to which all the conduitables go
 	 in.
 	 */
@@ -935,7 +944,7 @@ public class Circuit {
 			}
 	}
 
-	/*Performs all calculations of the circuit components.
+	/**Performs all calculations of the circuit components.
 	If no error is found it resets the circuitRecalculationNeeded flag and
 	returns true. Performs the opposite otherwise.*/
 	private boolean calculateCircuit(){
@@ -951,8 +960,8 @@ public class Circuit {
 		the proper ratings. No calculation is done for the OCPD at the
 		circuit level*/
 		//calculateOCPD();
-		//Quedé aquí 2
-		//calculateEGC();
+		if(!calculateEGC())
+			return false;
 		//calculateConduit();
 		if(!resultMessages.hasErrors()) {
 			circuitChangedRecalculationNeeded = false;
@@ -961,7 +970,7 @@ public class Circuit {
 		return false;
 	}
 
-	/*Calculates the size of the phase conductors for the set of insulated
+	/**Calculates the size of the phase conductors for the set of insulated
 	conductors or the phase conductors in the cable. Update the size for all
 	phase conductors.*/
 	private boolean calculatePhase(){
@@ -976,6 +985,8 @@ public class Circuit {
 		//choosing the biggest one from these two sizes.
 		Size phasesSize = ConductorProperties.getBiggestSize(sizePerAmpacity,
 				sizePerVoltageDrop);
+		if(phasesSize == sizePerVoltageDrop)
+			resultMessages.copyFrom(voltageDrop.getResultMessages());
 		//update the size of all phase conductors
 		if(usingCable)
 			conduitables.forEach(conduitable ->
@@ -985,8 +996,9 @@ public class Circuit {
 		return true;
 	}
 
-	/*calculate the ampacity of the selected conductor accounting for all the
-	conditions of use. It's for phases only, not for neutral*/
+	/**calculate the ampacity of the selected conductor accounting for all the
+	conditions of use. It's for phases only, not for neutral. The calculated
+	valued is stored in the circuitAmpacity property.*/
 	private boolean calculateCircuitAmpacity(){
 		circuitAmpacity = 0;
 		Conduitable conduitable = _getConduitable();
@@ -1010,7 +1022,7 @@ public class Circuit {
 						size,
 						conduitable.getMetal(),
 						conduitable.getTemperatureRating()
-				) * factor1;
+				) * factor1 * numberOfSets;
 				return true;
 			}
 			/*conductor temperature rating is higher than equipment
@@ -1027,7 +1039,7 @@ public class Circuit {
 					terminationTempRating
 			);
 			if(corrected_amp1 <= ampacity2){
-				circuitAmpacity = ampacity2;
+				circuitAmpacity = ampacity2 * numberOfSets;
 				return true;
 			}
 			//factor1 = conduitable.getCompoundFactor(terminationTempRating);
@@ -1035,7 +1047,7 @@ public class Circuit {
 					size,
 					conduitable.getMetal(),
 					terminationTempRating
-			);
+			) * numberOfSets;
 		}
 		else {
 			/*termination temperature rating is unknown*/
@@ -1055,12 +1067,12 @@ public class Circuit {
 					size,
 					conduitable.getMetal(),
 					t_rating
-			) * factor1;
+			) * factor1 * numberOfSets;
 		}
 		return true;
 	}
 
-	/*Calculates the size of the neutral conductor if present. Sets all the
+	/**Calculates the size of the neutral conductor if present. Sets all the
 	neutral wires to this size if the system has neutrals.
 	Calculation is based on:
 	-If the load does not have neutral, return.
@@ -1095,6 +1107,82 @@ public class Circuit {
 					((Cable) conduitable).setNeutralConductorSize(neutralSize));
 		else
 			neutralConductor.setSize(neutralSize);
+		return true;
+	}
+
+	/**Quedé aquí 1
+	 Calculates the size of the Equipment Grounding Conductor and updates the
+	 size of the grounding conductor of this circuit, for regular conductors
+	 or cables.
+	 Notice that in {@link #prepareConduitableList()} this Circuit class
+	 always add one ECG to each set of conductors no matter if they are in a
+	 private or shared conduit, private or shared bundle or in free air.
+	 So, if this circuit has 4 sets in one conduit, said conduit will have 4
+	 EGC after the call to {@link #prepareConduitableList()}. Notice that the
+	 field list {@link #conduitables} always contains the maximum number of
+	 conductors in one private/shared conduit or in one private/shared bundle,
+	 no matter how many conduits or bundles the circuit actually has, or
+	 all the conductors of all combined sets when the circuit is in free air
+	 .<br><br>
+
+	 The calculation is as follows: (Method #1)
+	 <ol>
+	 <li>The size_1 is computed based on the OCPD rating (NEC 250.122).</li>
+
+	 <li>If the size of the conductor was decided because of the
+	 voltage drop, the EGC is increased per 250.122(B). Notice that if the
+	 size is increased for spare use, the EGC should also be increase per
+	 250.122(B), this must be done outside of the circuit class until this
+	 feature is implemented by adding a method that overrides the size of the
+	 circuit to be bigger than the calculated size</li>Future: to be implemented.
+
+	 <li>For circuit using conductors: the groundingConductor field is updated,
+	 with size_1 which in turn will update the rest of EGC via its listener
+	 .</li>
+
+	 <li>For circuits using cables: a size_2 is computed based on the nominal
+	 ampacity of the phase conductors in the cable; this ampacity is used to
+	 request the rating of the OCPD which in turn will define the size
+	 size_2 of the EGC through table NEC 250-122.<br>
+
+	 Two cases appear here:<br>
+	 (a) The cables are in free air or in bundle: use size_2.<br>
+	 (b) The cables are in a conduit:<br>
+	 ---(1) if size_1 is smaller than the phase conductors of the cable, use
+	 size_1;<br>
+	 ---(2) otherwise, use size_2 and:<br>
+	 -----(a) if there is no other insulated EGC (not in cable) in the conduit
+	 that is equal or bigger than size_1, a warning message must be added
+	 and it must indicate that an additional EGC of size_1 is required.<br>
+
+	 Todo: evaluate if at this approach can be done: (Method #2)<br>
+	 (this will comply with NEC 250.122(F)(2)(b) and (d))<br>
+	 The circuit can have a flag that indicates that only one EGC will be used.<br>
+	 If flag is true:<br>
+	 Once the size_1 is calculated:<br>
+	 -size the EGC in each cable as size_2;<br>
+	 -remove all the insulated EGC from the conduitable list in the conduit,
+	 leaving only one insulated EGC of size_1<br>
+	 -add a warning message that only one EGC complying with 250.122 is in
+	 the conduit.<br>
+
+	 If flag is false:<br>
+	 proceed as described before in method #1, using several EGC in the conduit.<br>
+
+	 TODO conduct tests
+	 <br>
+	 </li>
+	 </ol>
+
+	 -If the load is a motor, apply particular rule 250.122(D)(2)
+	 -When using cord and fixture wire, use rule 250.122(E)
+	 -Circuits in parallel: rule 250.122(F)(1) or (2):
+	 ****this rule changed in the NEC 2017************
+	 -single raceway: single EGC is permitted based on table 250.122.
+	 -multiple raceways: each raceway must have an EGC sized per 250.122
+
+	 */
+	private boolean calculateEGC(){
 		return true;
 	}
 
@@ -1510,8 +1598,8 @@ Answer: the load.
 		circuitChangedRecalculationNeeded = true;
 	}
 
-	/* Returns Conduitable interface to this circuit's internal cable or phase A
-	 conductor.
+	/** Returns Conduitable interface to this circuit's internal cable or
+	 phase A conductor.
 	 */
 	private Conduitable _getConduitable(){
 		return usingCable? cable: phaseAConductor;

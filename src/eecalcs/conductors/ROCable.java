@@ -23,8 +23,8 @@ public interface ROCable {
 	/** Refer to {@link ROConduitable#getAmbientTemperatureF()} */
 	int getAmbientTemperatureF();
 
-	/** Refer to {@link ROConduitable#getAmpacity()} ()} */
-	double getAmpacity();
+	/** Refer to {@link ROConduitable#getCorrectedAndAdjustedAmpacity()} ()} */
+	double getCorrectedAndAdjustedAmpacity();
 
 	/**
 	 @return This cable copper coating if the metal of the conductors is

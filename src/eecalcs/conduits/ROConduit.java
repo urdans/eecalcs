@@ -1,6 +1,7 @@
 package eecalcs.conduits;
 
 import eecalcs.conductors.Conduitable;
+import eecalcs.conductors.Size;
 
 /**
  This interface is intended to be used by the class {@link Conduit} in order
@@ -104,6 +105,11 @@ public interface ROConduit {
      * Calculates the trade size of this conduit to accommodate all its
      conductors and cables. The calculation will depend on if this conduit
      is a nipple or not, and on the minimum trade size it can be.
+     It counts all the conductors including the EGC belonging to each circuit
+     filling this conduit. To get the size of this conduit by accounting for
+     the biggest EGC use {@link #getTradeSizeForOneEGC()}. To obtain the size
+     of an EGC that would replace all the existing EGC call
+     {@link #getOneEGCSize()}
 
      @return The calculated trade size of this conduit.
      */
@@ -121,4 +127,28 @@ public interface ROConduit {
      return 0 if the trade size is null.
      */
     double getFillPercentage();
+
+    /**
+     @return The trade size of this conduit as if it was using only one EGC.
+     Refer to {@link #getOneEGCSize()} for more information.
+     */
+    Trade getTradeSizeForOneEGC();
+
+    /**
+     @return The size of the EGC that is able to replace all existing
+     EGC in this conduit, in accordance with NEC 250.122. This replacement is
+     for insulated conductors only; it does not account for the EGC of any
+     cable inside this conduit.<br>
+     This is a mere convention. Although it is possible to use the EGC of a
+     cable as the EGC for all circuits sharing the conduit, as long as that
+     EGC complies with NEC 250.122 (the NEC does not prohibit it), this would
+     be impracticable.<br>
+     Again, it is possible but it would be very weird and even could be
+     rejected by the AHJ.<br>
+     Notice also that all cables have an EGC.<br>
+     Finally, if the conduit has only cables, this method returns null,
+     indicating that there is no possible replacement for the EGC in the this
+     conduit.
+     */
+    Size getOneEGCSize();
 }
