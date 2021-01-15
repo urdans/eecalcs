@@ -88,7 +88,7 @@ class CircuitTest {
         Tools.println("################################ Circuit Conduit Characteristics ################################");
         if(circuit.getCircuitMode() == CircuitMode.PRIVATE_CONDUIT) {
             Tools.println("**** PRIVATE_CONDUIT ****");
-            Tools.println("Number of conduits in this circuit: " + circuit.getNumberOfConduits());
+            Tools.println("Number of conduits in this circuit: " + circuit.getNumberOfPrivateConduits());
             Tools.println("Is a nipple: " + circuit.getPrivateConduit().isNipple());
             Tools.println("Type: " + circuit.getPrivateConduit().getType());
             Tools.println("Minimum size: " + circuit.getPrivateConduit().getMinimumTrade());
@@ -103,7 +103,7 @@ class CircuitTest {
         }
         else if(circuit.getCircuitMode() == CircuitMode.SHARED_CONDUIT) {
             Tools.println("**** SHARED_CONDUIT ****");
-            Tools.println("Number of conduits in this circuit: " + circuit.getNumberOfConduits());
+            Tools.println("Number of conduits in this circuit: " + circuit.getNumberOfPrivateConduits());
             Tools.println("Is a nipple: " + circuit.getSharedConduit().isNipple());
             Tools.println("Type: " + circuit.getSharedConduit().getType());
             Tools.println("Minimum size: " + circuit.getSharedConduit().getMinimumTrade());
@@ -201,7 +201,7 @@ class CircuitTest {
         Tools.println("################################ Circuit Conduit Characteristics ################################");
         if(circuit.getCircuitMode() == CircuitMode.PRIVATE_CONDUIT) {
             Tools.println("**** PRIVATE_CONDUIT ****");
-            Tools.println("Number of conduits in this circuit: " + circuit.getNumberOfConduits());
+            Tools.println("Number of conduits in this circuit: " + circuit.getNumberOfPrivateConduits());
             Tools.println("Is a nipple: " + circuit.getPrivateConduit().isNipple());
             Tools.println("Type: " + circuit.getPrivateConduit().getType());
             Tools.println("Minimum size: " + circuit.getPrivateConduit().getMinimumTrade());
@@ -216,7 +216,7 @@ class CircuitTest {
         }
         else if(circuit.getCircuitMode() == CircuitMode.SHARED_CONDUIT) {
             Tools.println("**** SHARED_CONDUIT ****");
-            Tools.println("Number of conduits in this circuit: " + circuit.getNumberOfConduits());
+            Tools.println("Number of conduits in this circuit: " + circuit.getNumberOfPrivateConduits());
             Tools.println("Is a nipple: " + circuit.getSharedConduit().isNipple());
             Tools.println("Type: " + circuit.getSharedConduit().getType());
             Tools.println("Minimum size: " + circuit.getSharedConduit().getMinimumTrade());
@@ -340,7 +340,7 @@ class CircuitTest {
         circuitData.setupModelConductors();
         circuit.setNumberOfSets(3);
         circuitData.getState();
-        assertEquals(3, circuit.getNumberOfConduits());
+        assertEquals(3, circuit.getNumberOfPrivateConduits());
         assertEquals(1, circuitData.setsPerConduit);
         assertEquals(4, circuitData.conductorsPerSet);
         assertEquals(4, circuitData.conduitables.size());
@@ -349,38 +349,38 @@ class CircuitTest {
         circuitData.setupModelConductors();
         circuit.setNumberOfSets(1);
         circuitData.getState();
-        assertEquals(1, circuit.getNumberOfConduits());
+        assertEquals(1, circuit.getNumberOfPrivateConduits());
         assertEquals(1, circuitData.setsPerConduit);
         assertEquals(3, circuitData.conductorsPerSet);
         assertEquals(3, circuitData.conduitables.size());
     }*/
 /*   @Test
-    void moreConduits() throws IllegalAccessException, NoSuchFieldException, InvocationTargetException {
-        Tools.printTitle("CircuitTest.moreConduits");
+    void morePrivateConduits() throws IllegalAccessException, NoSuchFieldException, InvocationTargetException {
+        Tools.printTitle("CircuitTest.morePrivateConduits");
         circuit.getLoad().setSystemVoltage(VoltageSystemAC.v208_3ph_4w);
-        assertEquals(1, circuit.getNumberOfConduits());
+        assertEquals(1, circuit.getNumberOfPrivateConduits());
         assertEquals(1, circuit.getNumberOfSets());
 
         circuit.setNumberOfSets(10); //this keeps the number of sets per conduit to 1
         circuitData.setNumberOfConduits(1);
         circuitData.prepareConduitableList();
-        assertEquals(1, circuit.getNumberOfConduits());
+        assertEquals(1, circuit.getNumberOfPrivateConduits());
         assertEquals(10, circuit.getNumberOfSets());
 
-        circuit.moreConduits();
-        assertEquals(2, circuit.getNumberOfConduits());
+        circuit.morePrivateConduits();
+        assertEquals(2, circuit.getNumberOfPrivateConduits());
         assertEquals(10, circuit.getNumberOfSets());
 
-        circuit.moreConduits();
-        assertEquals(5, circuit.getNumberOfConduits());
+        circuit.morePrivateConduits();
+        assertEquals(5, circuit.getNumberOfPrivateConduits());
         assertEquals(10, circuit.getNumberOfSets());
 
-        circuit.moreConduits();
-        assertEquals(10, circuit.getNumberOfConduits());
+        circuit.morePrivateConduits();
+        assertEquals(10, circuit.getNumberOfPrivateConduits());
         assertEquals(10, circuit.getNumberOfSets());
 
-        circuit.moreConduits();
-        assertEquals(10, circuit.getNumberOfConduits());
+        circuit.morePrivateConduits();
+        assertEquals(10, circuit.getNumberOfPrivateConduits());
         assertEquals(10, circuit.getNumberOfSets());
     }*/
 
@@ -584,7 +584,7 @@ b.prepareConduitableList:
     -setsPerConduit
   ==>call this if:
   -don't call it directly, it will be called from SetupModelConductors(),
-   moreConduits(), lessConduits() and setNumberOfSets() (these last 3 change
+   morePrivateConduits(), lessPrivateConduits() and setNumberOfSets() (these last 3 change
    the setsPerConduit state)
 
 c.setMode()
@@ -624,54 +624,54 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.getLoad().setNominalCurrent(300);
         circuit.setNumberOfSets(2);
         printState();
-        circuit.moreConduits();
+        circuit.morePrivateConduits();
         printState();
 //Quedé aquí 2
     }
 
     @Test
     void lessAndMoreConduits(){
-        Tools.printTitle("CircuitTest.lessConduits");
+        Tools.printTitle("CircuitTest.lessPrivateConduits");
         circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        assertEquals(1, circuit.getNumberOfConduits());
+        assertEquals(1, circuit.getNumberOfPrivateConduits());
         assertEquals(1, circuit.getNumberOfSets());
-        assertEquals(1, circuit.getSetsPerConduit());
+        assertEquals(1, circuit.getSetsPerPrivateConduit());
 
         circuit.setNumberOfSets(10);
-        assertEquals(1, circuit.getNumberOfConduits());
+        assertEquals(1, circuit.getNumberOfPrivateConduits());
         assertEquals(10, circuit.getNumberOfSets());
-        assertEquals(10, circuit.getSetsPerConduit());
+        assertEquals(10, circuit.getSetsPerPrivateConduit());
 
 
-        circuit.moreConduits();
-        assertEquals(2, circuit.getNumberOfConduits());
+        circuit.morePrivateConduits();
+        assertEquals(2, circuit.getNumberOfPrivateConduits());
         assertEquals(10, circuit.getNumberOfSets());
-        assertEquals(5, circuit.getSetsPerConduit());
+        assertEquals(5, circuit.getSetsPerPrivateConduit());
 
-        circuit.moreConduits();
-        assertEquals(5, circuit.getNumberOfConduits());
+        circuit.morePrivateConduits();
+        assertEquals(5, circuit.getNumberOfPrivateConduits());
         assertEquals(10, circuit.getNumberOfSets());
-        assertEquals(2, circuit.getSetsPerConduit());
+        assertEquals(2, circuit.getSetsPerPrivateConduit());
 
-        circuit.moreConduits();
-        assertEquals(10, circuit.getNumberOfConduits());
+        circuit.morePrivateConduits();
+        assertEquals(10, circuit.getNumberOfPrivateConduits());
         assertEquals(10, circuit.getNumberOfSets());
-        assertEquals(1, circuit.getSetsPerConduit());
+        assertEquals(1, circuit.getSetsPerPrivateConduit());
 
-        circuit.lessConduits();
-        assertEquals(5, circuit.getNumberOfConduits());
+        circuit.lessPrivateConduits();
+        assertEquals(5, circuit.getNumberOfPrivateConduits());
         assertEquals(10, circuit.getNumberOfSets());
-        assertEquals(2, circuit.getSetsPerConduit());
+        assertEquals(2, circuit.getSetsPerPrivateConduit());
 
-        circuit.lessConduits();
-        assertEquals(2, circuit.getNumberOfConduits());
+        circuit.lessPrivateConduits();
+        assertEquals(2, circuit.getNumberOfPrivateConduits());
         assertEquals(10, circuit.getNumberOfSets());
-        assertEquals(5, circuit.getSetsPerConduit());
+        assertEquals(5, circuit.getSetsPerPrivateConduit());
 
-        circuit.lessConduits();
-        assertEquals(1, circuit.getNumberOfConduits());
+        circuit.lessPrivateConduits();
+        assertEquals(1, circuit.getNumberOfPrivateConduits());
         assertEquals(10, circuit.getNumberOfSets());
-        assertEquals(10, circuit.getSetsPerConduit());
+        assertEquals(10, circuit.getSetsPerPrivateConduit());
     }
 
     @Test
@@ -1336,38 +1336,139 @@ ALl the parameters of the circuit are obtained through the read only objects.
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_15(){
         Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_15");
+/*testing that the conduitable list is consistent, that is, the number of
+conduitables correspond with the circuit configuration */
+
+        /*the model contains 3 conductors: conductors per set = 3.
+        Since there is one only set and the circuit is in private conduit,
+        there is only one conduit and then conduitables.size=3*/
+        Conduit sharedConduit = new Conduit();
+        sharedConduit.add(new Cable());
+        /*this cable has 2 ccc*/
+        sharedConduit.add(new Conductor());
+        //the shared conduit has 1 cable and 1 conductor
+        circuit.setUsingCable(true);
+        //conduitable list has one cable only. conductorsPerSet has no meaning
+        circuit.setConduitMode(sharedConduit);
+        /*conduitable list has one cable only. sharedConduit has 2 cables +
+        1 conductor = 3*/
+        circuit.setNumberOfSets(2);
+        //conduitable list has 2 cables now. sharedConduit has 3 cables + 1 conductor = 4
         circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(600);
+        /*conduitable list has 2 cables. sharedConduit should have 3 cables
+        + 1 conductor = 4, but now it has 7: 6 cables + 1 conductor!!!!!!!!!!!
+        CORRECTED! sharedConduit has 4 conduitables now.*/
+
+        circuit.getLoad().setNominalCurrent(400);
+        /*since there are 2 cables, each is carrying 200 amperes. Each sets
+        has 3 ccc*/
         circuit.getLoad().setNonlinear(true);
+        /*now each set has 4 ccc now. In the shared conduit there should be 8
+         ccc belonging to this circuit + 1 cable with 2 ccc + 1 conductor ccc =
+         11, however there are 22!!!!!.
+         CORRECTED! there are 11 ccc in the shared conduit.
+         Total filling counting conductors should be 2+1+1=4, however, there
+         are 8!!!!!
+         CORRECTED! shared conduit has 4 filling counting conductors now.*/
+        assertEquals(Size.KCMIL_600, circuit.getCircuitSize(), getState());
+
+        assertEquals(0, circuit.getNumberOfPrivateConduits(), getState());
+        /*in the present context numberOfPrivateConduits returns 0 (it has no
+         meaning since the circuit is in shared conduit, meaning it uses only
+         one conduit which is shared, and not a private conduit.*/
+
+        assertEquals(2, circuit.getNumberOfSets(), getState());
+        /*as it was set before*/
+
+        assertEquals(0, circuit.getSetsPerPrivateConduit(), getState());
+        /*setsPerPrivateConduit updates when number of sets changes, however
+        since it has no meaning in the present context its value is zero.*/
+
+        circuit.setNumberOfSets(1);
+        assertEquals(0, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(1, circuit.getNumberOfSets(), getState());
+        assertEquals(0, circuit.getSetsPerPrivateConduit(), getState());
+
+        circuit.setUsingCable(false);
+        circuit.getLoad().setNonlinear(false);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v120_1ph_2w);
+        circuit.getLoad().setNominalCurrent(600);
         circuit.setFreeAirMode();
+        //there are 5 conduitables
         assertEquals(Size.KCMIL_1500, circuit.getCircuitSize(), getState());
         assertEquals(1, circuit.getNumberOfSets(), getState());
-        assertEquals(1, circuit.getNumberOfConduits(), getState());
+        assertEquals(0, circuit.getNumberOfPrivateConduits(), getState());
 
         circuit.setNumberOfSets(2);
+        //there are 10 conduitables
         assertEquals(Size.KCMIL_350, circuit.getCircuitSize(), getState());
         assertEquals(2, circuit.getNumberOfSets(), getState());
 
         circuit.setNumberOfSets(3);
+        //there are 15 conduitables
         assertEquals(Size.AWG_3$0, circuit.getCircuitSize(), getState());
         assertEquals(3, circuit.getNumberOfSets(), getState());
 
         circuit.setNumberOfSets(4);
+        //there are 20 conduitables
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize(), getState());
         assertEquals(4, circuit.getNumberOfSets(), getState());
-
-        circuit.setConduitMode();
-        assertEquals(1, circuit.getNumberOfConduits(), getState());
-        assertEquals(Size.KCMIL_350, circuit.getCircuitSize(), getState());
-
-        circuit.moreConduits();
-        assertEquals(Size.AWG_4$0, circuit.getCircuitSize(), getState());
-        assertEquals(2, circuit.getNumberOfConduits(), getState());
-
+//------------------------------------------------------------------------------
+        circuit.setBundleMode();
         circuit.setNumberOfSets(1);
-        circuit.setFreeAirMode();
+        //there are 5 conduitables
         assertEquals(Size.KCMIL_1500, circuit.getCircuitSize(), getState());
         assertEquals(1, circuit.getNumberOfSets(), getState());
+
+        circuit.setNumberOfSets(2);
+        //there are 10 conduitables
+        assertEquals(Size.KCMIL_350, circuit.getCircuitSize(), getState());
+        assertEquals(2, circuit.getNumberOfSets(), getState());
+
+        circuit.setNumberOfSets(3);
+        //there are 20 conduitables
+        assertEquals(Size.AWG_3$0, circuit.getCircuitSize(), getState());
+        assertEquals(3, circuit.getNumberOfSets(), getState());
+
+        circuit.setNumberOfSets(4);
+        //there are 20 conduitables
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize(), getState());
+        assertEquals(4, circuit.getNumberOfSets(), getState());
+//------------------------------------------------------------------------------
+        circuit.setConduitMode();
+        assertEquals(1, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(4, circuit.getNumberOfSets(), getState());
+        assertEquals(4, circuit.getSetsPerPrivateConduit(), getState());
+        assertEquals(Size.AWG_4$0, circuit.getCircuitSize(), getState());
+
+        circuit.morePrivateConduits();
+        assertEquals(Size.AWG_3$0, circuit.getCircuitSize(), getState());
+        assertEquals(2, circuit.getNumberOfPrivateConduits(), getState());
+
+        circuit.morePrivateConduits();//4 conduits so far
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize(), getState());
+        assertEquals(4, circuit.getNumberOfPrivateConduits(), getState());
+//------------------------------------------------------------------------------
+        circuit.setBundleMode();
+        circuit.setConduitMode();
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize(), getState());
+        assertEquals(4, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(4, circuit.getNumberOfSets(), getState());
+
+        circuit.setNumberOfSets(1);
+//        circuit.setFreeAirMode();
+
+        //conduitables should have 5 conductors
+        circuit.setNumberOfSets(2);
+        //conduitables should still have 5 conductors
+        circuit.setBundleMode();
+        assertEquals(Size.KCMIL_350, circuit.getCircuitSize(), getState());
+        assertEquals(2, circuit.getNumberOfSets(), getState());
+
+        circuit.setNumberOfSets(3);
+        //conduitables should still have 5 conductors
+        assertEquals(Size.AWG_3$0, circuit.getCircuitSize(), getState());
+        assertEquals(3, circuit.getNumberOfSets(), getState());
     }
 
     @Test
@@ -1554,7 +1655,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         Tools.println("            Size: " + size.getName());
 
         //case 1
-        assertEquals(Size.AWG_12, circuit.getCircuitSize());
+        assertEquals(Size.AWG_12, circuit.getCircuitSize(), getState());
 
         //case 2
         bundle.setBundlingLength(25);
@@ -1569,7 +1670,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         Tools.println("            Size: " + size.getName());
 
 
-        assertEquals(Size.AWG_10, circuit.getCircuitSize());
+        assertEquals(Size.AWG_10, circuit.getCircuitSize(), getState());
 
         //case 3
         circuit.setInsulation(Insul.THHW);
@@ -1578,7 +1679,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
         //case 3
         circuit.setTerminationTempRating(TempRating.T60);
-        assertEquals(/*Size.KCMIL_350*/Size.KCMIL_300, circuit.getCircuitSize());
+        assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
 
         //case 4
         circuit.setTerminationTempRating(TempRating.T75);
@@ -1670,7 +1771,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize());
 
         circuit.getLoad().setNominalCurrent(100);
-        printState();
         assertEquals(Size.AWG_3$0, circuit.getCircuitSize());
 
         circuit.getLoad().setNominalCurrent(414);
@@ -1853,35 +1953,35 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.getLoad().setNonlinear(false);
         circuit.getLoad().setNominalCurrent(1957);
         circuit.setNumberOfSets(6);
-        assertEquals(1, circuit.getNumberOfConduits());
-        assertEquals(6, circuit.getSetsPerConduit());
-        assertEquals(Size.KCMIL_2000, circuit.getCircuitSize());
+        assertEquals(1, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(6, circuit.getSetsPerPrivateConduit(), getState());
+        assertEquals(Size.KCMIL_2000, circuit.getCircuitSize(), getState());
 
-        circuit.moreConduits();
-        assertEquals(2, circuit.getNumberOfConduits());
-        assertEquals(3, circuit.getSetsPerConduit());
-        assertEquals(Size.KCMIL_800, circuit.getCircuitSize());
+        circuit.morePrivateConduits();
+        assertEquals(2, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(3, circuit.getSetsPerPrivateConduit(), getState());
+        assertEquals(Size.KCMIL_800, circuit.getCircuitSize(), getState());
 
-        circuit.moreConduits();
-        assertEquals(3, circuit.getNumberOfConduits());
-        assertEquals(2, circuit.getSetsPerConduit());
-        assertEquals(Size.KCMIL_600, circuit.getCircuitSize());
+        circuit.morePrivateConduits();
+        assertEquals(3, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(2, circuit.getSetsPerPrivateConduit(), getState());
+        assertEquals(Size.KCMIL_600, circuit.getCircuitSize(), getState());
 
-        circuit.moreConduits();
-        assertEquals(6, circuit.getNumberOfConduits());
-        assertEquals(1, circuit.getSetsPerConduit());
-        assertEquals(Size.KCMIL_400, circuit.getCircuitSize());
+        circuit.morePrivateConduits();
+        assertEquals(6, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(1, circuit.getSetsPerPrivateConduit(), getState());
+        assertEquals(Size.KCMIL_400, circuit.getCircuitSize(), getState());
 
-        circuit.moreConduits();
-        assertEquals(6, circuit.getNumberOfConduits());
-        assertEquals(1, circuit.getSetsPerConduit());
+        circuit.morePrivateConduits();
+        assertEquals(6, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(1, circuit.getSetsPerPrivateConduit(), getState());
 
-        assertEquals(Size.KCMIL_400, circuit.getCircuitSize());
+        assertEquals(Size.KCMIL_400, circuit.getCircuitSize(), getState());
 
-        circuit.lessConduits();
-        assertEquals(3, circuit.getNumberOfConduits());
-        assertEquals(2, circuit.getSetsPerConduit());
-        assertEquals(Size.KCMIL_600, circuit.getCircuitSize());
+        circuit.lessPrivateConduits();
+        assertEquals(3, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(2, circuit.getSetsPerPrivateConduit(), getState());
+        assertEquals(Size.KCMIL_600, circuit.getCircuitSize(), getState());
 
         circuit.getCircuitSize();
         circuit.getResultMessages().getMessages().forEach(x -> System.out.println(x.number + ": " + x.message));
