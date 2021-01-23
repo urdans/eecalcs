@@ -50,10 +50,12 @@ class CircuitTest {
         Tools.println("Circuit ampacity: " + circuit.getCircuitAmpacity());
         Tools.println("Circuit length: " + circuit.getCircuitLength());
         Tools.println("Termination Temperature Rating: " + circuit.getTerminationTempRating());
+        Tools.println("Using one EGC: " + circuit.isUsingOneEGC());
         if(circuit.isUsingCable()) {
             Tools.println("**** Using a cable ****");
             s = circuit.getCable().getNeutralConductorSize();
             Tools.println("Neutral size: " + (s == null? "No neutral" : s));
+            Tools.println("EGC size: " + circuit.getCable().getGroundingConductorSize());
             Tools.println("Insulation: " + circuit.getCable().getInsulation().getName());
             Tools.println("Ambient Temperature: " + circuit.getCable().getAmbientTemperatureF());
             Tools.println("Temperature Rating: " + circuit.getCable().getTemperatureRating());
@@ -72,6 +74,7 @@ class CircuitTest {
             RoConductor RoC = circuit.getNeutralConductor();
             Tools.println("Neutral size: " + (RoC == null? "No neutral" :
                     RoC.getSize()));
+            Tools.println("EGC size: " + circuit.getGroundingConductor().getSize());
             Tools.println("Insulation: " + circuit.getPhaseConductor().getInsulation().getName());
             Tools.println("Ambient Temperature: " + circuit.getPhaseConductor().getAmbientTemperatureF());
             Tools.println("Temperature Rating: " + circuit.getPhaseConductor().getTemperatureRating());
@@ -85,6 +88,9 @@ class CircuitTest {
                     circuit.getPhaseConductor().getTemperatureRating()));
         }
         //PRIVATE_CONDUIT, FREE_AIR, SHARED_CONDUIT, PRIVATE_BUNDLE, SHARED_BUNDLE
+        Tools.println("################################ Circuit OCPD ################################");
+        Tools.println("OCPD rating: "+ circuit.getOcdp().getRating());
+        Tools.println("OCPD is 100% rated: "+ circuit.getOcdp().is100PercentRated());
         Tools.println("################################ Circuit Conduit Characteristics ################################");
         if(circuit.getCircuitMode() == CircuitMode.PRIVATE_CONDUIT) {
             Tools.println("**** PRIVATE_CONDUIT ****");
@@ -478,7 +484,8 @@ class CircuitTest {
                 getState());
 
         //conduit
-        assertEquals(Trade.T3$4, circuit.getPrivateConduit().getTradeSize());
+        assertEquals(Trade.T1_1$2, circuit.getPrivateConduit().getTradeSize(),
+                getState());
 /*To solve this incongruity, the class circuit must be refactored as follows:
 1. Once the class is created, any change to its primitive or simple members
 through setters must change the state of the class, including the state of
@@ -623,15 +630,14 @@ ALl the parameters of the circuit are obtained through the read only objects.
     void multipleEGCPerConduitWhenMoreThanOneConduit_PrivateMode(){
         circuit.getLoad().setNominalCurrent(300);
         circuit.setNumberOfSets(2);
-        printState();
+//        printState();
         circuit.morePrivateConduits();
-        printState();
+//        printState();
 //Quedé aquí 2
     }
 
     @Test
     void lessAndMoreConduits(){
-        Tools.printTitle("CircuitTest.lessPrivateConduits");
         circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         assertEquals(1, circuit.getNumberOfPrivateConduits());
         assertEquals(1, circuit.getNumberOfSets());
@@ -676,7 +682,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getCircuitSize_Conductor_Private_Conduit(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Private_Conduit");
         //voltage drop decides
         assertEquals(Size.AWG_10, circuit.getCircuitSize());//selected per voltage drop
 
@@ -732,7 +737,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize());
 
         circuit.getLoad().setNominalCurrent(100);
-        printState();
         assertEquals(Size.AWG_3$0/*Size.AWG_1$0*/, circuit.getCircuitSize());
 
         circuit.getLoad().setNominalCurrent(414);
@@ -957,47 +961,16 @@ ALl the parameters of the circuit are obtained through the read only objects.
         //adjustment factor = 0.8
         //load is continuous
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize());
-        Tools.println("Load tpe: " + ((GeneralLoad)circuit.getLoad()).getLoadType());
-        Tools.println("Load current: " + circuit.getLoad().getNominalCurrent());
-        Tools.println("Load MCA: " + circuit.getLoad().getMCA());
-        Tools.println("CircuitSize: " + circuit.getCircuitSize().getName());
-        Tools.println("Selected by MCA: " + circuit.getResultMessages().containsMessage(230));
-        Tools.println("Ampacity: " + circuit.getPhaseConductor().getCorrectedAndAdjustedAmpacity());
-        Tools.println("CorrectionFactor: " + circuit.getPhaseConductor().getCorrectionFactor());
-        Tools.println("AdjustmentFactor: " + circuit.getPhaseConductor().getAdjustmentFactor());
-        Tools.println("----------");
-
         //case 4 - load is continuous, MCA decides.
         circuit.setAmbientTemperatureF(77);
         //correction factor = 1.05
         //adjustment factor = 0.8
         //load is continuous
         assertEquals(Size.AWG_1, circuit.getCircuitSize());
-        Tools.println("Load tpe: " + ((GeneralLoad)circuit.getLoad()).getLoadType());
-        Tools.println("Load current: " + circuit.getLoad().getNominalCurrent());
-        Tools.println("Load MCA: " + circuit.getLoad().getMCA());
-        Tools.println("CircuitSize: " + circuit.getCircuitSize().getName());
-        Tools.println("Ampacity: " + circuit.getPhaseConductor().getCorrectedAndAdjustedAmpacity());
-        Tools.println("Selected by MCA: " + circuit.getResultMessages().containsMessage(230));
-        Tools.println("CorrectionFactor: " + circuit.getPhaseConductor().getCorrectionFactor());
-        Tools.println("AdjustmentFactor: " + circuit.getPhaseConductor().getAdjustmentFactor());
-        Tools.println("----------");
-
         //case 5 - load is continuous, MCA decides.
         circuit.setAmbientTemperatureF(50);
         //correction factor = 1.20
         //adjustment factor = 0.8
-        //load is continuous
-        Tools.println("Load tpe: " + ((GeneralLoad)circuit.getLoad()).getLoadType());
-        Tools.println("Load current: " + circuit.getLoad().getNominalCurrent());
-        Tools.println("Load MCA: " + circuit.getLoad().getMCA());
-        Tools.println("CircuitSize: " + circuit.getCircuitSize().getName());
-        Tools.println("Ampacity: " + circuit.getPhaseConductor().getCorrectedAndAdjustedAmpacity());
-        Tools.println("Selected by MCA: " + circuit.getResultMessages().containsMessage(230));
-        Tools.println("CorrectionFactor: " + circuit.getPhaseConductor().getCorrectionFactor());
-        Tools.println("AdjustmentFactor: " + circuit.getPhaseConductor().getAdjustmentFactor());
-        Tools.println("----------");
-
         //load is continuous, but temperature is too high, adj. & correc. factors govern
         //done: this is a good example of how big a conductor could be when
         // accounting all factors in the code
@@ -1022,20 +995,10 @@ ALl the parameters of the circuit are obtained through the read only objects.
         //adjustment factor = 0.8
         //load is continuous
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize());
-        Tools.println("Load tpe: " + ((GeneralLoad)circuit.getLoad()).getLoadType());
-        Tools.println("Load current: " + circuit.getLoad().getNominalCurrent());
-        Tools.println("Load MCA: " + circuit.getLoad().getMCA());
-        Tools.println("CircuitSize: " + circuit.getCircuitSize().getName());
-        Tools.println("Ampacity: " + circuit.getPhaseConductor().getCorrectedAndAdjustedAmpacity());
-        Tools.println("Selected by MCA: " + circuit.getResultMessages().containsMessage(230));
-        Tools.println("CorrectionFactor: " + circuit.getPhaseConductor().getCorrectionFactor());
-        Tools.println("AdjustmentFactor: " + circuit.getPhaseConductor().getAdjustmentFactor());
-        Tools.println("----------");
     }
 
     @Test
     void getCircuitSize_VDrop_Neutral_OCPD_Grounding_ConductorsUpdated_TradeSize() {
-        Tools.printTitle("CircuitTest.getCircuitSize_Neutral_OCPD_Grounding_ConductorsUpdated_TradeSize");
         circuit.setMaxVoltageDropPercent(3);
         circuit.setLength(100);
         circuit.setNumberOfSets(1);
@@ -1059,8 +1022,8 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getTradeSize(){
-        Tools.printTitle("CircuitTest.getTradeSize");
-        assertEquals(Trade.T1$2, circuit.getPrivateConduit().getTradeSize());
+        assertEquals(Trade.T1$2, circuit.getPrivateConduit().getTradeSize(),
+                getState());
 
         circuit.setTerminationTempRating(null);
         circuit.setNumberOfSets(2);
@@ -1071,19 +1034,17 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setMaxVoltageDropPercent(5.0);
         circuit.getLoad().setNonlinear(true);
 
-        printState();
-
         assertEquals(Size.KCMIL_350, circuit.getCircuitSize());
         assertEquals(Size.KCMIL_350, circuit.getNeutralConductor().getSize());
-        //todo in the future, the grounding conductor size must be selected per the ocpd
-        assertEquals(Size.AWG_12, circuit.getGroundingConductor().getSize());
+        assertEquals(Size.AWG_3, circuit.getGroundingConductor().getSize(),
+                getState());
         assertEquals(8, circuit.getCurrentCarryingNumber());
         assertEquals(8, circuit.getPrivateConduit().getCurrentCarryingCount());
         assertEquals(Type.PVC40, circuit.getPrivateConduit().getType());
         assertEquals(40, circuit.getPrivateConduit().getMaxAllowedFillPercentage());
-        assertEquals(4.2202, circuit.getPrivateConduit().getConduitablesArea());
-        assertEquals(
-                12.554,
+        assertEquals(4.3882,
+                circuit.getPrivateConduit().getConduitablesArea(), getState());
+        assertEquals(12.554,
                 ConduitProperties.getArea(
                         circuit.getPrivateConduit().getType(),
                         Trade.T4
@@ -1094,7 +1055,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_01(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_01");
         //a circuit made of copper THW, L=100 Ft 120v, 1φ, AmbTemp=86, 10 Amps,
         //size decided by voltage drop
         circuit.setFreeAirMode();
@@ -1103,7 +1063,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_02(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_02");
         //a circuit made of copper THW, L=100 Ft 120v, 1φ, AmbTemp=86, 10 Amps,
         //size decided by ampacity
         circuit.setFreeAirMode();
@@ -1113,7 +1072,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_03(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_03");
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.TW);
@@ -1129,7 +1087,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_04(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_04");
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.TW);
@@ -1140,13 +1097,11 @@ ALl the parameters of the circuit are obtained through the read only objects.
         //there are 4 current-carrying conductor in free air, so adjustment
         // factor is 1.
         circuit.setMaxVoltageDropPercent(25.0);
-        printState();
         assertEquals(Size.KCMIL_350, circuit.getCircuitSize());
     }
 
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_05(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_05");
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.THW);
@@ -1162,7 +1117,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_06(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_06");
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.THHW);
@@ -1178,7 +1132,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_07(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_07");
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.setInsulation(Insul.TW);
@@ -1194,7 +1147,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_08(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_08");
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.setInsulation(Insul.THW);
@@ -1219,7 +1171,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_09(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_09");
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.setInsulation(Insul.THHW);
@@ -1244,7 +1195,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_10(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_10");
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.TW);
@@ -1261,7 +1211,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_11(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_11");
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.THW);
@@ -1277,7 +1226,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_12(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_12");
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.THHW);
@@ -1302,7 +1250,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_13(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_13");
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.setInsulation(Insul.THW);
@@ -1319,7 +1266,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_14(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_14");
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.setInsulation(Insul.THHW);
@@ -1335,7 +1281,6 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void getCircuitSize_Conductor_Free_Air_Case_15(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Free_Air_Case_15");
 /*testing that the conduitable list is consistent, that is, the number of
 conduitables correspond with the circuit configuration */
 
@@ -1473,7 +1418,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Conductor_Shared_Conduit_Case_01(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Shared_Conduit_Case_01");
         //Shared conduit is empty
         //circuit have 4 ccc.
         circuit.setConduitMode(sharedConduit);
@@ -1484,13 +1428,11 @@ conduitables correspond with the circuit configuration */
         circuit.getLoad().setNominalCurrent(100);
         circuit.getLoad().setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
-        printState();
         assertEquals(Size.AWG_3$0/*Size.AWG_1$0*/, circuit.getCircuitSize());
     }
 
     @Test
     void getCircuitSize_Conductor_Shared_Conduit_Case_02(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Shared_Conduit_Case_02");
         //Shared conduit is empty
         //circuit have 4 ccc.
         circuit.setConduitMode(sharedConduit);
@@ -1506,7 +1448,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Conductor_Shared_Conduit_Case_03(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Shared_Conduit_Case_03");
         //Shared conduit is empty
         //circuit have 4 ccc.
         circuit.setConduitMode(sharedConduit);
@@ -1522,7 +1463,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Conductor_Shared_Conduit_Case_04(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Shared_Conduit_Case_04");
         //Shared conduit is empty
         //circuit have 4 ccc.
         circuit.setConduitMode(sharedConduit);
@@ -1538,7 +1478,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Conductor_Shared_Conduit_Case_05(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Shared_Conduit_Case_05");
         //Shared conduit is empty
         //circuit have 4 ccc.
         circuit.setConduitMode(sharedConduit);
@@ -1554,7 +1493,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Conductor_Shared_Conduit_Case_06(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Shared_Conduit_Case_06");
         //Shared conduit is empty
         //circuit have 4 ccc.
         circuit.setConduitMode(sharedConduit);
@@ -1570,7 +1508,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Conductor_Shared_Conduit_Case_07(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Shared_Conduit_Case_07");
         Cable cable = new Cable(VoltageSystemAC.v480_3ph_4w, 0.5);
         cable.setNeutralCarryingConductor(true);
         Conductor conductor = new Conductor();
@@ -1592,7 +1529,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Conductor_Private_Bundled_Cases(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Private_Bundled_Cases");
         //circuit have 4 ccc.
         circuit.setBundleMode();
         circuit.setTerminationTempRating(null);
@@ -1630,7 +1566,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Conductor_Shared_Bundled_Cases(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Conductor_Shared_Bundled_Cases");
         Bundle bundle = new Bundle();//empty bundle
         //circuit have 4 ccc.
         circuit.setBundleMode(bundle);
@@ -1644,32 +1579,13 @@ conduitables correspond with the circuit configuration */
         circuit.setLength(30);
         bundle.setBundlingLength(24);
 
-        Size size = circuit.getCircuitSize();
-        Tools.println("   Number of CCC: " + bundle.getCurrentCarryingCount());
-        Tools.println("        Distance: " + bundle.getBundlingLength());
-        Tools.println("complyWith310_15_B_3_a_4: " + bundle.complyWith310_15_B_3_a_4());
-        Tools.println("complyWith310_15_B_3_a_5: " + bundle.complyWith310_15_B_3_a_5());
-        Tools.println("CorrectionFactor: " + circuit.getPhaseConductor().getCorrectionFactor());
-        Tools.println("AdjustmentFactor: " + circuit.getPhaseConductor().getAdjustmentFactor());
-        Tools.println("      hasConduit: " + circuit.getPhaseConductor().hasBundle());
-        Tools.println("            Size: " + size.getName());
-
+//        Size size = circuit.getCircuitSize();
         //case 1
         assertEquals(Size.AWG_12, circuit.getCircuitSize(), getState());
 
         //case 2
         bundle.setBundlingLength(25);
-        size = circuit.getCircuitSize();
-        Tools.println("   Number of CCC: " + bundle.getCurrentCarryingCount());
-        Tools.println("        Distance: " + bundle.getBundlingLength());
-        Tools.println("complyWith310_15_B_3_a_4: " + bundle.complyWith310_15_B_3_a_4());
-        Tools.println("complyWith310_15_B_3_a_5: " + bundle.complyWith310_15_B_3_a_5());
-        Tools.println("CorrectionFactor: " + circuit.getPhaseConductor().getCorrectionFactor());
-        Tools.println("AdjustmentFactor: " + circuit.getPhaseConductor().getAdjustmentFactor());
-        Tools.println("      hasConduit: " + circuit.getPhaseConductor().hasBundle());
-        Tools.println("            Size: " + size.getName());
-
-
+//        size = circuit.getCircuitSize();
         assertEquals(Size.AWG_10, circuit.getCircuitSize(), getState());
 
         //case 3
@@ -1712,7 +1628,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Private_Conduit(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Private_Conduit");
         //voltage drop decides
         circuit.setUsingCable(true);
         assertEquals(Size.AWG_10, circuit.getCircuitSize());//selected per voltage drop
@@ -1982,14 +1897,10 @@ conduitables correspond with the circuit configuration */
         assertEquals(3, circuit.getNumberOfPrivateConduits(), getState());
         assertEquals(2, circuit.getSetsPerPrivateConduit(), getState());
         assertEquals(Size.KCMIL_600, circuit.getCircuitSize(), getState());
-
-        circuit.getCircuitSize();
-        circuit.getResultMessages().getMessages().forEach(x -> System.out.println(x.number + ": " + x.message));
     }
 
     @Test
     void getCircuitSize_Cable_Shared_Conduit_Case_01(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Shared_Conduit_Case_01");
         //Shared conduit is empty
         //circuit have 4 ccc.
         circuit.setUsingCable(true);
@@ -2001,13 +1912,11 @@ conduitables correspond with the circuit configuration */
         circuit.getLoad().setNominalCurrent(100);
         circuit.getLoad().setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
-        printState();
         assertEquals(Size.AWG_3$0/*Size.AWG_1$0*/, circuit.getCircuitSize());
     }
 
     @Test
     void getCircuitSize_Cable_Shared_Conduit_Case_02(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Shared_Conduit_Case_02");
         //Shared conduit is empty
         //circuit have 4 ccc.
         circuit.setUsingCable(true);
@@ -2025,7 +1934,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Shared_Conduit_Case_03(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Shared_Conduit_Case_03");
         //Shared conduit is empty
         //circuit have 4 ccc.
         circuit.setUsingCable(true);
@@ -2043,7 +1951,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Shared_Conduit_Case_04(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Shared_Conduit_Case_04");
         //Shared conduit is empty
         //circuit have 4 ccc.
         circuit.setUsingCable(true);
@@ -2061,7 +1968,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Shared_Conduit_Case_05(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Shared_Conduit_Case_05");
         //Shared conduit is empty
         //circuit have 4 ccc.
         circuit.setUsingCable(true);
@@ -2079,7 +1985,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Shared_Conduit_Case_06(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Shared_Conduit_Case_06");
         //Shared conduit is empty
         //circuit have 4 ccc.
         circuit.setUsingCable(true);
@@ -2097,7 +2002,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Shared_Conduit_Case_07(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Shared_Conduit_Case_07");
         Cable cable = new Cable(VoltageSystemAC.v480_3ph_4w, 0.5);
         cable.setNeutralCarryingConductor(true);
         Conductor conductor = new Conductor();
@@ -2122,7 +2026,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Private_Bundled_Cases(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Private_Bundled_Cases");
         //circuit have 4 ccc.
         circuit.setUsingCable(true);
         circuit.setBundleMode();
@@ -2160,7 +2063,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Shared_Bundled_Cases(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Shared_Bundled_Cases");
         Bundle bundle = new Bundle();//empty bundle
         //circuit have 4 ccc.
         circuit.setUsingCable(true);
@@ -2224,7 +2126,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Free_Air_Case_01(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Free_Air_Case_01");
         //a circuit made of copper THW, L=100 Ft 120v, 1φ, AmbTemp=86, 10 Amps,
         //size decided by voltage drop
         circuit.setFreeAirMode();
@@ -2234,7 +2135,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Free_Air_Case_02(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Free_Air_Case_02");
         //a circuit made of copper THW, L=100 Ft 120v, 1φ, AmbTemp=86, 10 Amps,
         //size decided by ampacity
         circuit.setUsingCable(true);
@@ -2246,7 +2146,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Free_Air_Case_03(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Free_Air_Case_03");
         circuit.setUsingCable(true);
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(null);
@@ -2264,7 +2163,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Free_Air_Case_04(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Free_Air_Case_04");
         circuit.setUsingCable(true);
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(null);
@@ -2283,7 +2181,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Free_Air_Case_05(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Free_Air_Case_05");
         circuit.setUsingCable(true);
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(null);
@@ -2301,7 +2198,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Free_Air_Case_06(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Free_Air_Case_06");
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(null);
         circuit.setUsingCable(true);
@@ -2320,7 +2216,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Free_Air_Case_07(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Free_Air_Case_07");
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.setUsingCable(true);
@@ -2338,7 +2233,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Free_Air_Case_08(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Free_Air_Case_08");
         circuit.setUsingCable(true);
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(TempRating.T60);
@@ -2366,7 +2260,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Free_Air_Case_09(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Free_Air_Case_09");
         circuit.setUsingCable(true);
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(TempRating.T60);
@@ -2394,7 +2287,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Free_Air_Case_10(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Free_Air_Case_10");
         circuit.setUsingCable(true);
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(TempRating.T75);
@@ -2413,7 +2305,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Free_Air_Case_11(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Free_Air_Case_11");
         circuit.setUsingCable(true);
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(TempRating.T75);
@@ -2432,7 +2323,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Free_Air_Case_12(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Free_Air_Case_12");
         circuit.setUsingCable(true);
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(TempRating.T75);
@@ -2460,7 +2350,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Free_Air_Case_13(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Free_Air_Case_13");
         circuit.setUsingCable(true);
         circuit.setFreeAirMode();
         circuit.setTerminationTempRating(TempRating.T90);
@@ -2479,7 +2368,6 @@ conduitables correspond with the circuit configuration */
 
     @Test
     void getCircuitSize_Cable_Free_Air_Case_14(){
-        Tools.printTitle("CircuitTest.getCircuitSize_Cable_Free_Air_Case_14");
         circuit.setFreeAirMode();
         circuit.setUsingCable(true);
         circuit.setTerminationTempRating(TempRating.T90);
@@ -2504,83 +2392,62 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T60);
 
         Runnable case1 = () -> {
-            Tools.println("\nCase 1: private conduit, 1 set");
             circuit.setConduitMode();
             circuit.setNumberOfSets(2);
             assertEquals(CircuitMode.PRIVATE_CONDUIT, circuit.getCircuitMode());
-            circuit.getResultMessages().getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
         };
 
         case1.run();
 
-        Tools.println("\nCase 2: private conduit, 2 sets");
         circuit.setNumberOfSets(2);
         assertEquals(2, circuit.getNumberOfSets()); //was 1
-        printState();
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize());//was bigger
         assertNotNull(circuit.getPrivateConduit());
         assertNull(circuit.getPrivateBundle());
-        circuit.getResultMessages().getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
 
-        Tools.println("\nCase 3: in free air, 1 set");
         circuit.setFreeAirMode();
         circuit.setNumberOfSets(1);
         assertEquals(1, circuit.getNumberOfSets());
         assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
-        circuit.getResultMessages().getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
 
-        Tools.println("\nCase 4: in free air, 2 sets");
         circuit.setNumberOfSets(2);
         assertEquals(2, circuit.getNumberOfSets()); //was 1
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize());
         assertNull(circuit.getPrivateConduit());
         assertNull(circuit.getPrivateBundle());
-        circuit.getResultMessages().getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
 
-        Tools.println("\nCase 5: private bundle, 1 set");
         circuit.setBundleMode();
         circuit.setNumberOfSets(1);
         assertEquals(1, circuit.getNumberOfSets());
         assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
-        circuit.getResultMessages().getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
 
-        Tools.println("\nCase 6: private bundle, 1 set");
         circuit.setNumberOfSets(2);
         assertEquals(2, circuit.getNumberOfSets());
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize());
         assertNull(circuit.getPrivateConduit());
         assertNotNull(circuit.getPrivateBundle());
-        circuit.getResultMessages().getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
 
-        Tools.println("\nCase 7: shared conduit, 1 set");
         Conduit sharedConduit = new Conduit();
         circuit.setConduitMode(sharedConduit);
         circuit.setNumberOfSets(1);
         assertEquals(1, circuit.getNumberOfSets());
         assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
-        circuit.getResultMessages().getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
 
-        Tools.println("\nCase 8: shared conduit, 2 sets");
         circuit.setNumberOfSets(2); //circuit does not ignore this value //7/11/20
         assertEquals(2, circuit.getNumberOfSets());//was 1
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize());//7/11/20 was KCMIL_300
         assertNull(circuit.getPrivateConduit());
         assertNull(circuit.getPrivateBundle());
-        circuit.getResultMessages().getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
 
-        Tools.println("\nCase 9: shared bundle, 1 set");
         Bundle sharedBundle = new Bundle();
         circuit.setBundleMode(sharedBundle);
         circuit.setNumberOfSets(1);
         assertEquals(1, circuit.getNumberOfSets());
         assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
-        circuit.getResultMessages().getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
 
-        Tools.println("\nCase 10: shared bundle, 2 sets");
         circuit.setNumberOfSets(2);
         assertEquals(2, circuit.getNumberOfSets());//was 1
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize());//was KCMIL_300
-        circuit.getResultMessages().getMessages().forEach(message -> Tools.println(message.number+": "+message.message));
     }
 
     @Test
@@ -2612,9 +2479,227 @@ conduitables correspond with the circuit configuration */
 
     }
 
+    @Test
+    void oneEGCPerOnePrivateConduit(){
+        //conduitables contain 3 conductors: A-N-G
+        assertFalse(circuit.isUsingOneEGC(), getState());
 
+        circuit.getLoad().setNominalCurrent(400);
+        assertEquals(Size.KCMIL_600, circuit.getCircuitSize(), getState());
+        assertEquals(3, circuit.getPrivateConduit().getFillingConductorCount(), getState());
 
+        circuit.setNumberOfSets(3);
+        //conduitables contain 9 conductors: AAA-NNN-GGG
+        assertEquals(1, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(Size.AWG_2$0, circuit.getCircuitSize(), getState());
+        assertEquals(9, circuit.getPrivateConduit().getFillingConductorCount(), getState());
 
+        circuit.morePrivateConduits();
+        //conduitables contain 3 conductors: A-N-G
+        assertEquals(3, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize(), getState());
+        assertEquals(3, circuit.getPrivateConduit().getFillingConductorCount(), getState());
+
+        circuit.setUsingOneEGC(true);
+        //conduitables contain 3 conductors: A-N-G
+        assertTrue(circuit.isUsingOneEGC(), getState());
+        assertEquals(3, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize(), getState());
+        assertEquals(3, circuit.getPrivateConduit().getFillingConductorCount(), getState());
+
+        circuit.lessPrivateConduits();
+        //conduitables contains 7 conductors: AAA-NNN-G
+        assertEquals(1, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(Size.AWG_2$0, circuit.getCircuitSize(), getState());
+        assertEquals(7, circuit.getPrivateConduit().getFillingConductorCount(), getState());
+
+        circuit.getLoad().setNominalCurrent(700);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        //conduitables contains 13 conductors: AAA-BBB-CCC-NNN-G
+        assertEquals(1, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(3, circuit.getNumberOfSets(), getState());
+        assertEquals(Size.KCMIL_400, circuit.getCircuitSize(), getState());
+        assertEquals(13, circuit.getPrivateConduit().getFillingConductorCount(), getState());
+
+        circuit.morePrivateConduits();
+        //conduitables contain 5 conductors: A-B-C-N-G
+        assertEquals(3, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(Size.KCMIL_250, circuit.getCircuitSize(), getState());
+        assertEquals(5, circuit.getPrivateConduit().getFillingConductorCount(), getState());
+
+        circuit.setUsingOneEGC(false);
+        circuit.lessPrivateConduits();
+        //conduitables contains 15 conductors: AAA-BBB-CCC-NNN-GGG
+        assertEquals(1, circuit.getNumberOfPrivateConduits(), getState());
+        assertEquals(3, circuit.getNumberOfSets(), getState());
+        assertEquals(Size.KCMIL_400, circuit.getCircuitSize(), getState());
+        assertEquals(15, circuit.getPrivateConduit().getFillingConductorCount(), getState());
+    }
+
+    @Test
+    void oneEGCPerOnePrivateBundle(){
+        circuit.setBundleMode();
+        //conduitables contain 3 conductors: A-N-G
+        assertFalse(circuit.isUsingOneEGC(), getState());
+
+        circuit.getLoad().setNominalCurrent(400);
+        assertEquals(Size.KCMIL_600, circuit.getCircuitSize(), getState());
+        assertEquals(2, circuit.getPrivateBundle().getCurrentCarryingCount(), getState());
+        assertEquals(3, circuit.getPrivateBundle().getConductorCount(), getState());
+
+        circuit.setNumberOfSets(3);
+        //conduitables contain 9 conductors: AAA-NNN-GGG
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize(), getState());
+        assertEquals(6, circuit.getPrivateBundle().getCurrentCarryingCount(), getState());
+        assertEquals(9, circuit.getPrivateBundle().getConductorCount(), getState());
+
+        circuit.setUsingOneEGC(true);
+        //conduitables contains 7 conductors: AAA-NNN-G
+        assertTrue(circuit.isUsingOneEGC(), getState());
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize(), getState());
+        assertEquals(6, circuit.getPrivateBundle().getCurrentCarryingCount(), getState());
+        assertEquals(7, circuit.getPrivateBundle().getConductorCount(), getState());
+
+        circuit.getLoad().setNominalCurrent(700);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        //conduitables contains 13 conductors: AAA-BBB-CCC-NNN-G
+        assertEquals(3, circuit.getNumberOfSets(), getState());
+        assertEquals(Size.KCMIL_250, circuit.getCircuitSize(), getState());
+        assertEquals(9, circuit.getPrivateBundle().getCurrentCarryingCount(), getState());
+        assertEquals(13, circuit.getPrivateBundle().getConductorCount(), getState());
+
+        circuit.setUsingOneEGC(false);
+        //conduitables contains 15 conductors: AAA-BBB-CCC-NNN-GGG
+        assertEquals(Size.KCMIL_250, circuit.getCircuitSize(), getState());
+        assertEquals(9, circuit.getPrivateBundle().getCurrentCarryingCount(), getState());
+        assertEquals(15, circuit.getPrivateBundle().getConductorCount(), getState());
+
+    }
+
+    @Test
+    void oneEGCPerOneSharedBundle(){
+        Bundle bundle = new Bundle();
+        circuit.setBundleMode(bundle);
+        //conduitables contain 3 conductors: A-N-G
+        assertFalse(circuit.isUsingOneEGC(), getState());
+
+        circuit.getLoad().setNominalCurrent(400);
+        assertEquals(Size.KCMIL_600, circuit.getCircuitSize(), getState());
+        assertEquals(2, circuit.getSharedBundle().getCurrentCarryingCount(), getState());
+        assertEquals(3, circuit.getSharedBundle().getConductorCount(), getState());
+
+        circuit.setNumberOfSets(3);
+        //conduitables contain 9 conductors: AAA-NNN-GGG
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize(), getState());
+        assertEquals(6, circuit.getSharedBundle().getCurrentCarryingCount(), getState());
+        assertEquals(9, circuit.getSharedBundle().getConductorCount(), getState());
+
+        circuit.setUsingOneEGC(true);
+        //conduitables contains 7 conductors: AAA-NNN-G
+        assertTrue(circuit.isUsingOneEGC(), getState());
+        assertEquals(Size.AWG_1$0, circuit.getCircuitSize(), getState());
+        assertEquals(6, circuit.getSharedBundle().getCurrentCarryingCount(), getState());
+        assertEquals(7, circuit.getSharedBundle().getConductorCount(), getState());
+
+        circuit.getLoad().setNominalCurrent(700);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        //conduitables contains 13 conductors: AAA-BBB-CCC-NNN-G
+        assertEquals(3, circuit.getNumberOfSets(), getState());
+        assertEquals(Size.KCMIL_250, circuit.getCircuitSize(), getState());
+        assertEquals(9, circuit.getSharedBundle().getCurrentCarryingCount(), getState());
+        assertEquals(13, circuit.getSharedBundle().getConductorCount(), getState());
+
+        circuit.setUsingOneEGC(false);
+        //conduitables contains 15 conductors: AAA-BBB-CCC-NNN-GGG
+        assertEquals(Size.KCMIL_250, circuit.getCircuitSize(), getState());
+        assertEquals(9, circuit.getSharedBundle().getCurrentCarryingCount(), getState());
+        assertEquals(15, circuit.getSharedBundle().getConductorCount(), getState());
+
+    }
+
+    @Test
+    void oneEGCPerOneSharedConduit(){
+        Conduit conduit = new Conduit();
+        Conductor ground = new Conductor();
+        ground.setRole(Conductor.Role.GND);
+        conduit.add(ground);
+        conduit.add(ground.clone());
+
+        circuit.setConduitMode(conduit);
+        //conduitables contain 3 conductors: A-N-G
+        assertFalse(circuit.isUsingOneEGC(), getState());
+
+        circuit.getLoad().setNominalCurrent(400);
+        assertEquals(Size.KCMIL_600, circuit.getCircuitSize(), getState());
+        assertEquals(2, circuit.getSharedConduit().getCurrentCarryingCount(), getState());
+        assertEquals(3+2, circuit.getSharedConduit().getFillingConductorCount(), getState());
+
+        circuit.setNumberOfSets(3);
+        //conduitables contain 9 conductors: AAA-NNN-GGG
+        assertEquals(Size.AWG_2$0, circuit.getCircuitSize(), getState());
+        assertEquals(6, circuit.getSharedConduit().getCurrentCarryingCount(), getState());
+        assertEquals(9+2, circuit.getSharedConduit().getFillingConductorCount(), getState());
+
+        circuit.setUsingOneEGC(true);
+        //conduitables contains 7 conductors: AAA-NNN-G
+        assertTrue(circuit.isUsingOneEGC(), getState());
+        assertEquals(Size.AWG_2$0, circuit.getCircuitSize(), getState());
+        assertEquals(6, circuit.getSharedConduit().getCurrentCarryingCount(), getState());
+        assertEquals(7+2, circuit.getSharedConduit().getFillingConductorCount(), getState());
+
+        circuit.getLoad().setNominalCurrent(700);
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        //conduitables contains 13 conductors: AAA-BBB-CCC-NNN-G
+        assertEquals(3, circuit.getNumberOfSets(), getState());
+        assertEquals(Size.KCMIL_400, circuit.getCircuitSize(), getState());
+        assertEquals(9, circuit.getSharedConduit().getCurrentCarryingCount(), getState());
+        assertEquals(13+2, circuit.getSharedConduit().getFillingConductorCount(), getState());
+
+        circuit.setUsingOneEGC(false);
+        //conduitables contains 15 conductors: AAA-BBB-CCC-NNN-GGG
+        assertEquals(Size.KCMIL_400, circuit.getCircuitSize(), getState());
+        assertEquals(9, circuit.getSharedConduit().getCurrentCarryingCount(), getState());
+        assertEquals(15+2, circuit.getSharedConduit().getFillingConductorCount(), getState());
+
+    }
+
+    @Test
+    void sizeOfEGC(){
+        /*case 1:
+        load: 120v 1φ 50A
+        circuit Length = 100 ft
+        VD max = 3%
+        Voltage drops decides the size, #4, rated for 70Amps at 60°C
+        The ocpd is for protecting the conductor, 70 Amps
+        */
+        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v120_1ph_2w);
+        circuit.getLoad().setNominalCurrent(50);
+        assertEquals(Size.AWG_6, circuit.getSizePerAmpacity(false), getState());
+        assertEquals(Size.AWG_4, circuit.getSizePerVoltageDrop(false),  getState());
+        assertEquals(70,circuit.getOcdp().getRating(),getState());
+
+        /*case 2:
+        Same conditions except the length is 50 ft.
+        Ampacity decides the size, #6, rated for 55Amps at 60°C
+        The ocpd is for protecting the conductor, 60 Amps, NHSR rule applies.
+        */
+        circuit.setLength(50);
+        assertEquals(Size.AWG_6, circuit.getSizePerAmpacity(false), getState());
+        assertEquals(Size.AWG_6, circuit.getSizePerVoltageDrop(false), getState());
+        assertEquals(60,circuit.getOcdp().getRating(),getState());
+
+        /*case 3:
+        Same as before but the load is continuous.
+        50*1.25=62.5Amps ->#4
+        Ampacity decides the size, #4, rated for 70Amps at 60°C
+        The ocpd is for protecting the conductor, 70 Amps.
+        */
+        GeneralLoad load = (GeneralLoad) circuit.getLoad();
+        load.setContinuous();
+        assertEquals(Size.AWG_4, circuit.getSizePerAmpacity(false), getState());
+        assertEquals(Size.AWG_6, circuit.getSizePerVoltageDrop(false), getState());
+        assertEquals(70,circuit.getOcdp().getRating(),getState());
+    }
 }
 /*
 

@@ -194,7 +194,9 @@ public class Circuit {
 	/**the ampacity of the circuit size
 	 under the installation conditions*/
 	private double circuitAmpacity;
-
+	/**Indicates if only 1 EGC should be used for each conduit or in a bundle.
+	 It has meaning when using conductors, not when using cables.*/
+	private boolean usingOneEGC = false;
 	private static final Message ERROR210 = new Message(
 	"More than one set of conductors or cables cannot be in a shared " +
 			"conduit.",-210);
@@ -259,6 +261,8 @@ public class Circuit {
 	/**Indicates that something changed and the circuit needs to be
 	 recalculated*/
 	private boolean circuitChangedRecalculationNeeded = true;
+	private Size sizePerAmpacity;
+	private Size sizePerVoltageDrop;
 
 	/**
 	 @return The {@link ROResultMessages} object containing all the error and
@@ -289,6 +293,9 @@ public class Circuit {
 	 circuit having 3 sets of 4 conductors each, the conduitable list
 	 will have 1 set of conductors, that is, 1x4=4.<br>
 
+	 The number of EGC in this list depends on the value of the
+	 {@link #usingOneEGC} flag.<br>
+
 	 This method is called after the set of conductors is prepared by the
 	 {@link #prepareSetOfConductors()} method, whenever the circuit mode
 	 changes, whenever the number of private conduits changes or whenever the
@@ -312,7 +319,7 @@ public class Circuit {
 				conduitables.add(neutralConductor);
 			conduitables.add(groundingConductor);
 			//add the other sets as clones
-			while (conduitables.size()/conductorsPerSet < getListBound()) {
+			for(int i = 1; i < getListBound(); i++){
 				conduitables.add(phaseAConductor.clone());
 				if(phaseBConductor != null)
 					conduitables.add(phaseBConductor.clone());
@@ -320,10 +327,10 @@ public class Circuit {
 					conduitables.add(phaseCConductor.clone());
 				if(neutralConductor != null)
 					conduitables.add(neutralConductor.clone());
-				conduitables.add(groundingConductor.clone());
+				if(!usingOneEGC)
+					conduitables.add(groundingConductor.clone());
 			}
 		}
-		setupMode();
 	}
 
 	/** @return The number of times a set of conductors or a cable must be
@@ -441,7 +448,6 @@ public class Circuit {
 					+ (phaseCConductor == null ? 0 : 1)
 					+ (neutralConductor == null ? 0 : 1);
 		}
-		prepareConduitableList();
 	}
 
 	/**
@@ -476,31 +482,43 @@ public class Circuit {
 	 neutral behaves as a current carrying conductor.
 	 */
 	public Size getSizePerAmpacity(boolean forNeutral){
-		Function<Size, Boolean> checkError260 = (size) ->{
-			if(size == null) {
-				resultMessages.add(ERROR260);//ampacity too high
-				return true;
-			}
-			return false;
-		};
-		Function<Size, Boolean> checkError270 = (size) ->{
-			if(ConductorProperties.compareSizes(size, Size.AWG_1$0) < 0 && numberOfSets > 1) {
-				resultMessages.add(ERROR270);//paralleled conductors < 1/0
-				return true;
-			}
-			return false;
-		};
 		//messages cleanup
 		resultMessages.remove(WARNN220);
 		resultMessages.remove(ERROR260);
 		resultMessages.remove(ERROR270);
 		resultMessages.remove(ERROR290);
 		Conduitable conduitable = _getConduitable();
-		double factor1;
-		if(ocdp.is100PercentRated())
+
+		Function<Size, Boolean> checkError260 = size ->{
+			if(size == null) {
+				resultMessages.add(ERROR260);//ampacity too high
+				return true;
+			}
+			return false;
+		};
+		Function<Size, Boolean> checkError270 = size ->{
+			if(ConductorProperties.compareSizes(size, Size.AWG_1$0) < 0 && numberOfSets > 1) {
+				resultMessages.add(ERROR270);//paralleled conductors < 1/0
+				return true;
+			}
+			return false;
+		};
+		Function<TempRating, Double> getFactor = tempRating -> {
+			if(ocdp.is100PercentRated())
+				return conduitable.getCompoundFactor(); //do not account for 1.25
+			else
+				return Math.min(
+					1 / load.getMCAMultiplier(),
+					tempRating == null? conduitable.getCompoundFactor()
+					: conduitable.getCompoundFactor(tempRating)
+				);
+		};
+
+		double factor1 = getFactor.apply(null);
+		/*if(ocdp.is100PercentRated())
 			factor1 = conduitable.getCompoundFactor(); //do not account for 1.25
 		else
-			factor1 = Math.min(1 / load.getMCAMultiplier(), conduitable.getCompoundFactor());
+			factor1 = Math.min(1 / load.getMCAMultiplier(), conduitable.getCompoundFactor());*/
 
 		if(factor1 == 0) {
 			//temp. rating of conductor not suitable for the ambient temperature
@@ -557,7 +575,8 @@ public class Circuit {
 			TempRating t_rating = TempRating.T60;
 			if(loadCurrentPerSet > 100 && conduitable.getTemperatureRating().getValue() >= 75)
 					t_rating = TempRating.T75;
-			lookup_current1 = loadCurrentPerSet / conduitable.getCompoundFactor(t_rating);
+			lookup_current1 = loadCurrentPerSet / getFactor.apply(t_rating);
+			/*conduitable.getCompoundFactor(t_rating);*/
 			size1 = ConductorProperties.getSizeByAmperes(
 					lookup_current1,
 					conduitable.getMetal(),
@@ -672,7 +691,11 @@ public class Circuit {
 
 		this.load = load;
 		//if the load changes, the model of conductors needs to be set up
-		this.load.getNotifier().addListener( speaker -> prepareSetOfConductors());
+		this.load.getNotifier().addListener( speaker -> {
+			prepareSetOfConductors();
+			prepareConduitableList();
+			setupMode();
+		});
 		//when a property of the the phase A conductor changes...
 		phaseAConductor.getNotifier().addListener(speaker -> {
 			//the other conductors must be updated accordingly...
@@ -764,6 +787,8 @@ public class Circuit {
 		sharedBundleListener =  speaker ->
 				circuitChangedRecalculationNeeded = true;
 		prepareSetOfConductors();
+		prepareConduitableList();
+		setupMode();
 		calculateCircuit();
 	}
 
@@ -860,6 +885,7 @@ public class Circuit {
 			return;
 		circuitMode = CircuitMode.FREE_AIR;
 		prepareConduitableList();
+		setupMode();
 	}
 
 	/**
@@ -873,6 +899,7 @@ public class Circuit {
 			return;
 		circuitMode = CircuitMode.PRIVATE_CONDUIT;
 		prepareConduitableList();
+		setupMode();
 	}
 
 	/**
@@ -897,6 +924,7 @@ public class Circuit {
 		sharedConduit.getNotifier().addListener(sharedConduitListener);
 		this.sharedConduit = sharedConduit;
 		prepareConduitableList();
+		setupMode();
 	}
 
 	/**
@@ -907,6 +935,7 @@ public class Circuit {
 			return;
 		circuitMode = CircuitMode.PRIVATE_BUNDLE;
 		prepareConduitableList();
+		setupMode();
 	}
 
 	/**
@@ -927,6 +956,7 @@ public class Circuit {
 		sharedBundle.getNotifier().addListener(sharedBundleListener);
 		this.sharedBundle = sharedBundle;
 		prepareConduitableList();
+		setupMode();
 	}
 
 	/**
@@ -947,6 +977,7 @@ public class Circuit {
 				numberOfPrivateConduits = i;
 				setsPerPrivateConduit = numberOfSets / numberOfPrivateConduits;
 				prepareConduitableList();
+				setupMode();
 				break;
 			}
 	}
@@ -970,6 +1001,7 @@ public class Circuit {
 				numberOfPrivateConduits = i;
 				setsPerPrivateConduit = numberOfSets / numberOfPrivateConduits;
 				prepareConduitableList();
+				setupMode();
 				break;
 			}
 	}
@@ -1005,11 +1037,11 @@ public class Circuit {
 	phase conductors.*/
 	private boolean calculatePhase(){
 		//determine size per ampacity
-		Size sizePerAmpacity = getSizePerAmpacity(false);
+		sizePerAmpacity = getSizePerAmpacity(false);
 		if(sizePerAmpacity == null) //reasons on resultMessages
 			return false;
 		//determine size per voltage drop
-		Size sizePerVoltageDrop = getSizePerVoltageDrop(false);
+		sizePerVoltageDrop = getSizePerVoltageDrop(false);
 		if(sizePerVoltageDrop == null) //reasons on resultMessages
 			return false;
 		//choosing the biggest one from these two sizes.
@@ -1139,144 +1171,103 @@ public class Circuit {
 		return true;
 	}
 
-	/**Quedé aquí 1
-	 Calculates the size of the Equipment Grounding Conductor (EGC) of this
-	 circuit and updates its size, number and requirements, for regular
-	 conductors or cables.<br>
-	 Notice that in {@link #prepareConduitableList()} this Circuit class
-	 always add one ECG to each set of conductors no matter if they are in a
-	 private or shared conduit, private or shared bundle or in free air.
-	 Notice also that cables will always have one EGC.<br>
-	 So, if this circuit has 4 sets in one private conduit, said conduit will
-	 have 4 EGC after the call to {@link #prepareConduitableList()}. Notice
-	 that the field list {@link #conduitables} always contains the maximum
-	 number of conductors in one private/shared conduit or in one
-	 private/shared bundle, no matter how many conduits or bundles the
-	 circuit actually has, or all the conductors of all combined sets when
-	 the circuit is in free air.<br><br>
+	/**Calculates the size of the Equipment Grounding Conductor (EGC) for this
+	 circuit and updates the size of the {@link #groundingConductor}.
+	 The size is determined based on the OCPD rating using the table NEC-250
+	 .122(A) and increased based on the rule NEC 250.122(B).<br><br>
+	 <b>Notice that:</b><br>
 
-	 For the calculation of the EGC, this Circuit class will have a method
-	 called setOneEGCPerConduit(boolean) which will set the private field
-	 flag oneEGCPerConduit (its default value is false).<br>
-	 This flag is meaningless when the circuit is in free air or in bundle
-	 .<br>
-	 Let's define <b>size1</b> as the size of the EGC determined per NEC table
-	 250.122, using the rating of this circuit's OCPD.<br>
-	 Let's define <b>size2</b> as the size of the EGC determined per NEC table
-	 250.122 but using the rating of the OCPD that would be required to
-	 protect the conductors in a cable, based on the nominal ampacity of the
-	 cable at 75°C. For example, a 1/0-3 AL MC cable will have (3) #1/0 AWG AL
-	 conductors. Since they have a nominal ampacity of 120 Amps @ T75, size2
-	 would be #6 AWG copper or #4 AWG aluminum. It is assumed that this is
-	 the way the industry sizes the EGC in cables.<br><br>
+	 - If more than one EGC is present in the circuit, all EGC will be updated
+	 through this circuit listener to changes in the EGC.<br>
 
-	 <b>Circuit in a private conduit:</b><br>
-	 -<u>oneEGCPerConduit is false:</u> each set of conductors will always
-	 have its own EGC. There will be as many EGC as sets are in the private
-	 conduit. The size of the EGC is size1 for each set of insulated
-	 conductors and for each cable.<br>
-	 -<u>oneEGCPerConduit is true:</u> the circuit will always add only one EGC
-	 of size1 in each conduit when using insulated conductors or when using
-	 cables. Additionally, When using cables, the EGC of the cable will be of
-	 size2.<br><br>
+	 - The {@link #prepareSetOfConductors()} always add one EGC to the model
+	 set.<br>
 
-	 <b>Circuit in a shared conduit:</b><br>
-	 -<u>oneEGCPerConduit is false:</u> each set of conductors will always
-	 have its own EGC. There will be as many EGC as sets are in the shared
-	 conduit. The size of the EGC is size1 for each set of insulated
-	 conductors and for each cable.<br>
-	 -<u>oneEGCPerConduit is true:</u> the circuit will add one insulated EGC of
-	 size1 to the shared conduit if the shared conduit does not have an
-	 insulated EGC, or if its biggest existing insulated EGC is smaller than
-	 size1. Notice that the circuit could not add any EGC to the shared
-	 conduit because there is already one EGC that is big enough to comply
-	 with table 250.122 as the EGC for this circuit. If this circuit is
-	 using cables, the EGC of the cable will be of size2.<br><br>
+	 - The flag {@link #usingOneEGC} (default is false) controls how many EGC
+	 are added to the conduit(s) or to the bundle. If the circuit is in free
+	 air, there will be one EGC per each set no matter the value of this
+	 flag:<br>
+	 ──> if usingOneEGC is false, {@link #prepareConduitableList()} add one
+	 EGC for each set to the conduitable list.
+	 ──> if usingOneEGC is true, {@link #prepareConduitableList()} add one
+	 EGC only to the conduitable list.<br>
 
-	 Notice that in both cases, the requirements for the EGC of the circuit
-	 are satisfied. However, when an insulated EGC in a shared conduit
-	 changes its size or metal, all circuits using that shared conduit must
-	 be notified so they can update their insulated EGC accordingly.
-	 Todo: check that events are in place.
-	 Notice also that a shared conduit used by several circuits could end up
-	 with multiple EGC, because for example one circuit was using one EGC per
-	 set or because the existing EGC where not enough for another circuit and
-	 this one has to add an EGC of proper size. For situation like this, the
-	 class Conduit offers the methods
-	 {@link ROConduit#getTradeSizeForOneEGC()} and
-	 {@link ROConduit#getOneEGCSize()}. They will provide the proper
-	 conduit and EGC sizes when we want to use only one EGC.<br><br>
+	 - There is always one EGC per set in free air mode.<br>
 
+	 - Cables will always have one EGC.<br><br>
 
-	 , no matter how many sets are in the conduit and, when
-	 using a
-	 shared conduit, no matter if an EGC is already present.<br>
-	 The Circuit class can properly correct the does not change the size of
-	 any existing EGC in
-	 that 	 shared conduit.
+	 Also notice that {@link #setupMode()} puts the content of the
+	 conduitable list in the conduit(s) or in the bundle. So whenever the
+	 usingOneEGC changes, a call to {@link #prepareConduitableList()} and
+	 to {@link #setupMode()} is necessary.<br>
 
+	 The sole purpose of this method is determine the size of the EGC. No change
+	 in the number of EGC is done in this method.<br>
 
-	 Notice
-	 The calculation is as follows: (Method #1)
-	 <ol>
-	 <li>The size_1 is computed based on the OCPD rating (NEC 250.122).</li>
-
-	 <li>If the size of the conductor was decided because of the
-	 voltage drop, the EGC is increased per 250.122(B). Notice that if the
-	 size is increased for spare use, the EGC should also be increase per
-	 250.122(B), this must be done outside of the circuit class until this
-	 feature is implemented by adding a method that overrides the size of the
-	 circuit to be bigger than the calculated size</li>Future: to be implemented.
-
-	 <li>For circuit using conductors: the groundingConductor field is updated,
-	 with size_1 which in turn will update the rest of EGC via its listener
-	 .</li>
-
-	 <li>For circuits using cables: a size_2 is computed based on the nominal
-	 ampacity of the phase conductors in the cable; this ampacity is used to
-	 request the rating of the OCPD which in turn will define the size
-	 size_2 of the EGC through table NEC 250-122.<br>
-
-	 Two cases appear here:<br>
-	 (a) The cables are in free air or in bundle: use size_2.<br>
-	 (b) The cables are in a conduit:<br>
-	 ---(1) if size_1 is smaller than the phase conductors of the cable, use
-	 size_1;<br>
-	 ---(2) otherwise, use size_2 and:<br>
-	 -----(a) if there is no other insulated EGC (not in cable) in the conduit
-	 that is equal or bigger than size_1, a warning message must be added
-	 and it must indicate that an additional EGC of size_1 is required.<br>
-
-	 Todo: evaluate if at this approach can be done: (Method #2)<br>
-	 (this will comply with NEC 250.122(F)(2)(b) and (d))<br>
-	 The circuit can have a flag that indicates that only one EGC will be used.<br>
-	 If flag is true:<br>
-	 Once the size_1 is calculated:<br>
-	 -size the EGC in each cable as size_2;<br>
-	 -remove all the insulated EGC from the conduitable list in the conduit,
-	 leaving only one insulated EGC of size_1<br>
-	 -add a warning message that only one EGC complying with 250.122 is in
-	 the conduit.<br>
-
-	 If flag is false:<br>
-	 proceed as described before in method #1, using several EGC in the conduit.<br>
-
-	 TODO conduct tests
-	 <br>
-	 </li>
-	 </ol>
-
-	 -If the load is a motor, apply particular rule 250.122(D)(2)
-	 -When using cord and fixture wire, use rule 250.122(E)
-	 -Circuits in parallel: rule 250.122(F)(1) or (2):
-	 ****this rule changed in the NEC 2017************
-	 -single raceway: single EGC is permitted based on table 250.122.
-	 -multiple raceways: each raceway must have an EGC sized per 250.122
-
+	 Since a shared conduit could end having multiple EGC of different sizes
+	 (the size calculated by this circuit and the size of the existing EGC),
+	 the Conduit class provides with methods to determine the only EGC to be
+	 used in that conduit (when so requested) and the size of said conduit.
+	 Refer to {@link ROConduit#getTradeSizeForOneEGC()} and
+	 {@link ROConduit#getOneEGCSize()}.
 	 */
 	private boolean calculateEGC(){
+		Metal metal = usingCable ? cable.getMetal(): groundingConductor.getMetal();
+		circuitChangedRecalculationNeeded = false; //this is a hack. smelly hack
+		Size egcSize = OCPD.getEGCSize(ocdp.getRating(), metal);
+		circuitChangedRecalculationNeeded = true; //this is a hack. smelly hack
+		if(egcSize == null)
+			return false;
+
+		if (sizePerAmpacity.ordinal() < sizePerVoltageDrop.ordinal()) {
+			double area1 = ConductorProperties.getAreaCM(sizePerAmpacity);
+			double area2 = ConductorProperties.getAreaCM(sizePerVoltageDrop);
+			double area3 = ConductorProperties.getAreaCM(egcSize);
+			double increasedArea = area3 * area2/area1;
+			egcSize = ConductorProperties.getSizePerArea(increasedArea);
+			if(egcSize == null)
+				return false;
+			if(egcSize.ordinal() > sizePerVoltageDrop.ordinal())
+				egcSize = sizePerVoltageDrop;
+
+		}
+
+		if(usingCable)
+			cable.setGroundingConductorSize(egcSize);
+		else
+			groundingConductor.setSize(egcSize);
+
+		//Quedé aquí 1
+		/*
+		-run several test for the calculation of the egc, with different
+		scenarios, with conductors decided per VD and per ampacity.
+		-commit changes
+		* */
 		return true;
 	}
+
+	/**
+	 @return Indicates if this circuit is using only one EGC or not.
+	 */
+	public boolean isUsingOneEGC() {
+		return usingOneEGC;
+	}
+
+	/**Sets or unsets the flag indicating that this circuit must use one EGC
+	 or several EGG (when needed). Even though this flag is always set in
+	 this method, it is meaningless if the circuit is in free air mode.
+	 @param usingOneEGC If true, indicates that this circuit must use only
+	 one EGC inside conduit(s) or inside a bundle.
+	 */
+	public void setUsingOneEGC(boolean usingOneEGC) {
+		if(this.usingOneEGC == usingOneEGC)
+			return;
+		this.usingOneEGC = usingOneEGC;
+		prepareConduitableList();
+		setupMode();
+	}
+
+
 
 	/**
 	 @return The size of this circuit phase conductors/cables properly
@@ -1296,7 +1287,7 @@ public class Circuit {
 	    <code>getSharedConduit().getTradeSize()</code> accordingly.
 	 */
 	public Size getCircuitSize(){
-		if(calculateCircuit()/*calculatePhase()*/) {
+		if(calculateCircuit()) {
 			if(usingCable)
 				return cable.getPhaseConductorSize();
 			else
@@ -1349,6 +1340,7 @@ Third line, circuit ratings:
 		//get ready for for when the circuit uses conduit...
 		setsPerPrivateConduit = numberOfSets / numberOfPrivateConduits;
 		prepareConduitableList();
+		setupMode();
 	}
 
 	/**
@@ -1587,6 +1579,8 @@ Third line, circuit ratings:
 			return;
 		this.usingCable = usingCable;
 		prepareSetOfConductors();
+		prepareConduitableList();
+		setupMode();
 	}
 
 	/**

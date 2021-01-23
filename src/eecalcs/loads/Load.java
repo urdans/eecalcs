@@ -107,7 +107,7 @@ import tools.NotifierDelegate;
  calculated value according to the load type. Descendant classes can provided
  specialized methods and implement extra behaviors.
  <p>The {@link Continuousness} interface provide enum for load type (continuous,
- non-continuous and mixed {@link eecalcs.loads.Continuousness.LoadType}, and
+ non-continuous and mixed {@link eecalcs.loads.Continuousness.LoadType}), and
  specify methods to handle the continuousness behavior of a load.
  <p>To avoid repeated code, the {@link ContinuousBehavior} helper class
  implements this interface and can be used as a delegated class (in composition)

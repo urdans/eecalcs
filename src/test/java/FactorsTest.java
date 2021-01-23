@@ -15,7 +15,6 @@ class FactorsTest {
 
     @Test
     void getTemperatureCorrectionF() {
-        Tools.printTitle("FactorsTest.getTemperatureCorrectionF");
         assertEquals(0.91, Factors.getTemperatureCorrectionF(100, TempRating.T90));
         assertEquals(0.29, Factors.getTemperatureCorrectionF(185, TempRating.T90));
         assertEquals(0.0,  Factors.getTemperatureCorrectionF(185, TempRating.T60));
@@ -28,7 +27,6 @@ class FactorsTest {
     @Test
     void getAdjustmentFactor() {
         conduit = new Conduit(Type.EMT, false);
-        Tools.printTitle("FactorsTest.getAdjustmentFactor");
         assertEquals(1.0, Factors.getAdjustmentFactor(conduit.getCurrentCarryingCount(), conduit.isNipple()));
     }
 }

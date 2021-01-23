@@ -150,6 +150,11 @@ public class Bundle implements ROBundle {
 		return currentCarrying;
 	}
 
+	@Override
+	public int getConductorCount() {
+		return conduitables.size();
+	}
+
 	/**
 	 Returns the list of all conduitable objects that are part of this bundle
 	 (for instance, conductors and cables).

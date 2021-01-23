@@ -5,7 +5,6 @@ import eecalcs.conduits.Conduit;
 import eecalcs.conduits.Type;
 import eecalcs.systems.TempRating;
 import org.junit.jupiter.api.Test;
-import test.Tools;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,24 +15,18 @@ class ConductorTest {
 
     @Test
     void testClone() {
-        Tools.printTitle("ConductorTest.testClone");
         Conductor cond1 = new Conductor(Size.AWG_8, Metal.ALUMINUM, Insul.XHHW, 123);
         Conduit conduit = new Conduit(Type.EMT, true);
         conduit.add(cond1);
         cond1.setAmbientTemperatureF(105);
         cond1.setCopperCoated(Coating.COATED);
         cond1.setRole(Conductor.Role.GND);
-        System.out.println("Before changes");
-        System.out.print("cond1:");
         String cond1S = cond1.getConduit()+", "+cond1.getCopperCoating()+", "+cond1.getCurrentCarryingCount()+", "+cond1.getDescription()
                 +", "+cond1.getInsulatedAreaIn2()+", "+cond1.getInsulation().getName()+", "+cond1.getLength()+", "+cond1.getMetal().getSymbol()+", "+ cond1.getRole()+", "+cond1.getSize().getName()+", "+cond1.getTemperatureRating();
-        System.out.println(cond1S);
         //--cloning
         Conductor cond2 = cond1.clone();
-        System.out.print("cond2:");
         String cond2S = cond2.getConduit()+", "+cond2.getCopperCoating()+", "+cond2.getCurrentCarryingCount()+", "+cond2.getDescription()
                 +", "+cond2.getInsulatedAreaIn2()+", "+cond2.getInsulation().getName()+", "+cond2.getLength()+", "+cond2.getMetal().getSymbol()+", "+ cond2.getRole()+", "+cond2.getSize().getName()+", "+cond2.getTemperatureRating();
-        System.out.println(cond2S);
 
         cond2.setAmbientTemperatureF(155);
         cond2.setCopperCoated(Coating.UNCOATED);
@@ -42,16 +35,10 @@ class ConductorTest {
         cond2.setMetal(Metal.COPPER);
         cond2.setInsulation(Insul.TW);
         cond2.setLength(78);
-        System.out.println();
-        System.out.println("After changes to cond2");
-        System.out.print("cond1:");
         String cond1SS = cond1.getConduit()+", "+cond1.getCopperCoating()+", "+cond1.getCurrentCarryingCount()+", "+cond1.getDescription()
                 +", "+cond1.getInsulatedAreaIn2()+", "+cond1.getInsulation().getName()+", "+cond1.getLength()+", "+cond1.getMetal().getSymbol()+", "+ cond1.getRole()+", "+cond1.getSize().getName()+", "+cond1.getTemperatureRating();
-        System.out.println(cond1SS);
-        System.out.print("cond2:");
         String cond2SS = cond2.getConduit()+", "+cond2.getCopperCoating()+", "+cond2.getCurrentCarryingCount()+", "+cond2.getDescription()
                 +", "+cond2.getInsulatedAreaIn2()+", "+cond2.getInsulation().getName()+", "+cond2.getLength()+", "+cond2.getMetal().getSymbol()+", "+ cond2.getRole()+", "+cond2.getSize().getName()+", "+cond2.getTemperatureRating();
-        System.out.println(cond2SS);
 
         assertEquals(cond1S, cond1SS);
         assertNotEquals(cond2S, cond2SS);
@@ -59,7 +46,6 @@ class ConductorTest {
 
     @Test
     void getTemperatureRating() {
-        Tools.printTitle("ConductorTest.getTemperatureRating");
         Conductor conductor = new Conductor();
         assertSame(conductor.getTemperatureRating(), TempRating.T75);
         conductor.setInsulation(Insul.XHHW2);
@@ -70,7 +56,6 @@ class ConductorTest {
 
     @Test
     void setAmbientTemperatureF() {
-        Tools.printTitle("ConductorTest.setAmbientTemperatureF");
         Bundle bundle1=new Bundle(null, 0, 30);
         Cable cable1 = new Cable();
         Cable cable2 = new Cable();
@@ -95,7 +80,6 @@ class ConductorTest {
 
     @Test
     void getAmpacity() {
-        Tools.printTitle("ConductorTest.getAmpacity");
         conductor = new Conductor(Size.AWG_12, Metal.COPPER, Insul.THHN, 125);
         conduit = new Conduit(Type.PVC80, false);
         conduit.add(conductor);
@@ -118,7 +102,6 @@ class ConductorTest {
 
     @Test
     void getCorrectionFactor() {
-        Tools.printTitle("ConductorTest.getCorrectionFactor");
         conductor = new Conductor(Size.KCMIL_250, Metal.ALUMINUM, Insul.TW, 125);
         assertEquals(1, conductor.getCorrectionFactor());
 
@@ -136,7 +119,6 @@ class ConductorTest {
 
     @Test
     void getAdjustmentFactor() {
-        Tools.printTitle("ConductorTest.getAdjustmentFactor");
         conductor = new Conductor(Size.AWG_4, Metal.COPPER, Insul.THW, 70);
         conduit = new Conduit(Type.EMT, false);
         conduit.add(conductor);
@@ -231,11 +213,6 @@ class ConductorTest {
         raceway.add(conductor2.clone());
         raceway.add(conductor2.clone());
         raceway.add(conductor2.clone());
-
-        Tools.println("Current Carrying Number: "+raceway.getCurrentCarryingCount());
-        Tools.println("Correction Factor: "+conductor2.getCorrectionFactor());
-        Tools.println("Adjustment Factor: "+conductor2.getAdjustmentFactor());
-        Tools.println("Ampacity: "+conductor2.getCorrectedAndAdjustedAmpacity());
     }
 
     @Test
@@ -250,15 +227,6 @@ class ConductorTest {
         raceway.add(conductor2.clone());
         raceway.add(conductor2.clone());
 
-        Tools.println("Current Carrying Number: "+raceway.getCurrentCarryingCount());
-        Tools.println("Correction Factor: "+conductor2.getCorrectionFactor());
-        Tools.println("Adjustment Factor: "+conductor2.getAdjustmentFactor());
-        Tools.println("Own Compound Factor: "+conductor2.getCompoundFactor());
-        Tools.println("Compound Factor @60°C : "+conductor2.getCompoundFactor(TempRating.T60));
-        Tools.println("Compound Factor @75°C : "+conductor2.getCompoundFactor(TempRating.T75));
-        Tools.println("Compound Factor @90°C : "+conductor2.getCompoundFactor(TempRating.T90));
-        Tools.println("Ampacity: "+conductor2.getCorrectedAndAdjustedAmpacity());
-
         assertEquals(6, raceway.getCurrentCarryingCount());
         assertEquals(0.87, conductor2.getCorrectionFactor());
         assertEquals(0.8, conductor2.getAdjustmentFactor());
@@ -271,7 +239,6 @@ class ConductorTest {
 
     @Test
     void copyFrom(){
-        Tools.printTitle("ConductorTest.copyFrom");
         Conductor conductor2 = new Conductor(Size.KCMIL_350, Metal.ALUMINUM, Insul.TBS, 1.1234);
         conductor2.setAmbientTemperatureF(321);
         conductor2.setCopperCoated(Coating.COATED);
@@ -291,7 +258,6 @@ class ConductorTest {
 
     @Test
     void listenToSpeaker(){
-        Tools.printTitle("ConductorTest.listenToSpeaker");
         Conductor phaseA = new Conductor();
         phaseA.setRole(Conductor.Role.HOT);
         Conductor phaseB = phaseA.clone();

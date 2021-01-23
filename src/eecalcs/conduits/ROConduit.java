@@ -136,19 +136,12 @@ public interface ROConduit {
 
     /**
      @return The size of the EGC that is able to replace all existing
-     EGC in this conduit, in accordance with NEC 250.122. This replacement is
-     for insulated conductors only; it does not account for the EGC of any
-     cable inside this conduit.<br>
-     This is a mere convention. Although it is possible to use the EGC of a
-     cable as the EGC for all circuits sharing the conduit, as long as that
-     EGC complies with NEC 250.122 (the NEC does not prohibit it), this would
-     be impracticable.<br>
-     Again, it is possible but it would be very weird and even could be
-     rejected by the AHJ.<br>
-     Notice also that all cables have an EGC.<br>
-     Finally, if the conduit has only cables, this method returns null,
-     indicating that there is no possible replacement for the EGC in the this
-     conduit.
+     EGC of the wire type in this conduit, in accordance with NEC 250.122(C).
+     This replacement is for insulated conductors only; it does not account
+     for the EGC of any cable inside this conduit.<br>
+     If the conduit has only cables or the conduit is empty, this method
+     returns null. This means there is nothing to replace, and that if there
+     are cables in this conduit it is assumed their EGC are properly sized.
      */
     Size getOneEGCSize();
 }

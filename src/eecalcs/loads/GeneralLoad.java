@@ -75,4 +75,12 @@ public class GeneralLoad extends Load implements Continuousness{
 		super.setNominalCurrent(nominalCurrent);
 		continuousBehavior.updatedNominalCurrent();
 	}
+	//todo: why do I have three classes to represent a basic load?
+	// The base class Load should have all the methods that allow a
+	// circuit class to calculate all the circuit components. Specialized
+	// loads should just extend the base class and implement the abstract
+	// methods if any, override existing ones or introducing new methods. I
+	// need to know what was the purpose of this architecture and if it's
+	// worthy; otherwise this needs to be refactored to get simpler.
+
 }

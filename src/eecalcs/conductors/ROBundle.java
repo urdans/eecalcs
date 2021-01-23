@@ -67,6 +67,9 @@ public interface ROBundle {
 	 */
 	int getCurrentCarryingCount();
 
+	/**@return The number of conductors inside this bundle.*/
+	int getConductorCount();
+
 	/**
 	 @return The distance or length of the bundle.
 	 */

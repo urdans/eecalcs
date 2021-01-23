@@ -12,7 +12,6 @@ class BundleTest {
 
     @Test
     void add() {
-        Tools.printTitle("CircuitTest.add");
         Conductor conductor = new Conductor();
         Cable cable = new Cable();
         assertEquals(0, bundle.getConduitables().size());
@@ -27,7 +26,6 @@ class BundleTest {
 
     @Test
     void remove() {
-        Tools.printTitle("CircuitTest.remove");
         Conductor conductor = new Conductor();
         Cable cable = new Cable();
         bundle.add(conductor);
@@ -42,7 +40,6 @@ class BundleTest {
 
     @Test
     void empty() {
-        Tools.printTitle("CircuitTest.empty");
         Conductor conductor = new Conductor();
         Cable cable = new Cable();
         bundle.add(conductor);
@@ -56,7 +53,6 @@ class BundleTest {
 
     @Test
     void isEmpty() {
-        Tools.printTitle("CircuitTest.isEmpty");
         Conductor conductor = new Conductor();
         Cable cable = new Cable();
         assertTrue(bundle.isEmpty());
@@ -70,7 +66,6 @@ class BundleTest {
 
     @Test
     void hasConduitable() {
-        Tools.printTitle("CircuitTest.hasConduitable");
         Conductor conductor = new Conductor();
         Cable cable = new Cable();
         assertTrue(bundle.isEmpty());
@@ -87,7 +82,6 @@ class BundleTest {
 
     @Test
     void getCurrentCarryingNumber() {
-        Tools.printTitle("CircuitTest.getCurrentCarryingNumber");
         Conductor conductor = new Conductor();
         Cable cable = new Cable();
         cable.setSystem(VoltageSystemAC.v480_3ph_4w);//3ccc
@@ -103,7 +97,6 @@ class BundleTest {
 
     @Test
     void complyWith310_15_B_3_a_4() {
-        Tools.printTitle("CircuitTest.complyWith310_15_B_3_a_4");
         Conductor conductor = new Conductor();
         Cable cable = new Cable();
         cable.setSystem(VoltageSystemAC.v480_3ph_4w);//3ccc
@@ -205,7 +198,6 @@ class BundleTest {
 
     @Test
     void complyWith310_15_B_3_a_5() {
-        Tools.printTitle("CircuitTest.complyWith310_15_B_3_a_5");
         Conductor conductor = new Conductor();
         Cable cable = new Cable();
         cable.setSystem(VoltageSystemAC.v480_3ph_4w);//3ccc

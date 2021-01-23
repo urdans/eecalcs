@@ -785,6 +785,22 @@ public class ConductorProperties {
 	}
 
 	/**
+	 @return The size of the conductor whose area is equal or immediately
+	 above to the given area, or null if no size have an equal or greater
+	 area than the given one.
+	 @param cmArea The area for which a conductor size is requested.
+	 */
+	public static Size getSizePerArea(double cmArea) {
+		if(cmArea <= 0)
+			return null;
+		for (Properties properties : table) {
+			if (properties.areaCM >= cmArea)
+				return properties.size;
+		}
+		return null;
+	}
+
+	/**
 	 Returns the DC resistance of this conductor size for the given metal. If
 	 the
 	 specified metal is aluminum, the copperCoated parameter is ignored.

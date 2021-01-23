@@ -1,6 +1,11 @@
 package eecalcs.circuits;
 
+import com.sun.deploy.util.ArrayUtil;
+import eecalcs.conductors.Metal;
+import eecalcs.conductors.Size;
 import tools.NotifierDelegate;
+
+import java.lang.reflect.Array;
 
 /**
  This class represents an OverCurrent Protection Device when providing
@@ -34,14 +39,75 @@ public class OCPD {
 			350, 400, 450, 500, 600, 700, 800, 1000, 1200, 1600, 2000, 2500,
 			3000, 4000, 5000, 6000};
 
-	/*Indicates if this OCPD is 100% rated or not. By default it is not. This
+	/**Table 250.122, rating of OCPD for sizing EGC*/
+	private static final int[] ocpdEGC = {
+			15, 20, 60, 100, 200,
+			300, 400, 500, 600, 800,
+			1000, 1200, 1600, 2000,
+			2500, 3000, 4000, 5000,
+			6000
+	};
+
+	/**Table 250.122 sizing of the copper EGC. It omits 300, 600 and 750.*/
+	private static final Size[] copperEGC = {
+			Size.AWG_14, Size.AWG_12, Size.AWG_10, Size.AWG_8, Size.AWG_6,
+			Size.AWG_4, Size.AWG_3, Size.AWG_2, Size.AWG_1, Size.AWG_1$0,
+			Size.AWG_2$0, Size.AWG_3$0, Size.AWG_4$0, Size.KCMIL_250,
+			Size.KCMIL_350,	Size.KCMIL_400,	Size.KCMIL_500,	Size.KCMIL_700,
+			Size.KCMIL_800
+	};
+
+	/**Table 250.122 sizing of the aluminum EGC. It omits 14, 3, 300, 500,
+	800, 900, 1000; it repeats 600 and includes a non standard size (1200)
+	twice, which is replaced in this software with 1250 and 1500.*/
+	private static final Size[] aluminumEGC = {
+			Size.AWG_12, Size.AWG_10, Size.AWG_8, Size.AWG_6, Size.AWG_4,
+			Size.AWG_2, Size.AWG_1, Size.AWG_1$0, Size.AWG_2$0, Size.AWG_3$0,
+			Size.AWG_4$0, Size.KCMIL_250, Size.KCMIL_350, Size.KCMIL_400,
+			Size.KCMIL_600, Size.KCMIL_600, Size.KCMIL_750, Size.KCMIL_1250,
+			Size.KCMIL_1500
+	};
+
+	/**
+	 @return The index of the OCPD in table 250.122 that is equal or less
+	 than the rating passed in the parameter and that if bigger than the
+	 previous element in the table. Returns -1 if the rating passed exceeds
+	 6000A.
+	 For example, if the ocpd rating is 55, it returns the index of the ocpd
+	 corresponding to 60.
+	 @param ocpdRating the rating to search for.
+	 */
+	private static int indexOfOCPD(int ocpdRating){
+		ocpdRating = Math.abs(ocpdRating);
+		if(ocpdRating <= 15)
+			return 0;
+		for(int index = 0; index < ocpdEGC.length - 1; index++){
+			int prev = ocpdEGC[index];
+			int next = ocpdEGC[index + 1];
+			if(ocpdRating == prev)
+				return index;
+			if(ocpdRating > prev && ocpdRating <= next)
+				return index + 1;
+		}
+		return -1;
+	}
+
+	/**Indicates if this OCPD is 100% rated or not. By default it is not. This
 	information is not used by this class in any of its behaviors. It is
 	intended to be used by the Circuit class and Load class to decide if the
 	1.25 factor is applied or not.
 	*/
 	private boolean _100PercentRated = false; //it's 80% rated by default.
 	private final Circuit circuit;
-	protected final NotifierDelegate notifier = new NotifierDelegate(this);
+
+	/**
+	 @return The notifier delegate object for this object.
+	 */
+	public NotifierDelegate getNotifier() {
+		return notifier;
+	}
+
+	private final NotifierDelegate notifier = new NotifierDelegate(this);
 
 	/**
 	 @return The list of all standard ratings recognized by the NEC.
@@ -88,6 +154,25 @@ public class OCPD {
 			nextHigher = standardRatings[i];
 		}
 		return standardRatings[0]; //15 Amps
+	}
+
+	/**
+	 @return The size of the EGC per table NEC-250.122. If any of the
+	 parameters is invalid the return value is null.
+	 @param ocpdRating Rating of the OCPD.
+	 @param metal The metal of the conductor (Cu or Al)
+	 */
+	public static Size getEGCSize(int ocpdRating, Metal metal){
+		if(metal == null)
+			return null;
+		if(ocpdRating == 0)
+			return null;
+		int index = indexOfOCPD(ocpdRating);
+		if(index == -1)
+			return null;
+		if(metal == Metal.COPPER)
+			return copperEGC[index];
+		return aluminumEGC[index];
 	}
 
 	/**

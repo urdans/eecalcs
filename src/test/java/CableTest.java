@@ -6,18 +6,15 @@ import eecalcs.conduits.Type;
 import eecalcs.systems.VoltageSystemAC;
 import eecalcs.systems.TempRating;
 import org.junit.jupiter.api.*;
-import test.Tools;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-//@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class CableTest {
     private Cable cable;
 
     @Test
     void getInsulatedAreaIn2() {
-        Tools.printTitle("CableTest.getInsulatedAreaIn2");
         double diameter = 2;
         cable = new Cable(VoltageSystemAC.v277_1ph_2w, diameter);
         assertEquals(diameter*diameter*0.25*Math.PI, cable.getInsulatedAreaIn2());
@@ -29,7 +26,6 @@ class CableTest {
 
     @Test
     void getCurrentCarryingCount() {
-        Tools.printTitle("CableTest.getCurrentCarryingCount");
         Cable cable2 = new Cable();
         assertEquals(2, cable2.getCurrentCarryingCount());
 
@@ -64,7 +60,6 @@ class CableTest {
 
     @Test
     void getAmpacity() {
-        Tools.printTitle("CableTest.getAmpacity");
         cable = new Cable(VoltageSystemAC.v277_1ph_2w, 1);
         cable.setNeutralConductorSize(Size.KCMIL_300);
         assertEquals(285, cable.getCorrectedAndAdjustedAmpacity());
@@ -262,7 +257,6 @@ class CableTest {
 
     @Test
     void setNeutralConductorSize(){
-        Tools.printTitle("CableTest.setNeutralConductorSize");
         cable = new Cable(VoltageSystemAC.v277_1ph_2w, 1);
         assertEquals(Size.AWG_12, cable.getGroundingConductorSize());
 
@@ -284,7 +278,6 @@ class CableTest {
 
     @Test
     void getPhaseConductorSize() {
-        Tools.printTitle("CableTest.getPhaseConductorSize");
         cable = new Cable(VoltageSystemAC.v277_1ph_2w, 1);
         cable.setPhaseConductorSize(Size.KCMIL_250);
         cable.setNeutralConductorSize(Size.KCMIL_300);
@@ -295,43 +288,27 @@ class CableTest {
 
     @Test
     void testClone() {
-        Tools.printTitle("CableTest.testClone");
         Cable cable1 = new Cable(VoltageSystemAC.v208_3ph_3w, 1.5);
         Conduit conduit = new Conduit(Type.EMT, true);
         conduit.add(cable1);
         cable1.setType(CableType.NMS);
         cable1.setJacketed(true);
-//        cable1.setBundlingExceeds20(true);
-//        cable1.setBundlingDistanceExceeds24(true);
         cable1.setRoofTopDistance(20);
         cable1.setNeutralCarryingConductor(true);
-        System.out.println("Before changes");
-        System.out.print("cable1:");
         String cable1S = cable1.toString();
-        System.out.println(cable1S);
         //--cloning
         Cable cable2 = cable1.clone();
-        System.out.print("cable2:");
         String cable2S = cable2.toString();
-        System.out.println(cable2S);
 
         cable2.setType(CableType.AC);
         cable2.setJacketed(false);
-//        cable2.setBundlingExceeds20(false);
-//        cable2.setBundlingDistanceExceeds24(false);
         cable2.setRoofTopDistance(25);
         cable2.setNeutralCarryingConductor(false);
         cable2.setSystem(VoltageSystemAC.v277_1ph_2w); //it should assume it as W2
         cable2.setOuterDiameter(0.5);
 
-        System.out.println();
-        System.out.println("After changes to cable2");
-        System.out.print("cable1:");
         String cable1SS = cable1.toString();
-        System.out.println(cable1SS);
-        System.out.print("cable2:");
         String cable2SS = cable2.toString();
-        System.out.println(cable2SS);
 
         assertEquals(cable1S, cable1SS);
         assertNotEquals(cable2S, cable2SS);
@@ -339,7 +316,6 @@ class CableTest {
 
     @Test
     void bundleAndConduit(){
-        Tools.printTitle("CableTest.bundleAndConduit");
         Cable cable1 = new Cable();
         Bundle bundle1 = new Bundle(cable1, 5, 60);
         assertEquals(5, bundle1.getConduitables().size());
@@ -428,7 +404,6 @@ class CableTest {
 
     @Test
     void setNeutralCarryingConductor(){
-        Tools.printTitle("CableTest.setNeutralCarryingConductor");
         cable = new Cable();
         cable.setSystem(VoltageSystemAC.v480_3ph_4w);
         assertEquals(3, cable.getCurrentCarryingCount());

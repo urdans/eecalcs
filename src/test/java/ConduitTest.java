@@ -33,7 +33,6 @@ class ConduitTest {
 
     @Test
     void getConduitables() {
-        Tools.printTitle("ConduitTest.getConduitables");
         assertEquals(0, conduit.getConduitables().size());
 
         change1();
@@ -45,7 +44,6 @@ class ConduitTest {
 
     @Test
     void remove() {
-        Tools.printTitle("ConduitTest.remove");
         change1();
         conduit.remove(conductor);
         assertEquals(1, conduit.getConduitables().size());
@@ -57,7 +55,6 @@ class ConduitTest {
 
     @Test
     void empty() {
-        Tools.printTitle("ConduitTest.empty");
         assertEquals(0, conduit.getConduitables().size());
 
         change1();
@@ -71,7 +68,6 @@ class ConduitTest {
 
     @Test
     void hasConduitable() {
-        Tools.printTitle("ConduitTest.hasConduitable");
         change1();
         assertTrue(conduit.hasConduitable(conductor));
         assertTrue(conduit.hasConduitable(cable));
@@ -92,7 +88,6 @@ class ConduitTest {
 
     @Test
     void getFillingConductorCount() {
-        Tools.printTitle("ConduitTest.getFillingConductorCount");
         assertEquals(0, conduit.getFillingConductorCount());
 
         change1();
@@ -104,7 +99,6 @@ class ConduitTest {
 
     @Test
     void getCurrentCarryingNumber() {
-        Tools.printTitle("ConduitTest.getCurrentCarryingNumber");
         assertEquals(0, conduit.getCurrentCarryingCount());
 
         change1();
@@ -123,7 +117,6 @@ class ConduitTest {
 
     @Test
     void getConduitablesArea() {
-        Tools.printTitle("ConduitTest.getConduitablesArea");
         assertEquals(0, conduit.getConduitablesArea());
 
         change1();
@@ -135,7 +128,6 @@ class ConduitTest {
 
     @Test
     void getTradeSize() {
-        Tools.printTitle("ConduitTest.getTradeSize");
         assertEquals(Trade.T1$2, conduit.getTradeSize());
 
         change1();
@@ -172,8 +164,6 @@ class ConduitTest {
         conduit.setType(Type.ENT);
         assertNull(conduit.getTradeSize());
         assertTrue(conduit.getResultMessages().containsMessage(-100));
-        conduit.getResultMessages().getMessages().forEach(message -> System.out.println(message.message));
-        System.out.println("-----");
 
 /*        conduit.setNipple(null);
         assertNull(conduit.getTradeSize());
@@ -186,12 +176,10 @@ class ConduitTest {
         conduit.setMinimumTrade(null);
         assertNull(conduit.getTradeSize());
         assertTrue(conduit.getResultMessages().containsMessage(-110));
-        conduit.getResultMessages().getMessages().forEach(message -> System.out.println(message.message));
     }
 
     @Test
     void getAllowedFillPercentage() {
-        Tools.printTitle("ConduitTest.getAllowedFillPercentage");
         assertFalse(conduit.isNipple());
 
         conduit.setNipple(true);

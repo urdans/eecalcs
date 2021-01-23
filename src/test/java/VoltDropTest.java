@@ -43,7 +43,6 @@ class VoltDropTest {
 
     @Test
     void getACVoltageDrop() {
-        Tools.printTitle("VoltDropTest.getACVoltageDrop");
         assertEquals(3.9999, voltDrop.getACVoltageDrop(), 0.0001);
 
         change1();
@@ -53,12 +52,10 @@ class VoltDropTest {
         assertEquals(7.8228, voltDrop.getACVoltageDrop(), 0.0001);
         assertEquals(480-7.8228, voltDrop.getACVoltageAtLoad(), 0.0001);
         assertEquals(100*7.8228/480, voltDrop.getACVoltageDropPercentage(), 0.0001);
-        voltDrop.getResultMessages().getMessages().forEach(message -> System.out.println(message.message+": "+message.number));
     }
 
     @Test
     void getDCVoltageDrop() {
-        Tools.printTitle("VoltDropTest.getDCVoltageDrop");
         assertEquals(3.8600, voltDrop.getDCVoltageDrop(), 0.0001);
 
         change1();
@@ -68,12 +65,10 @@ class VoltDropTest {
         assertEquals(7.1990, voltDrop.getDCVoltageDrop(), 0.0001);
         assertEquals(480-7.1990, voltDrop.getDCVoltageAtLoad(), 0.0001);
         assertEquals(100*7.1990/480, voltDrop.getDCVoltageDropPercentage(), 0.0001);
-        voltDrop.getResultMessages().getMessages().forEach(message -> System.out.println(message.message+": "+message.number));
     }
 
     @Test
     void getCalculatedSizeAC() {
-        Tools.printTitle("VoltDropTest.getCalculatedSizeAC");
         assertEquals(Size.AWG_10, voltDrop.getCalculatedSizeAC());
 
         change1();
@@ -85,7 +80,6 @@ class VoltDropTest {
 
     @Test
     void getCalculatedSizeDC() {
-        Tools.printTitle("VoltDropTest.getCalculatedSizeDC");
         assertEquals(Size.AWG_10, voltDrop.getCalculatedSizeDC());
 
         change1();
@@ -97,7 +91,6 @@ class VoltDropTest {
 
     @Test
     void getMaxLengthAC(){
-        Tools.printTitle("VoltDropTest.getMaxLengthAC");
         assertEquals(150.0046, voltDrop.getMaxLengthACForCalculatedSize(), 0.0001);
 
         change1();
@@ -109,7 +102,6 @@ class VoltDropTest {
 
     @Test
     void getMaxLengthDC() {
-        Tools.printTitle("VoltDropTest.getMaxLengthDC");
         assertEquals(148.7603, voltDrop.getMaxLengthDCForCalculatedSize(), 0.0001);
 
         change1();
@@ -121,7 +113,6 @@ class VoltDropTest {
 
     @Test
     void getActualVoltageDropPercentageAC(){
-        Tools.printTitle("VoltDropTest.getActualVoltageDropPercentageAC");
         assertEquals(2.0000, voltDrop.getActualVoltageDropPercentageAC(), 0.0001);
 
         change1();
@@ -133,7 +124,6 @@ class VoltDropTest {
 
     @Test
     void getActualVoltageDropPercentageDC(){
-        Tools.printTitle("VoltDropTest.getActualVoltageDropPercentageDC");
         assertEquals(2.0167, voltDrop.getActualVoltageDropPercentageDC(), 0.0001);
 
         change1();
@@ -144,7 +134,6 @@ class VoltDropTest {
     }
     @Test
     void getErrorMessages() {
-        Tools.printTitle("VoltDropTest.getErrorMessages");
         VoltDrop voltDrop2 = new VoltDrop(null);
         assertEquals(0, voltDrop2.getACVoltageDrop(), 0.0001);
         assertTrue(voltDrop2.getResultMessages().containsMessage(-9));
