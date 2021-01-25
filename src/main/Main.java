@@ -393,7 +393,7 @@ public class Main {
 
 		if (vd.resultMessages.hasMessages()) {
 			System.out.println("The following errors ocurred:");
-			for (Message msg : vd.resultMessages.getMessages()) {
+			for (ResultMessage msg : vd.resultMessages.getMessages()) {
 				System.out.println(msg.message + " : " + msg.number);
 			}
 		}*/

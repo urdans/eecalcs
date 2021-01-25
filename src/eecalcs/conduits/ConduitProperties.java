@@ -1,6 +1,6 @@
 package eecalcs.conduits;
 
-import tools.Message;
+import tools.ResultMessage;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,11 +26,11 @@ public class ConduitProperties {
 	private static final Map<Trade, Double> areaPVCEB;
 	private static Map<Trade, Double> areaINVALID;
 	private static final Map<Type, Map<Trade, Double>> dimensions;
-	private static final Message ERROR40 = new Message("Invalid conduit type" +
+	private static final ResultMessage ERROR40 = new ResultMessage("Invalid conduit type" +
 			".", -40);
-	private static final Message ERROR41 = new Message("Trade size not " +
+	private static final ResultMessage ERROR41 = new ResultMessage("Trade size not " +
 			"available for this conduit type.", -41);
-	private static final Message ERROR42 = new Message("Area of conduit " +
+	private static final ResultMessage ERROR42 = new ResultMessage("Area of conduit " +
 			"not available.", -42);
 
 	static {

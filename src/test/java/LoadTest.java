@@ -1,15 +1,13 @@
 package test.java;
 
-import eecalcs.loads.Continuousness;
-import eecalcs.loads.GeneralLoad;
-import eecalcs.loads.Load;
+import eecalcs.loads.*;
 import eecalcs.systems.VoltageSystemAC;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class GeneralLoadTest {
-	GeneralLoad generalLoad = new GeneralLoad();
+class LoadTest {
+	Load generalLoad = new Load();
 
 	@Test
 	void setNonContinuous() {
@@ -18,7 +16,7 @@ class GeneralLoadTest {
 		assertEquals(200, generalLoad.getNominalCurrent());
 		assertEquals(200, generalLoad.getMCA());
 		assertEquals(1.0, generalLoad.getMCAMultiplier());
-		assertEquals(Continuousness.LoadType.NONCONTINUOUS, generalLoad.getLoadType());
+		assertEquals(LoadType.NONCONTINUOUS, generalLoad.getLoadType());
 	}
 
 	@Test
@@ -28,7 +26,7 @@ class GeneralLoadTest {
 		assertEquals(100, generalLoad.getNominalCurrent());
 		assertEquals(125, generalLoad.getMCA());
 		assertEquals(125/100.0, generalLoad.getMCAMultiplier());
-		assertEquals(Continuousness.LoadType.CONTINUOUS, generalLoad.getLoadType());
+		assertEquals(LoadType.CONTINUOUS, generalLoad.getLoadType());
 	}
 
 	@Test
@@ -37,13 +35,13 @@ class GeneralLoadTest {
 		assertEquals(10, generalLoad.getNominalCurrent());
 		assertEquals(321, generalLoad.getMCA());
 		assertEquals(321/10.0, generalLoad.getMCAMultiplier());
-		assertEquals(Continuousness.LoadType.MIXED, generalLoad.getLoadType());
+		assertEquals(LoadType.MIXED, generalLoad.getLoadType());
 	}
 
 	@Test
 	void setNominalCurrent() {
 		assertEquals(10, generalLoad.getNominalCurrent());
-		assertEquals(Continuousness.LoadType.NONCONTINUOUS, generalLoad.getLoadType());
+		assertEquals(LoadType.NONCONTINUOUS, generalLoad.getLoadType());
 		assertEquals(0, generalLoad.getOverloadRating());
 		assertEquals(0, generalLoad.getDSRating());
 		assertEquals(10, generalLoad.getMCA());
@@ -52,10 +50,10 @@ class GeneralLoadTest {
 		assertEquals(123, generalLoad.getNominalCurrent());
 	}
 
-	/*Testing features of the base Load class*/
+	/*Testing features of the base OldLoad class*/
 	@Test
 	void loadConstructor(){
-		Load load = new GeneralLoad();
+		Load load = new Load();
 		assertEquals(VoltageSystemAC.v120_1ph_2w, load.getVoltageSystem());
 		assertEquals(10.0, load.getNominalCurrent());
 		assertEquals(10.0, load.getNeutralCurrent());
@@ -85,13 +83,13 @@ class GeneralLoadTest {
 		assertEquals(0.0, load.getOverloadRating());
 		assertEquals("Induction heater", load.getDescription());
 
-		((GeneralLoad)load).setContinuous();
+		load.setContinuous();
 		assertEquals(20.0*1.25, load.getMCA());
 		assertEquals(1.25, load.getMCAMultiplier());
 
-		Load load2 = new GeneralLoad(VoltageSystemAC.v240_1ph_3w, 25);
-		assertEquals( Continuousness.LoadType.NONCONTINUOUS,
-				((GeneralLoad)load2).getLoadType());
+		Load load2 = new Load(VoltageSystemAC.v240_1ph_3w, 25);
+		assertEquals( LoadType.NONCONTINUOUS,
+				load2.getLoadType());
 		assertEquals(25.0, load2.getNominalCurrent());
 		assertEquals(25.0, load2.getNeutralCurrent());
 		assertEquals(240*25.0, load2.getVoltAmperes());

@@ -2,7 +2,7 @@ package eecalcs.conduits;
 
 import eecalcs.conductors.Conduitable;
 import eecalcs.conductors.Size;
-import tools.Message;
+import tools.ResultMessage;
 import tools.NotifierDelegate;
 import tools.ROResultMessages;
 import tools.ResultMessages;
@@ -33,12 +33,12 @@ public class Conduit implements ROConduit {
 //	private int allowedFillPercentage;
 	private final List<Conduitable> conduitables = new ArrayList<>();
 	private double roofTopDistance = -1.0; //means no rooftop condition
-	private static final Message ERROR100 = new Message(
+	private static final ResultMessage ERROR100 = new ResultMessage(
 	"The calculated trade size for this conduit is not recognized by" +
 			" NEC Table 4 (not available).", -100);
-	private static final Message ERROR110 = new Message(
+	private static final ResultMessage ERROR110 = new ResultMessage(
 	"The minimum conduit trade size is not valid.", -110);
-	private static final Message ERROR120 = new Message(
+	private static final ResultMessage ERROR120 = new ResultMessage(
 	"The type of this conduit is not valid.", -120);
 	protected final NotifierDelegate notifier = new NotifierDelegate(this);
 

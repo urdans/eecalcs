@@ -101,7 +101,7 @@ public interface ROVoltDrop {
      given
 	 maximum voltage drop. If the returned value is zero, the user must check
 	 the
-	 result Message field content.
+	 result ResultMessage field content.
 	 @return The maximum conductor's length in feet.
 	 @see #getCalculatedSizeAC()
 	 */
@@ -111,7 +111,7 @@ public interface ROVoltDrop {
 	 Returns the one way length of the circuit's actual conductor size that
 	 would
 	 reach the given maximum voltage drop. If the returned value is zero, the
-	 user must check the result Message field content.
+	 user must check the result ResultMessage field content.
 	 @return The maximum conductor's length in feet.
 	 */
 	double getMaxLengthACForActualConductor();

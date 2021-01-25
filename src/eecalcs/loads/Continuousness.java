@@ -4,6 +4,7 @@ package eecalcs.loads;
  Describes the behaviors that a candidate load must have due to its
  continuousness.
  */
+@Deprecated
 public interface Continuousness {
 	/**
 	 Describe the type of loads based on its continuousness. The purpose of

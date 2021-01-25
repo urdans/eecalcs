@@ -3,13 +3,13 @@ package test.java;
 import eecalcs.circuits.Circuit;
 import eecalcs.circuits.CircuitMode;
 import eecalcs.conduits.*;
-import eecalcs.loads.GeneralLoad;
+import eecalcs.loads.Load;
 import eecalcs.conductors.*;
 import eecalcs.systems.TempRating;
 import eecalcs.systems.VoltageSystemAC;
 import org.junit.jupiter.api.Test;
 import test.Tools;
-//import tools.Message;
+//import tools.ResultMessage;
 //import static test.Tools;
 
 import java.text.NumberFormat;
@@ -17,7 +17,7 @@ import java.text.NumberFormat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CircuitTest {
-    private final Circuit circuit = new Circuit(new GeneralLoad());
+    private final Circuit circuit = new Circuit(new Load());
     private final Conduit sharedConduit = new Conduit(Type.RMC, false);
     private String getState(){
         Tools.startRecording();
@@ -26,12 +26,12 @@ class CircuitTest {
     }
     private void printState(){
         Tools.println("\n");
-        Tools.println("################################ Load ################################");
+        Tools.println("################################ OldLoad ################################");
         Tools.println("Voltage: " + circuit.getLoad().getVoltageSystem());
-        Tools.println("Load current: " + circuit.getLoad().getNominalCurrent());
-        Tools.println("Load MCA: " + circuit.getLoad().getMCA());
-        Tools.println("Load type: " + ((GeneralLoad) circuit.getLoad()).getLoadType());
-        Tools.println("Load non-linear(harmonics): " + (circuit.getLoad()).isNonlinear());
+        Tools.println("OldLoad current: " + circuit.getLoad().getNominalCurrent());
+        Tools.println("OldLoad MCA: " + circuit.getLoad().getMCA());
+        Tools.println("OldLoad type: " + /*((GeneralOldLoad) */circuit.getLoad()/*)*/.getLoadType());
+        Tools.println("OldLoad non-linear(harmonics): " + (circuit.getLoad()).isNonlinear());
         Tools.println("################################ Voltage Drop ################################");
         Size s = circuit.getSizePerVoltageDrop(false);
         Tools.println("Max voltage drop: " + circuit.getVoltageDrop().getMaxVoltageDropPercent());
@@ -143,13 +143,13 @@ class CircuitTest {
     }
     /*
     private String getState(){
-        String msg = "\n################################ Load " +
+        String msg = "\n################################ OldLoad " +
             "################################\n" +
             "Voltage: " + circuit.getLoad().getVoltageSystem()+"\n"+
-            "Load current: " + circuit.getLoad().getNominalCurrent()+"\n"+
-            "Load MCA: " + circuit.getLoad().getMCA()+"\n"+
-            "Load type: " + ((GeneralLoad) circuit.getLoad()).getLoadType()+"\n"+
-            "Load non-linear(harmonics): " + (circuit.getLoad()).isNonlinear()+"\n"+
+            "OldLoad current: " + circuit.getLoad().getNominalCurrent()+"\n"+
+            "OldLoad MCA: " + circuit.getLoad().getMCA()+"\n"+
+            "OldLoad type: " + ((GeneralOldLoad) circuit.getLoad()).getLoadType()+"\n"+
+            "OldLoad non-linear(harmonics): " + (circuit.getLoad()).isNonlinear()+"\n"+
             "################################ Voltage Drop " +
                 "################################"+"\n";
         Size s = circuit.getSizePerVoltageDrop(false);
@@ -256,7 +256,7 @@ class CircuitTest {
     }
      */
 /*    private void printResultMessages(){
-        for(Message m: circuit.resultMessages.getMessages()){
+        for(ResultMessage m: circuit.resultMessages.getMessages()){
             Tools.println(m.number + ": " + m.message);
         }
     }*/
@@ -395,7 +395,7 @@ class CircuitTest {
     @Test
     void congruencyTest(){
         /*All the objects that belong to the Circuit class should be under
-        control of that class. If Circuit uses an object like Load for
+        control of that class. If Circuit uses an object like OldLoad for
         example, it should be able to provide proper state even when the
         state of the load object changes.
         These tests are meant to verify congruency.*/
@@ -530,7 +530,7 @@ The following are the getters that expose such objects:
 *       ->setInsulation(Insul insulation)                -->hide&move to Circuit
 *       ->setLength(double length)                       -->hide&move to Circuit
 *       ->setAmbientTemperatureF(int ambientTemperatureF)-->hide&move to Circuit
-*   -Load getLoad()                                      -->to be fully observed
+*   -OldLoad getLoad()                                      -->to be fully observed
 *       ->setDescription(String description)      ->make it notify all listeners
 *   -OCPD getOcdp()                               ->make it notify all listeners
 *   -RoConductor getNeutralConductor()                  -->same as before
@@ -939,7 +939,8 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setNumberOfSets(1);
         circuit.setConduitMode();
         circuit.setTerminationTempRating(TempRating.T75);
-        ((GeneralLoad)circuit.getLoad()).setNonContinuous();
+//        ((GeneralOldLoad)circuit.getLoad()).setNonContinuous();
+        circuit.getLoad().setNonContinuous();
 
         //case 1 - standard (default) conditions
         //correction factor = 1
@@ -948,7 +949,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         assertEquals(Size.AWG_3, circuit.getCircuitSize());
 
         //case 2 - load is continuous, no factors, MCA decides
-        ((GeneralLoad)circuit.getLoad()).setContinuous();
+        /*((GeneralOldLoad)*/circuit.getLoad()/*)*/.setContinuous();
         //correction factor = 1
         //adjustment factor = 1
         //load is continuous
@@ -1579,13 +1580,11 @@ conduitables correspond with the circuit configuration */
         circuit.setLength(30);
         bundle.setBundlingLength(24);
 
-//        Size size = circuit.getCircuitSize();
         //case 1
         assertEquals(Size.AWG_12, circuit.getCircuitSize(), getState());
 
         //case 2
         bundle.setBundlingLength(25);
-//        size = circuit.getCircuitSize();
         assertEquals(Size.AWG_10, circuit.getCircuitSize(), getState());
 
         //case 3
@@ -1668,7 +1667,7 @@ conduitables correspond with the circuit configuration */
         circuit.setAmbientTemperatureF(100);
         circuit.setInsulation(Insul.THHW);
         circuit.setMetal(Metal.COPPER);
-        assertEquals(105, circuit.getLoad().getMCA(), 0.01);
+        assertEquals(105, circuit.getLoad().getMCA(), 0.01, getState());
         assertEquals(CircuitMode.PRIVATE_CONDUIT, circuit.getCircuitMode());
         assertEquals(4, circuit.getPrivateConduit().getCurrentCarryingCount());
 
@@ -2456,11 +2455,13 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.getLoad().setNominalCurrent(100);
         //conductor sized per MCA
-        ((GeneralLoad)circuit.getLoad()).setContinuous();
+//        ((GeneralOldLoad)circuit.getLoad()).setContinuous();
+        circuit.getLoad().setContinuous();
         assertEquals(Size.AWG_1,circuit.getCircuitSize());
 
         //conductor sized per factors
-        ((GeneralLoad)circuit.getLoad()).setNonContinuous();
+//        ((GeneralOldLoad)circuit.getLoad()).setNonContinuous();
+        circuit.getLoad().setNonContinuous();
         assertEquals(Size.AWG_3, circuit.getCircuitSize());
 
         //conductor sized per factors
@@ -2469,7 +2470,7 @@ conduitables correspond with the circuit configuration */
         assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
 
         //conductor sized per MCA
-        ((GeneralLoad)circuit.getLoad()).setContinuous();
+        /*((GeneralOldLoad)*/circuit.getLoad()/*)*/.setContinuous();
         circuit.setAmbientTemperatureF(68);
         assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
 
@@ -2694,11 +2695,43 @@ conduitables correspond with the circuit configuration */
         Ampacity decides the size, #4, rated for 70Amps at 60°C
         The ocpd is for protecting the conductor, 70 Amps.
         */
-        GeneralLoad load = (GeneralLoad) circuit.getLoad();
+        /*GeneralOldLoad*/ Load load = /*(GeneralOldLoad)*/ circuit.getLoad();
         load.setContinuous();
         assertEquals(Size.AWG_4, circuit.getSizePerAmpacity(false), getState());
         assertEquals(Size.AWG_6, circuit.getSizePerVoltageDrop(false), getState());
         assertEquals(70,circuit.getOcdp().getRating(),getState());
+
+        /*case 4:
+        load: 208v 3φ 4w 400A, non-linear and continuous
+        circuit Length = 100 ft, 2 sets in 2 conduits
+        VD max = 3%
+        */
+        load.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        load.setContinuous();
+        load.setNonlinear(true);
+        load.setNominalCurrent(400);
+        circuit.setNumberOfSets(2);
+        circuit.morePrivateConduits();
+        assertEquals(Size.KCMIL_250, circuit.getSizePerAmpacity(false), getState());
+        assertEquals(Size.AWG_3$0, circuit.getSizePerVoltageDrop(false), getState());
+        assertEquals(450,circuit.getOcdp().getRating(),getState());
+        assertEquals(Metal.COPPER, circuit.getGroundingConductor().getMetal(), getState());
+        assertEquals(Size.AWG_2, circuit.getGroundingConductor().getSize(),getState());
+
+        circuit.setMetal(Metal.ALUMINUM);
+        assertEquals(400,circuit.getOcdp().getRating(),getState());
+        assertEquals(Metal.ALUMINUM, circuit.getGroundingConductor().getMetal(), getState());
+        assertEquals(Size.AWG_1, circuit.getGroundingConductor().getSize(), getState());
+
+    }
+
+    @Test
+    void messaging(){
+        Circuit c = new Circuit(new /*GeneralOldLoad*/Load());
+        c.setLength(10);
+        assertEquals(15, c.getOcdp().getRating());
+        assertEquals(Size.AWG_14, c.getGroundingConductor().getSize(), getState());
+
     }
 }
 /*
@@ -2712,7 +2745,7 @@ class CircuitData{
     public Conduit sharedConduit;
     public Bundle privateBundle;
     public Bundle sharedBundle;
-    public Load load;
+    public OldLoad load;
     public int numberOfSets;
     public int setsPerConduit;
     public int numberOfConduits;
@@ -2829,7 +2862,7 @@ class CircuitData{
         sharedConduit = (Conduit) sharedConduitField.get(circuit);
         privateBundle = (Bundle) privateBundleField.get(circuit);
         sharedBundle = (Bundle) sharedBundleField.get(circuit);
-        load = (Load) loadField.get(circuit);
+        load = (OldLoad) loadField.get(circuit);
         numberOfSets = (int) numberOfSetsField.get(circuit);
         setsPerConduit = (int) setsPerConduitField.get(circuit);
         numberOfConduits = (int) numberOfConduitsField.get(circuit);

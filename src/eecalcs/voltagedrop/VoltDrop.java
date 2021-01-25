@@ -8,7 +8,7 @@ import eecalcs.conduits.ConduitProperties;
 import eecalcs.conduits.Material;
 import eecalcs.systems.VoltageSystemAC;
 import org.apache.commons.math3.complex.Complex;
-import tools.Message;
+import tools.ResultMessage;
 import tools.ROResultMessages;
 import tools.ResultMessages;
 
@@ -43,22 +43,22 @@ public class VoltDrop implements ROVoltDrop {
 	private Material conduitMaterial = Material.PVC;
 
 	//region Predefined messages
-	private static final Message ERROR01	= new Message("Source voltage must be greater that zero.",-1);
-	private static final Message ERROR02	= new Message("Invalid conduit material.",-2);
-	private static final Message ERROR03	= new Message("Invalid conductor size.",-3);
-	private static final Message ERROR04	= new Message("Number of sets must be between 1 and 10.",-4);
-	private static final Message ERROR05	= new Message("One way conductor length must be greater than 0.",-5);
-	private static final Message ERROR06	= new Message("Load current must be greater than 0.",-6);
-	private static final Message ERROR07	= new Message("Motor factor must be between 0.7 and 1.",-7);
-	private static final Message ERROR08	= new Message("Voltage drop for determining conductor sizing must be between 0.5% and 25%",-8);
-	private static final Message ERROR09	= new Message("Invalid conductor object.",-9);
-	private static final Message ERROR20	= new Message("Load current exceeds maximum allowed ampacity of the set.",-20);
-	private static final Message ERROR21	= new Message("Paralleled power conductors in sizes smaller than 1/0 AWG are not permitted. NEC-310" +
+	private static final ResultMessage ERROR01	= new ResultMessage("Source voltage must be greater that zero.",-1);
+	private static final ResultMessage ERROR02	= new ResultMessage("Invalid conduit material.",-2);
+	private static final ResultMessage ERROR03	= new ResultMessage("Invalid conductor size.",-3);
+	private static final ResultMessage ERROR04	= new ResultMessage("Number of sets must be between 1 and 10.",-4);
+	private static final ResultMessage ERROR05	= new ResultMessage("One way conductor length must be greater than 0.",-5);
+	private static final ResultMessage ERROR06	= new ResultMessage("Load current must be greater than 0.",-6);
+	private static final ResultMessage ERROR07	= new ResultMessage("Motor factor must be between 0.7 and 1.",-7);
+	private static final ResultMessage ERROR08	= new ResultMessage("Voltage drop for determining conductor sizing must be between 0.5% and 25%",-8);
+	private static final ResultMessage ERROR09	= new ResultMessage("Invalid conductor object.",-9);
+	private static final ResultMessage ERROR20	= new ResultMessage("Load current exceeds maximum allowed ampacity of the set.",-20);
+	private static final ResultMessage ERROR21	= new ResultMessage("Paralleled power conductors in sizes smaller than 1/0 AWG are not permitted. NEC-310" +
 			".10(H)(1)",-21);
-	private static final Message ERROR30	= new Message("No length can achieve that voltage drop under the given conditions.", -30);
-	private static final Message ERROR31	= new Message("No building conductor can achieve that voltage drop under the given conditions.",
+	private static final ResultMessage ERROR30	= new ResultMessage("No length can achieve that voltage drop under the given conditions.", -30);
+	private static final ResultMessage ERROR31	= new ResultMessage("No building conductor can achieve that voltage drop under the given conditions.",
 			-31);
-	private static final Message WARNN21	= new Message(ERROR21.message,21);
+	private static final ResultMessage WARNN21	= new ResultMessage(ERROR21.message,21);
 	//Quedé aquí 6: why am I using a warning message that is also an error?
 	// when is an error and when is a warning? This must be refactored to be
 	// consistent with the way the size per ampacity is performed. But also,

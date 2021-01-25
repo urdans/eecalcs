@@ -6,14 +6,14 @@ import java.util.List;
 /**
  This class represents a delegate whose role is forecasting notifications about
  changes field values in its owner object, to the registered listeners.
- All objects using a delegate should declare ir private and provide a common
+ All objects using a delegate should declare it private and provide a common
  name for the getter as<br><br>
  <code>public NotifierDelegate getNotifier()</code>
  @see Listener
  */
 public class NotifierDelegate {
-    private List<Listener> listeners = new ArrayList<>();
-    private Object sender;
+    private final List<Listener> listeners = new ArrayList<>();
+    private final Object sender;
 
     private boolean enable = true;
     /**

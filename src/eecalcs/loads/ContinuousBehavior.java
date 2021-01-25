@@ -7,6 +7,7 @@ This class implements the continuousness behavior that a load will have. This
  class acts as a helper class and must be used in composition with other
  classes.
  */
+@Deprecated
 public class ContinuousBehavior implements Continuousness{
 	private LoadType loadType = LoadType.NONCONTINUOUS;
 	private NotifierDelegate notifierDelegate;

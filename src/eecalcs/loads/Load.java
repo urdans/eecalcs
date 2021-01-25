@@ -3,8 +3,7 @@ package eecalcs.loads;
 import eecalcs.systems.VoltageSystemAC;
 import tools.NotifierDelegate;
 
-/**
- This is the abstract base class for all type of loads.
+/**This is a generic and base class load for all type of loads.
  <p>An electric load object provides information about its basic requirements
  and has the following properties (RO: read only; R&W: read and write):
  <ol>
@@ -13,9 +12,7 @@ import tools.NotifierDelegate;
  It's a non-null field. Refer to {@link VoltageSystemAC} for details.</dd>
  <li>Nominal current.</li>
  <dd>(R&W). In amperes, apply only for the phase (hot) conductors. It's a
- non-zero positive value. Descendant classes must override this property to
- recalculate the MCA, if required, like for example for loads having a
- continuousness behavior.
+ non-zero positive value.
  <p>Voltage, nominal current and power factor are independent variables that
  define the real and apparent power (P & S). Voltage and nominal current can be
  set when calling the constructor, or later on using their own setters.</dd>
@@ -25,31 +22,14 @@ import tools.NotifierDelegate;
  classes can override this property and provide setter methods when required.
  This property provides a current value that is only used for sizing the neutral
  conductor. It should not be used for any other purpose.
-  <p>For a nonlinear load, this property can return a value that is as big as
+ <p>For a nonlinear load, this property can return a value that is as big as
  173% the nominal current of the phase conductors (for 3Ø balanced
  non-linear loads) or as big as 200% the nominal current of the
  phase conductors for 3Ø system feeding only single-phase non-linear
- loads. Future: more investigation is required for this.<br><br>
- <p><b>When a load is a panel and thus, fed from a feeder:</b>
- <p>The NEC-220.61 explains that the load of a feeder or service neutral is the
- maximum unbalanced load, that is, the maximum net calculated load between
- the neutral and any one phase conductor, i.e. for phase A load = 25650,
- phase B load = 32340, and phase C load=28600, the maximum unbalanced load is
- for phase B, 32340; because of the "net calculated" words, these values are
- obtained after applying demand factor and other calculation rules.
- <p>From the feeder or service neutral load, the current is calculated to
- determine the size of the conductors. However, the code mandates that for
- 3-wire 2Ø or 5-wire 2Ø systems (very old system not covered by
- this software) this current must be multiplied by 1.4.
- <p>The code also permits a reduction of 70% to the neutral current after it
- is calculated per NEC-220.61(B)(1) (the loads of ranges, ovens,etc. per table
- 220.55 and dryers per table 220.54) or per NEC-220.61(B)(2) (the excess of
- 200 amps for system voltages of: 3W DC; 1Ø 3W; 3Ø 4W; or the old 2Ø 3W and
- 5W systems.
- <p>The code prohibits any reductions of the neutral current calculated from
- 220.61(C)(1) (1Ø 3W circuits fed from 3Ø 4W wye-connected systems) or from
- 220.61(C)(2) (portion consisting of nonlinear loads supplied from 3Ø 4W
- wye-connected systems).
+ loads.<br>
+ "*****************************************"
+ Future: more investigation is required for this.
+ "*****************************************"
  </dd>
  <li>Apparent power (S).</li>
  <dd>(RO). In volt-amperes. It's a calculated value from the voltage system and
@@ -61,9 +41,7 @@ import tools.NotifierDelegate;
  <dd>(R&W). A positive number between 0.7 and 1.0. Its setter constrain the
  provided value to this rage. The default value is 1.0.</dd>
  <li>MCA: Minimum circuit ampacity.</li>
- <dd>(RO). In amperes. In the base class, its value is the same as the nominal
- current. Descendant classes override this property and provide setter methods
- when required.</dd>
+ <dd>(RO). In amperes.</dd>
  <li>The MCA to nominal current ratio.</li>
  <dd>(RO). Named as MCAMultiplier. It's the quotient between the MCA and the
  nominal current. This property can be used by other classes (Circuit class, for
@@ -102,57 +80,83 @@ import tools.NotifierDelegate;
  describing a circuit load (load name and location). For this base class
  load, its a null value.</dd>
  </ol>
+ <p><b>When a load is a panel and thus, fed from a feeder:</b>
+ <p>The NEC-220.61 explains that the load of a feeder or service neutral is the
+ maximum unbalanced load, that is, the maximum net calculated load between
+ the neutral and any one phase conductor, i.e. for phase A load = 25650,
+ phase B load = 32340, and phase C load=28600, the maximum unbalanced load is
+ for phase B, 32340; because of the "net calculated" words, these values are
+ obtained after applying demand factor and other calculation rules.
+ <p>From the feeder or service neutral load, the current is calculated to
+ determine the size of the conductors. However, the code mandates that for
+ 3-wire 2Ø or 5-wire 2Ø systems (very old system not covered by
+ this software) this current must be multiplied by 1.4.
+ <p>The code also permits a reduction of 70% to the neutral current after it
+ is calculated per NEC-220.61(B)(1) (the loads of ranges, ovens,etc. per table
+ 220.55 and dryers per table 220.54) or per NEC-220.61(B)(2) (the excess of
+ 200 amps for system voltages of: 3W DC; 1Ø 3W; 3Ø 4W; or the old 2Ø 3W and
+ 5W systems.
+ <p>The code prohibits any reductions of the neutral current calculated from
+ 220.61(C)(1) (1Ø 3W circuits fed from 3Ø 4W wye-connected systems) or from
+ 220.61(C)(2) (portion consisting of nonlinear loads supplied from 3Ø 4W
+ wye-connected systems).<br><br>
+
  <p>Descendant classes are specialized loads and they add specific methods that
- modify the internals, so the base class methods return the properly
- calculated value according to the load type. Descendant classes can provided
- specialized methods and implement extra behaviors.
- <p>The {@link Continuousness} interface provide enum for load type (continuous,
- non-continuous and mixed {@link eecalcs.loads.Continuousness.LoadType}), and
- specify methods to handle the continuousness behavior of a load.
- <p>To avoid repeated code, the {@link ContinuousBehavior} helper class
- implements this interface and can be used as a delegated class (in composition)
- in classes implementing the Continuousness interface.
- */
-public abstract class Load {
-    protected VoltageSystemAC voltageSystem;
-    protected double powerFactor = 1.0;
+ modify the internals. Descendant classes can provided specialized methods
+ and implement extra behaviors.
+  */
+public class Load {
+	private LoadType loadType = LoadType.NONCONTINUOUS;
+	protected VoltageSystemAC voltageSystem;
+	protected double powerFactor = 1.0;
 	protected final NotifierDelegate notifier = new NotifierDelegate(this);
 	protected String description;
-	/*this is a temporary member that will be redefined or removed depending
-	on what is the best method to determine if a load is linear or not and
-	how to calculate the neutral current*/
+	/**Defines if this load is a linear or a nonlinear load.
+	 Todo To be removed once a descendant load NonLinear class is implemented.*/
 	private boolean _isNonlinear = false;
-	/*A struct like class is necessary for integrating with other helper classes*/
-	protected Currents currents = new Currents();
+	/**The nominal current of a load, in amperes. Along with the power factor
+	 and voltage it defines this load real and apparent power.*/
+	public double nominalCurrent;
+	/**The Minimum Circuit Ampacity that is required for the conductor
+	 feeding this load. For this class, it's a read-only property whose value
+	 is defines as follows:<br>
+	 for a noncontinuous load, MCA = nominal current<br>
+	 for a continuous load, MCA = 1.25 x nominal current.<br>
+	 Descendant classes add a setter to this property and override its getter
+	 to detach the relationship between these two values based on the
+	 continuousness behavior of the load but must keep it equal or bigger
+	 than the nominal current.<br>
+	 For example, a piece of refrigerant equipment could not be a continuous
+	 load and still have an MCA value above the nominal current.*/
+	public double MCA;
 
 	/**
-	 This is a constructor for a descendant load class object. Do not call this
-	 constructor directly since this is an abstract class.
+	 Construct a load object with the given parameters.
 	 @param voltageSystem The voltage system of the load. If a null value is
 	 provided, the default value will be assumed.
-	 @param nominalCurrent The nominal current of the load in amperes. It's a
-	 positive non zero value. If zero is provided, the default value will be
-	 assumed.
+	 @param nominalCurrent The nominal current of the load in amperes. If a
+	 negative value is provided, its absolute value will be taken. If a zero
+	 value is provided, the default value will be assumed.
 	 @see VoltageSystemAC
 	 */
 	public Load(VoltageSystemAC voltageSystem, double nominalCurrent) {
 		if(voltageSystem == null)
-			voltageSystem = VoltageSystemAC.v120_1ph_2w;
+			this.voltageSystem = VoltageSystemAC.v120_1ph_2w;
 		if(nominalCurrent == 0)
-			nominalCurrent = 10.0;
-        this.voltageSystem = voltageSystem;
-        currents.nominalCurrent = Math.abs(nominalCurrent);
-        currents.MCA = currents.nominalCurrent;
-    }
+			this.nominalCurrent = 10.0;
+		this.voltageSystem = voltageSystem;
+		this.nominalCurrent = Math.abs(nominalCurrent);
+		MCA = nominalCurrent;
+	}
 
 	/**
-	 Constructs a Load object with the following default values:
-	 <p>- System AC voltage = 120v, 1 Ø, 2 wires.
-	 <p>- Nominal current = 10 amperes<br>
+	 Constructs a Load object with the following default values:<br>
+	 - System AC voltage = 120v, 1 Ø, 2 wires.<br>
+	 - Nominal current = 10 amperes<br>
 	 */
-    public Load(){
-    	this(VoltageSystemAC.v120_1ph_2w, 10);
-    }
+	public Load(){
+		this(VoltageSystemAC.v120_1ph_2w, 10);
+	}
 
 	/**
 	 Sets the voltage system of this load.
@@ -161,12 +165,12 @@ public abstract class Load {
 	 parameter is null, nothing is set.
 	 @see VoltageSystemAC
 	 */
-    public void setVoltageSystem(VoltageSystemAC voltageSystem) {
-    	if(this.voltageSystem == voltageSystem || voltageSystem == null)
-    		return;
-    	notifier.info.addFieldChange("voltageSystem", this.voltageSystem, voltageSystem );
-    	this.voltageSystem = voltageSystem;
-    	notifier.notifyAllListeners();
+	public void setVoltageSystem(VoltageSystemAC voltageSystem) {
+		if(this.voltageSystem == voltageSystem || voltageSystem == null)
+			return;
+		notifier.info.addFieldChange("voltageSystem", this.voltageSystem, voltageSystem );
+		this.voltageSystem = voltageSystem;
+		notifier.notifyAllListeners();
 	}
 
 	/**
@@ -174,30 +178,50 @@ public abstract class Load {
 	 @see VoltageSystemAC
 	 */
 	public VoltageSystemAC getVoltageSystem() {
-        return voltageSystem;
-    }
+		return voltageSystem;
+	}
 
 	/**
-	 Sets a non-zero positive value for this load nominal current.
-	 Registered listeners receive notification of this change.
+	 Sets a non-zero positive value for this load nominal current. If this
+	 load is non-continuous, MCA is updated to this value; if this load is
+	 continuous, MCA is updated to 1.25 times this value. If the load is
+	 mixed and this value is bigger than MCA, this load changes to
+	 non-continuous and MCA is updated to this value, otherwise, MCA does not
+	 change.
+	 Registered listeners receive notification of these changes.
 	 @param nominalCurrent The new current of the load, in amperes. If this
 	 value is zero, nothing is set.
 	 */
-    public void setNominalCurrent(double nominalCurrent){
-    	if(currents.nominalCurrent == nominalCurrent || nominalCurrent == 0)
-    		return;
-    	nominalCurrent = Math.abs(nominalCurrent);
-	    notifier.info.addFieldChange("nominalCurrent", currents.nominalCurrent, nominalCurrent);
-    	currents.nominalCurrent = nominalCurrent;
-	    notifier.notifyAllListeners();
-    }
+	public void setNominalCurrent(double nominalCurrent){
+		if(this.nominalCurrent == nominalCurrent || nominalCurrent == 0)
+			return;
+		nominalCurrent = Math.abs(nominalCurrent);
+		double oldMCA = MCA;
+
+		if(loadType == LoadType.NONCONTINUOUS)
+			MCA = nominalCurrent;
+		else if (loadType == LoadType.CONTINUOUS)
+			MCA = 1.25 * nominalCurrent;
+		else {//MIXED
+			if(nominalCurrent >= MCA) {
+				loadType = LoadType.NONCONTINUOUS;
+				MCA = nominalCurrent;
+			}
+		}
+
+		notifier.info.addFieldChange("nominalCurrent", this.nominalCurrent,
+				nominalCurrent);
+		notifier.info.addFieldChange("MCA", oldMCA, MCA);
+		this.nominalCurrent = nominalCurrent;
+		notifier.notifyAllListeners();
+	}
 
 	/**
 	 @return The nominal current of this load, in amperes.
 	 */
 	public double getNominalCurrent() {
-        return currents.nominalCurrent;
-    }
+		return nominalCurrent;
+	}
 
 	/**
 	 @return The neutral current of this load, in amperes, for the only
@@ -217,7 +241,7 @@ public abstract class Load {
 	 */
 	public double getNeutralCurrent() {
 		if (voltageSystem.hasNeutral())
-			return currents.nominalCurrent;
+			return nominalCurrent;
 		//no neutral, no current.
 		return 0;
 	}
@@ -226,7 +250,7 @@ public abstract class Load {
 	 @return The apparent power of this load, in volt-amperes.
 	 */
 	public double getVoltAmperes() {
-		return voltageSystem.getVoltage() * currents.nominalCurrent * voltageSystem.getFactor();
+		return voltageSystem.getVoltage() * nominalCurrent * voltageSystem.getFactor();
 	}
 
 	/**
@@ -237,7 +261,7 @@ public abstract class Load {
 	}
 
 	/**
-	 Sets the power factor of this load and thus changing indirectly the
+	 Sets the power factor of this load. This will change indirectly the
 	 value of the real power of this load.
 	 <p>Registered listeners receive notification of these changes (pf & P).
 	 @param powerFactor A value >= 0.7  and <=1.0 representing the new power
@@ -257,7 +281,7 @@ public abstract class Load {
 		this.powerFactor = powerFactor;
 		notifier.info.addFieldChange("watts", oldWatts, getWatts());
 		notifier.notifyAllListeners();
-    }
+	}
 
 	/**
 	 @return The power factor of this load. A positive number between 0.7 and
@@ -270,49 +294,55 @@ public abstract class Load {
 	/**
 	 @return The Minimum Circuit Ampacity of this loads, in amperes.
 	 */
-    public abstract double getMCA();
+	public double getMCA() {
+		return MCA;
+	}
 
 	/**
 	 @return The quotient between the MCA and the load nominal current. Notice
 	 this value is greater or equal to 1.
 	 */
-    public double getMCAMultiplier() {
-        return currents.MCA / currents.nominalCurrent;
-    }
+	public double getMCAMultiplier() {
+		return MCA / nominalCurrent;
+	}
 
 	/**
 	 @return The maximum overcurrent protection device (OCPD) rating
 	 (protection for short-circuit, ground-fault and overload), in amperes.
-	 If the returned value is 0, it means that a particular OCDP device is
-	 not required for this load and thus, the rating of the device must be
+	 If the returned value is 0, it means that a specific OCDP rating is not
+	 required for this load and thus, the rating of the OCPD must be
 	 determined at the circuit level to protect the conductors feeding this
 	 load.
 	 <p>The is100PercentRated parameter may look trivial. It is up to the
 	 load object to decide to use it or not. For some load types, the NEC
-	 allows to skip the 1.25*I_continuous increase in OCDP size if the OCDP
-	 and its enclosure are 100% rated. As this exception does not apply to
-	 all loads, each load object must decide to account for it or ignore it.
-	 <p>Descendant load classes having particular requirements for an OCPD,
-	 must override this method to return the proper OCPD rating.
-	 @param is100PercentRated Tells the load if the requested value is for an
-	 OCPD that is 100% rated.
+	 allows to skip the 1.25*Inom increase in OCDP size if the OCDP and its
+	 enclosure are 100% rated. As this exception does not apply to all loads,
+	 each load object must decide to account for it or ignore it.
+	 <p>For this base class the returned value is zero. Descendant load classes
+	 having particular requirements for an OCPD rating, must override this
+	 method to return the proper value.
+	 @param is100PercentRated Indicates if the requested value is for an
+	 OCPD (and enclosure) that is 100% rated.
 	 */
 	public double getMaxOCPDRating(boolean is100PercentRated){
 		return 0;
 		/*When is100PercentRated is accounted for, use this:
-		* if(is100PercentRated || !isContinuous)
-		*   return Inom
-		* else
-		*   return 1.25*Inom
-		* Few loads would use this approach!*/
-    }
+		 * if(is100PercentRated || !isContinuous)
+		 *   return Inom
+		 * else
+		 *   return 1.25*Inom
+		 * Few loads would use this approach!*/
+	}
 
 	/**
-	 @return The minimum rating, in amperes, of the disconnect switch for this
-	 load, if required. If the returned value is 0, it means a disconnect switch
-	 is not required for this load.
-	 <p>Descendant load classes requiring or possibly having a DS (Disconnect
-	 Switch) must override this method to return the proper DS rating.
+	 @return The minimum rating in amperes of the disconnect switch (DS) for
+	 this load, if a DS is required. If the returned value is 0, it means a
+	 specific disconnect switch rating is not required for this load, and
+	 thus the rating should be determined at the circuit level, usually a
+	 value equal or greater than the circuit's OCPD rating.
+	 <p>For this base class the returned value is zero. Descendant load classes
+	 requiring or possibly having a DS (Disconnect Switch) must override this
+	 method to return the proper DS rating.
 	 */
 	public double getDSRating(){
 		return 0;
@@ -320,12 +350,13 @@ public abstract class Load {
 
 	/**
 	 @return True if the Next Higher Standard Rating rule can be applied to
-	 this load's OCPD, False otherwise.
+	 this load's OCPD, false otherwise.
 	 <p>The returned value is meaningful only if
 	 {@link #getMaxOCPDRating(boolean)} return a non zero value.
 
-	 <p>Descendant load classes that do not allow the application of
-	 this rule must override this method to return false.
+	 <p>For this base class the returned value is true. Descendant load classes
+	 that do not allow the application of this rule must override this method
+	 to return false.
 	 */
 	public boolean NHSRRuleApplies(){
 		return true;
@@ -333,21 +364,22 @@ public abstract class Load {
 
 	/**
 	 @return The maximum ampere rating of the overload protection device.
-	 If the returned value is 0, it means a separate overload protection device
-	 is not required for this load and that the overcurrent protection is
-	 provided by the OCPD (Short-Circuit and Ground-Fault Protection).
-	 <p>Descendant load classes requiring a separate overload protection
-	 device must override this method to return the proper overload rating.
+	 If the returned value is 0, it means a specific rating for a separate
+	 overload protection device is not required for this load and that the
+	 overcurrent protection is provided by the OCPD (Short-Circuit and
+	 Ground-Fault Protection).
+	 <p>For this base class the returned value is zero. Descendant load classes
+	 requiring a specific separate overload protection device rating must
+	 override this method to return the proper overload protection rating.
 	 */
-    public double getOverloadRating(){
-    	return 0;
-    }
+	public double getOverloadRating(){
+		return 0;
+	}
 
 	/**
 	 Sets the description of this load.
 	 @param description The description of the load. This should comply with the
-	 NEC requirements for describing a load circuit for panel circuit
-	 identification.
+	 NEC requirements for describing loads in panel circuit identification.
 	 */
 	public void setDescription(String description){
 		if(this.description != null)
@@ -366,7 +398,8 @@ public abstract class Load {
 	}
 
 	/**
-	 @return The notifier delegate object for this object.
+	 @return The {@link NotifierDelegate notifier delegate} object for this
+	 load.
 	 */
 	public NotifierDelegate getNotifier() {
 		return notifier;
@@ -388,21 +421,92 @@ public abstract class Load {
 
 	/**
 	 @return True if this is a nonlinear load (a load with harmonics); false
-	 otherwise.
-	 * Future: to be refactored to abstract when the proper method for dealing
-	 *  with nonlinear loads is developed.
-	 */
+	 otherwise.<br>
+	 For this base class the returned value is false. Descendant load classes
+	 with a nonlinear behavior must override this method to return true.*/
 	public boolean isNonlinear(){
-		return _isNonlinear;
+		//todo: to be removed when NonLinearLoad is implemented.
+		return /*false*/ _isNonlinear;
+	}
+
+	/**
+	 @return The type of the load in regards to its continuousness.
+	 @see LoadType
+	 */
+	public LoadType getLoadType() {
+		return loadType;
+	}
+
+	/**
+	 Makes this load a continuous load, implying that the MCA value changes to
+	 1.25*nominalCurrent. The load type changes to CONTINUOUS. Registered
+	 listeners are notified of this change.
+	 */
+	public void setContinuous() {
+		if(loadType == LoadType.CONTINUOUS)
+			return;
+		_setContinuousness(LoadType.CONTINUOUS, -1);
+	}
+
+	/**
+	 Makes this load a non continuous load, implying that the MCA value changes
+	 to the same value of nominalCurrent. Registered listeners are notified
+	 of this change.
+	 */
+	public void setNonContinuous() {
+		if(loadType == LoadType.NONCONTINUOUS)
+			return;
+		_setContinuousness(LoadType.NONCONTINUOUS, -1);
+	}
+
+	/**
+	 Sets explicitly the MCA for this load and mark this load as a mixed load.
+	 Notice that MCA should always be equal or greater than the load's nominal
+	 current. An attempt to set an MCA lesser than the load's nominal current
+	 will convert this load to a NONCONTINUOUS one, with an MCA equal to the
+	 load's nominal current. Also notice that there is no limitation on how big
+	 the MCA value can be, in regards to the load current. Registered
+	 listeners are notified of this change.
+	 @param MCA The new minimum circuit ampacity (MCA) for this load.
+	 */
+	public void setMixed(double MCA) {
+		if(this.MCA == MCA && loadType == LoadType.MIXED)
+			return;
+		if(MCA <= nominalCurrent) {
+			setNonContinuous();
+			return;
+		}
+		_setContinuousness(LoadType.MIXED, MCA);
+	}
+
+	/**Sets the new behavior of the load and notifies its listeners about it.
+	 If the parameter is null nothing is set.*/
+	private void _setContinuousness(LoadType loadType, double mca){
+		LoadType oldLoadType = this.loadType;
+		double oldMCA = MCA;
+		this.loadType = loadType;
+		if(loadType == LoadType.CONTINUOUS)
+			MCA = 1.25 * nominalCurrent;
+		else if(loadType == LoadType.NONCONTINUOUS)
+			MCA = nominalCurrent;
+		else //MIXED
+			MCA = mca;
+		notifier.info.addFieldChange("loadType", oldLoadType,
+				this.loadType);
+		notifier.info.addFieldChange("MCA", oldMCA, MCA);
+		notifier.notifyAllListeners();
 	}
 
 	/**
 	 Sets the nonlinear behavior of this load.
 	 @param flag If true, the load is set to nonlinear (load with harmonics).
-	 If false, the load is set as a linear one (the default).
-	 * Future: This is a temporary method. It should be removed once the
-	 *  proper method of determining if a load is linear or not is developed
-	  * and how much is the neutral current.
+	 If false, the load is set as a linear one (the default).<br>
+	 "*************************"<br>
+	 Future: This is a temporary method.
+	  A nonlinear load must be a descendant class that returns true for
+	  its isNonLinear() method. A load is just linear like this load or
+	  nonlinear as a descendant specialized load.<br>
+	 "*************************"
 	 */
 	public void setNonlinear(boolean flag){
 		if(_isNonlinear == flag)

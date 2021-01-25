@@ -197,51 +197,51 @@ public class Circuit {
 	/**Indicates if only 1 EGC should be used for each conduit or in a bundle.
 	 It has meaning when using conductors, not when using cables.*/
 	private boolean usingOneEGC = false;
-	private static final Message ERROR210 = new Message(
+	private static final ResultMessage ERROR210 = new ResultMessage(
 	"More than one set of conductors or cables cannot be in a shared " +
 			"conduit.",-210);
-	private static final Message ERROR220 = new Message(
+	private static final ResultMessage ERROR220 = new ResultMessage(
 	"More than one set of conductors or cables cannot be in a shared " +
 			"bundle.",-220);
-	private static final Message ERROR230 = new Message(
+	private static final ResultMessage ERROR230 = new ResultMessage(
 	"The provided shared conduit is not valid.",-230);
-	private static final Message ERROR240 = new Message(
+	private static final ResultMessage ERROR240 = new ResultMessage(
 	"The provided shared bundle is not valid.",-240);
-	private static final Message ERROR250 = new Message(
+	private static final ResultMessage ERROR250 = new ResultMessage(
 	"Changing the number of conduits is only allowed when in" +
 			" private circuitMode.",-250);
-	private static final Message ERROR260 = new Message(
+	private static final ResultMessage ERROR260 = new ResultMessage(
 	"Ampacity of the load is to high. Increment the number of " +
 			"sets, or use less sets per conduit.",-260);
-	private static final Message ERROR270 = new Message(
+	private static final ResultMessage ERROR270 = new ResultMessage(
 	"Paralleled power conductors in sizes smaller than 1/0 AWG " +
 			"are not permitted. NEC-310.10(H)(1)",-270);
-	private static final Message ERROR280 = new Message(
+	private static final ResultMessage ERROR280 = new ResultMessage(
 	"Private conduit is available only in private conduit " +
 			"circuitMode.",-280);
-	private static final Message ERROR282 = new Message(
+	private static final ResultMessage ERROR282 = new ResultMessage(
 	"Private bundle is available only in private bundle " +
 			"circuitMode.",-282);
-	private static final Message ERROR284 = new Message(
+	private static final ResultMessage ERROR284 = new ResultMessage(
 	"Circuit phase, neutral and grounding insulated conductors " +
 			"are available only when using conductors, not when using " +
 			"cables.",-284);
-	private static final Message ERROR286 = new Message(
+	private static final ResultMessage ERROR286 = new ResultMessage(
 	"Circuit cables are available only when using cables, not " +
 			"when using conductors", -286);
-	private static final Message ERROR290 = new Message(
+	private static final ResultMessage ERROR290 = new ResultMessage(
 	"Temperature rating of conductors or cable is not suitable " +
 			"for the conditions of use", -290);
-	private static final Message WARNN200 = new Message(
+	private static final ResultMessage WARNN200 = new ResultMessage(
 	"Insulated conductors are being used in free air. This " +
 			"could be considered a bad practice.", 200);
-	private static final Message WARNN205 = new Message(
+	private static final ResultMessage WARNN205 = new ResultMessage(
 	"Insulated conductors are being used in a bundle. This " +
 			"could be considered a bad practice.", 205);
-	private static final Message WARNN210 = new Message(
+	private static final ResultMessage WARNN210 = new ResultMessage(
 	"Cables are being used in conduit. This could be an " +
 			"expensive practice.", 210);
-	private static final Message WARNN220 = new Message(
+	private static final ResultMessage WARNN220 = new ResultMessage(
 	"Corrected and adjusted ampacity for this conductor/cable " +
 			"temp rating exceeds the ampacity for the temperature rating of " +
 			"the termination.\nConductor/cable size has been selected per " +
@@ -503,23 +503,21 @@ public class Circuit {
 			}
 			return false;
 		};
+		/*The 100% rated exception applies to conductor sizing and OCPD
+		rating for both branch circuits and feeders. NEC rules 210.19(A)(1),
+		210.20(A), 215.2, 215.3*/
 		Function<TempRating, Double> getFactor = tempRating -> {
 			if(ocdp.is100PercentRated())
 				return conduitable.getCompoundFactor(); //do not account for 1.25
 			else
 				return Math.min(
-					1 / load.getMCAMultiplier(),
+					1 / load.getMCAMultiplier(),//this is 1.25 or other
 					tempRating == null? conduitable.getCompoundFactor()
 					: conduitable.getCompoundFactor(tempRating)
 				);
 		};
 
 		double factor1 = getFactor.apply(null);
-		/*if(ocdp.is100PercentRated())
-			factor1 = conduitable.getCompoundFactor(); //do not account for 1.25
-		else
-			factor1 = Math.min(1 / load.getMCAMultiplier(), conduitable.getCompoundFactor());*/
-
 		if(factor1 == 0) {
 			//temp. rating of conductor not suitable for the ambient temperature
 			resultMessages.add(ERROR290);
@@ -842,7 +840,7 @@ public class Circuit {
 		if(circuitMode == CircuitMode.PRIVATE_CONDUIT) {
 			detachFromSharedConduit.run();
 			detachFromSharedBundle.run();
-			conduitables.forEach(conduitable -> privateConduit.add(conduitable));
+			conduitables.forEach(privateConduit::add);
 			if(usingCable) //using cables in conduit, bad practice
 				resultMessages.add(WARNN210);
 		}
@@ -855,7 +853,7 @@ public class Circuit {
 		else if(circuitMode == CircuitMode.PRIVATE_BUNDLE) {
 			detachFromSharedConduit.run();
 			detachFromSharedBundle.run();
-			conduitables.forEach(conduitable -> privateBundle.add(conduitable));
+			conduitables.forEach(privateBundle::add);
 			if(!usingCable)//using conductors in bundle, bad practice
 				resultMessages.add(WARNN205);
 		}
@@ -1021,10 +1019,11 @@ public class Circuit {
 		/*The OCPD object is available by calling getOcpd(). It will provide
 		the proper ratings. No calculation is done for the OCPD at the
 		circuit level*/
-		//calculateOCPD();
 		if(!calculateEGC())
 			return false;
-		//calculateConduit();
+		/*The conduit object is available by calling getPrivateConduit() or
+		getSharedConduit(). That object will provide the proper trade size. No
+		calculation is done for the conduit size at the circuit level*/
 		if(!resultMessages.hasErrors()) {
 			circuitChangedRecalculationNeeded = false;
 			return true;
@@ -1213,9 +1212,11 @@ public class Circuit {
 	 */
 	private boolean calculateEGC(){
 		Metal metal = usingCable ? cable.getMetal(): groundingConductor.getMetal();
-		circuitChangedRecalculationNeeded = false; //this is a hack. smelly hack
-		Size egcSize = OCPD.getEGCSize(ocdp.getRating(), metal);
-		circuitChangedRecalculationNeeded = true; //this is a hack. smelly hack
+		//requesting ocpd to provide the rating for circuitAmpacity
+		Message message = new Message(10132189,	circuitAmpacity);
+		if(!ocdp.messaging(this, message))
+			return false;
+		Size egcSize = OCPD.getEGCSize((int) message.container, metal);
 		if(egcSize == null)
 			return false;
 
@@ -1237,12 +1238,6 @@ public class Circuit {
 		else
 			groundingConductor.setSize(egcSize);
 
-		//Quedé aquí 1
-		/*
-		-run several test for the calculation of the egc, with different
-		scenarios, with conductors decided per VD and per ampacity.
-		-commit changes
-		* */
 		return true;
 	}
 

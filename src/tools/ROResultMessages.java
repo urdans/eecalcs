@@ -1,7 +1,5 @@
 package tools;
 
-import eecalcs.conductors.Conductor;
-
 import java.util.List;
 
 /**
@@ -36,7 +34,7 @@ public interface ROResultMessages {
 	 @return True if this container contains that message object, false
 	 otherwise.
 	 */
-	boolean containsMessage(Message msg);
+	boolean containsMessage(ResultMessage msg);
 
 	/**
 	 Asks if the container has messages.
@@ -79,5 +77,5 @@ public interface ROResultMessages {
 	/**
 	 @return a list containing all the registered message objects.
 	 */
-	List<Message> getMessages();
+	List<ResultMessage> getMessages();
 }

@@ -5,6 +5,7 @@ package eecalcs.loads;
  used by load objects for sharing these fields by using its container as a
  reference, between composition classes.
  */
+@Deprecated
 class Currents {
 	/** The nominal current of a load, in amperes */
 	public double nominalCurrent;

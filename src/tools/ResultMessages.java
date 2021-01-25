@@ -6,15 +6,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- This class contains and manage messages that results from any calculations
+ This class contains and manage resultMessages that results from any calculations
  or validation performed by this package tool. Negative message number are
- considered errors that impeaches proper calculation. Positive messages numbers
+ considered errors that impeaches proper calculation. Positive resultMessages numbers
  are warnings that doesn't affect the calculation result but that the user
  needs to be aware of.
  */
 public class ResultMessages implements ROResultMessages {
-	private final List<Message> messages =  new ArrayList<>();
-	//private Message[] mensaje;
+	private final List<ResultMessage> resultMessages =  new ArrayList<>();
+	//private ResultMessage[] mensaje;
 
 	/**
 	 Adds a new message to this result message container; if the message number
@@ -24,13 +24,13 @@ public class ResultMessages implements ROResultMessages {
 
 	 @param resultMessage The text of the message.
 	 @param number The number of the message.
-	 @see Message
+	 @see ResultMessage
 	 */
 	public void add(String resultMessage, int number) {
-		for(Message msg: messages){
+		for(ResultMessage msg: resultMessages){
 			if(msg.number == number) return;
 		}
-		messages.add(new Message(resultMessage, number));
+		resultMessages.add(new ResultMessage(resultMessage, number));
 	}
 
 	/**
@@ -39,16 +39,16 @@ public class ResultMessages implements ROResultMessages {
 	 @param msg The existing message object to be added to this result message
 	 container.
 
-	 @see Message
+	 @see ResultMessage
 	 */
-	public void add(Message msg){
-		if(messages.contains(msg)) return;
-		messages.add(msg);
+	public void add(ResultMessage msg){
+		if(resultMessages.contains(msg)) return;
+		resultMessages.add(msg);
 	}
 
 	@Override
 	public String getMessage(int number) {
-		for(Message msg: messages){
+		for(ResultMessage msg: resultMessages){
 			if(msg.number == number) return msg.message;
 		}
 		return "";
@@ -60,13 +60,13 @@ public class ResultMessages implements ROResultMessages {
 	}
 
 	@Override
-	public boolean containsMessage(Message msg){
-		return messages.contains(msg);
+	public boolean containsMessage(ResultMessage msg){
+		return resultMessages.contains(msg);
 	}
 
 	@Override
 	public boolean hasMessages() {
-		return messages.size() > 0;
+		return resultMessages.size() > 0;
 	}
 
 	@Override
@@ -82,7 +82,7 @@ public class ResultMessages implements ROResultMessages {
 	@Override
 	public int errorCount() {
 		int result = 0;
-		for(Message msg: messages){
+		for(ResultMessage msg: resultMessages){
 			if(msg.number < 0) result++;
 		}
 		return result;
@@ -91,7 +91,7 @@ public class ResultMessages implements ROResultMessages {
 	@Override
 	public int warningCount() {
 		int result = 0;
-		for(Message msg: messages){
+		for(ResultMessage msg: resultMessages){
 			if(msg.number > 0) result++;
 		}
 		return result;
@@ -104,9 +104,9 @@ public class ResultMessages implements ROResultMessages {
 	 @param number The number of the message to be removed from this container.
 	 */
 	public void remove(int number){
-		for(Message msg : messages){
+		for(ResultMessage msg : resultMessages){
 			if(msg.number == number) {
-				messages.remove(msg);
+				resultMessages.remove(msg);
 				break;
 			}
 		}
@@ -117,41 +117,41 @@ public class ResultMessages implements ROResultMessages {
 
 	 @param msg The existing message object to be removed from this result
 	 message container.
-	 @see Message
+	 @see ResultMessage
 	 */
-	public void remove(Message msg){
-		messages.remove(msg);
+	public void remove(ResultMessage msg){
+		resultMessages.remove(msg);
 	}
 
 	@Override
-	public List<Message> getMessages() {
-		List<Message> m = new ArrayList<>();
-		for (Message mes:messages) {
-			m.add(new Message(mes.message, mes.number));
+	public List<ResultMessage> getMessages() {
+		List<ResultMessage> m = new ArrayList<>();
+		for (ResultMessage mes: resultMessages) {
+			m.add(new ResultMessage(mes.message, mes.number));
 		}
 		return m;
 	}
 
 	/**
-	 Clear all the registered messages in this container.
+	 Clear all the registered resultMessages in this container.
 	 */
 	public void clearMessages(){
-		messages.clear();
+		resultMessages.clear();
 	}
 
 	/**
-	 Copies all the messages from the given source into this object. The
-	 existing messages are preserved. If the source has messages that already
-	 exists in this object, such messages are not copied.
-	 @param source The ResultMessages object from which messages are copied.
-	 @return The number of messages copied.
+	 Copies all the resultMessages from the given source into this object. The
+	 existing resultMessages are preserved. If the source has resultMessages that already
+	 exists in this object, such resultMessages are not copied.
+	 @param source The ResultMessages object from which resultMessages are copied.
+	 @return The number of resultMessages copied.
 	 */
 	public int copyFrom(@NotNull ROResultMessages source){
 		int count = 0;
-		for(Message sourceMessage: source.getMessages()) {
-			if (!containsMessage(sourceMessage.number)){
+		for(ResultMessage sourceResultMessage : source.getMessages()) {
+			if (!containsMessage(sourceResultMessage.number)){
 				count++;
-				add(sourceMessage);
+				add(sourceResultMessage);
 			}
 		}
 		return count;

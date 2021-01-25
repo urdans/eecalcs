@@ -12,7 +12,8 @@ import eecalcs.systems.VoltageSystemAC;
  rating of any of those devices is requested (this class does not override
  the corresponding rating-inquiring methods).
  */
-public class GeneralLoad extends Load implements Continuousness{
+@Deprecated
+public class GeneralOldLoad extends OldLoad implements Continuousness{
 	private final ContinuousBehavior continuousBehavior = new ContinuousBehavior(currents);
 
 	/**
@@ -20,7 +21,7 @@ public class GeneralLoad extends Load implements Continuousness{
 	 1-phase 2-wires, nominal current and MCA of 10 amperes and non
 	 continuous behavior.
 	 */
-	public GeneralLoad() {
+	public GeneralOldLoad() {
 		super();
 		continuousBehavior.setNotifierDelegate(notifier);
 	}
@@ -30,7 +31,7 @@ public class GeneralLoad extends Load implements Continuousness{
 	 nominalCurrent value for the nominal current and MCA, and a non
 	 continuous behavior.
 	 */
-	public GeneralLoad(VoltageSystemAC voltageSystemAC, double nominalCurrent){
+	public GeneralOldLoad(VoltageSystemAC voltageSystemAC, double nominalCurrent){
 		super(voltageSystemAC, nominalCurrent);
 		continuousBehavior.setNotifierDelegate(notifier);
 	}
@@ -76,7 +77,7 @@ public class GeneralLoad extends Load implements Continuousness{
 		continuousBehavior.updatedNominalCurrent();
 	}
 	//todo: why do I have three classes to represent a basic load?
-	// The base class Load should have all the methods that allow a
+	// The base class OldLoad should have all the methods that allow a
 	// circuit class to calculate all the circuit components. Specialized
 	// loads should just extend the base class and implement the abstract
 	// methods if any, override existing ones or introducing new methods. I

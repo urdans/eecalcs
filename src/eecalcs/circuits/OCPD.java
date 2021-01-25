@@ -1,11 +1,11 @@
 package eecalcs.circuits;
 
-import com.sun.deploy.util.ArrayUtil;
 import eecalcs.conductors.Metal;
 import eecalcs.conductors.Size;
+import eecalcs.loads.Load;
+import tools.Message;
 import tools.NotifierDelegate;
-
-import java.lang.reflect.Array;
+import tools.Receiver;
 
 /**
  This class represents an OverCurrent Protection Device when providing
@@ -32,8 +32,7 @@ import java.lang.reflect.Array;
  the OCPD rating to protect the conductors only.</li>
  </ol>
  */
-
-public class OCPD {
+public class OCPD implements Receiver {
 	private static final int[] standardRatings = {15, 20, 25, 30, 35, 40, 45,
 			50, 60, 70, 80, 90, 100, 110, 125, 150, 175, 200, 225, 250, 300,
 			350, 400, 450, 500, 600, 700, 800, 1000, 1200, 1600, 2000, 2500,
@@ -99,6 +98,7 @@ public class OCPD {
 	*/
 	private boolean _100PercentRated = false; //it's 80% rated by default.
 	private final Circuit circuit;
+//	private double circuitAmpacity;
 
 	/**
 	 @return The notifier delegate object for this object.
@@ -189,21 +189,24 @@ public class OCPD {
 	/**
 	 @return The rating of this OCPD when owned by a circuit.
 	 The rating is decided as follows: if the circuit's load has OCPD
-	 requirements ({@link eecalcs.loads.Load#getMaxOCPDRating(boolean)}
+	 requirements ({@link Load#getMaxOCPDRating(boolean)}
 	 returns a non zero value), it determines the OCPD rating per these load's
 	 requirements, otherwise it determines the OCPD rating to protect the
 	 circuit's conductors only, based on the ampacity of the circuit
 	 conductors under all the existing conditions of installations.
 	 */
 	public int getRating() {
+		return getRating(circuit.getCircuitAmpacity());
+	}
+
+	private int getRating(double circuitAmpacity){
 		double maxOCPD = circuit.getLoad().getMaxOCPDRating(_100PercentRated);
 		//if the circuit's load has an OCPD requirement, use it!.
 		if (maxOCPD != 0)
 			return getRatingFor(maxOCPD, circuit.getLoad().NHSRRuleApplies());
 
 		//No load OCPD requirement. So, select rating to protect conduitables.
-		return getRatingFor(circuit.getCircuitAmpacity(),
-				circuit.getLoad().NHSRRuleApplies());
+		return getRatingFor(circuitAmpacity, circuit.getLoad().NHSRRuleApplies());
 	}
 
 	/**
@@ -224,5 +227,19 @@ public class OCPD {
 		notifier.info.addFieldChange("_100PercentRated", _100PercentRated, flag );
 		_100PercentRated = flag;
 		notifier.notifyAllListeners();
+	}
+
+	@Override
+	public boolean messaging(Object sender, Message message) {
+		if(sender == circuit) {
+			if(message.id == 10132189) {
+				//owner circuit is requesting ocpd rating for the passed current
+				if(message.container instanceof Double){
+					message.container = getRating((Double) message.container);
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 }
