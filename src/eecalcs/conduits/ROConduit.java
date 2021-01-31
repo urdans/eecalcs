@@ -1,6 +1,7 @@
 package eecalcs.conduits;
 
 import eecalcs.conductors.Conduitable;
+import eecalcs.conductors.RoConductor;
 import eecalcs.conductors.Size;
 
 /**
@@ -109,7 +110,7 @@ public interface ROConduit {
      filling this conduit. To get the size of this conduit by accounting for
      the biggest EGC use {@link #getTradeSizeForOneEGC()}. To obtain the size
      of an EGC that would replace all the existing EGC call
-     {@link #getOneEGCSize()}
+     {@link #getBiggestOneEGC()}
 
      @return The calculated trade size of this conduit.
      */
@@ -130,7 +131,8 @@ public interface ROConduit {
 
     /**
      @return The trade size of this conduit as if it was using only one EGC.
-     Refer to {@link #getOneEGCSize()} for more information.
+     The conduit must have at least one EGC. Returns null if there is no EGC.
+     Refer to {@link #getBiggestOneEGC()} for more information.
      */
     Trade getTradeSizeForOneEGC();
 
@@ -139,9 +141,10 @@ public interface ROConduit {
      EGC of the wire type in this conduit, in accordance with NEC 250.122(C).
      This replacement is for insulated conductors only; it does not account
      for the EGC of any cable inside this conduit.<br>
-     If the conduit has only cables or the conduit is empty, this method
-     returns null. This means there is nothing to replace, and that if there
-     are cables in this conduit it is assumed their EGC are properly sized.
+     If the conduit has only cables, or the conduit is empty, or the
+     conduit does not have an EGC, this method  returns null. This means there
+     is nothing to replace, and that if there are cables in this conduit it
+     is assumed their EGC are properly sized.
      */
-    Size getOneEGCSize();
+    RoConductor getBiggestOneEGC();
 }

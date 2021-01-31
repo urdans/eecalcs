@@ -1,12 +1,13 @@
 package test.java;
 
+import eecalcs.circuits.Circuit;
 import eecalcs.conductors.*;
 import eecalcs.conduits.Conduit;
 import eecalcs.conduits.Trade;
 import eecalcs.conduits.Type;
+import eecalcs.loads.GeneralLoad;
 import eecalcs.systems.VoltageSystemAC;
 import org.junit.jupiter.api.Test;
-import test.Tools;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -165,10 +166,6 @@ class ConduitTest {
         assertNull(conduit.getTradeSize());
         assertTrue(conduit.getResultMessages().containsMessage(-100));
 
-/*        conduit.setNipple(null);
-        assertNull(conduit.getTradeSize());
-        assertTrue(conduit.resultMessages.containsMessage(-130));*/
-
         conduit.setType(null);
         assertNull(conduit.getTradeSize());
         assertTrue(conduit.getResultMessages().containsMessage(-120));
@@ -196,4 +193,57 @@ class ConduitTest {
         assertEquals(40, conduit.getMaxAllowedFillPercentage());
     }
 
+    @Test
+    void getBiggestOneEGC(){
+        Conductor ground1 = new Conductor().setSize(Size.AWG_12).setRole(Conductor.Role.GND);
+        Conductor ground2 = new Conductor().setSize(Size.AWG_10).setRole(Conductor.Role.GND);
+        Conductor ground3 = new Conductor().setSize(Size.AWG_8).setRole(Conductor.Role.GND);
+        conduit.add(ground1);
+        conduit.add(ground2);
+        conduit.add(ground3);
+        assertEquals(Size.AWG_8, conduit.getBiggestOneEGC().getSize());
+        assertEquals(Trade.T1$2, conduit.getTradeSizeForOneEGC());
+
+
+        conduit.empty();
+        conduit.add(ground2);
+        conduit.add(ground3);
+        conduit.add(ground1);
+        conduit.add(ground3.clone());
+        assertEquals(Size.AWG_8, conduit.getBiggestOneEGC().getSize());
+        assertEquals(Trade.T1$2, conduit.getTradeSizeForOneEGC());
+
+
+        Circuit circuit = new Circuit(new GeneralLoad());
+        circuit.setConduitMode(conduit);
+        assertEquals(Size.AWG_8, conduit.getBiggestOneEGC().getSize());
+
+        circuit.getLoad().setNominalCurrent(200);
+
+        assertEquals(Size.AWG_3$0, circuit.getCircuitSize());
+        assertEquals(Size.AWG_6, circuit.getGroundingConductor().getSize());
+        assertEquals(200, circuit.getOcdp().getRating());
+
+        /*the conduit contains 7 conductors: 1x12+1x10+2x8+2x3/0+1x6, out f
+        which 5 are EGC, where the biggest one is the #6.
+        Total area of these conductors is 0.8258 and the required area is 0
+        .8258/0.4 = 2.0645; For an EMT conduit, the trade size is 2" which
+        is 3.356
+        */
+        assertEquals(0.8258, conduit.getConduitablesArea());
+        assertEquals(Trade.T2, conduit.getTradeSize());
+        assertEquals(Insul.THW,circuit.getPhaseConductor().getInsulation());
+        assertEquals(40, conduit.getMaxAllowedFillPercentage());
+        assertEquals(Type.EMT, conduit.getType());
+
+        /*for this scenario, the conduit is assumed to contain only 3
+        conductors: 2x3/0+1x6 (1 hot + 1neutral + EGC).
+        Total area of these conductors is 0.696 and the required area is 0
+        .696/0.4 = 1.74; For an EMT conduit, the trade size is 1-1/2" which
+        is 2.036
+        */
+        assertEquals(Size.AWG_6, conduit.getBiggestOneEGC().getSize());
+        assertEquals(Trade.T1_1$2, conduit.getTradeSizeForOneEGC());
+
+    }
 }

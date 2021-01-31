@@ -68,13 +68,6 @@ class ConductorPropertiesTest {
     }
 
     @Test
-    void compareSizes() {
-        assertEquals(0, ConductorProperties.compareSizes(Size.AWG_1, Size.AWG_1));
-        assertTrue(0 >= ConductorProperties.compareSizes(Size.AWG_10, Size.AWG_1));
-        assertTrue(0 <= ConductorProperties.compareSizes(Size.AWG_1$0, Size.AWG_1));
-    }
-
-    @Test
     void getReactance() {
         assertEquals(0, ConductorProperties.getReactance(null, ConduitProperties.Magnetic),0.0001);
         assertEquals(0.057000, ConductorProperties.getReactance(Size.AWG_1, ConduitProperties.Magnetic),0.0001);

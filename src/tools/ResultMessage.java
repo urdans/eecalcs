@@ -22,4 +22,9 @@ public class ResultMessage {
 		this.message = message;
 		this.number = number;
 	}
+
+	public ResultMessage append(String additionalInfo){
+		message = message + "\n" + additionalInfo;
+		return this;
+	}
 }

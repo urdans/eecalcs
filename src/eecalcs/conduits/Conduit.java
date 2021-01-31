@@ -1,7 +1,6 @@
 package eecalcs.conduits;
 
-import eecalcs.conductors.Conduitable;
-import eecalcs.conductors.Size;
+import eecalcs.conductors.*;
 import tools.ResultMessage;
 import tools.NotifierDelegate;
 import tools.ROResultMessages;
@@ -155,10 +154,6 @@ public class Conduit implements ROConduit {
 	 this conduit will be empty.
 	 */
 	public void empty() {
-/*      Conduitable[] conduitableArray = new Conduitable[conduitables.size()];
-        conduitableArray = conduitables.toArray(conduitableArray);
-        for(Conduitable conduitable: conduitableArray) conduitable
-        .leaveConduit();*/
 		Object[] c = conduitables.toArray();
 		for (Object o : c) ((Conduitable) o).leaveConduit();
 		notifier.info.addFieldChange("conduitables", null, null);
@@ -219,17 +214,12 @@ public class Conduit implements ROConduit {
 	public Trade getTradeSize() {
 		if (!checkInput())
 			return null;
-		double conduitableAreas = getConduitablesArea();
-		conduitableAreas /= (getMaxAllowedFillPercentage() * 0.01);
-		Map<Trade, Double> areasForType =
-				ConduitProperties.getAreasForType(type);
-		for (int i = minimumTrade.ordinal(); i < Trade.values().length; i++)
-			if (ConduitProperties.hasArea(type, Trade.values()[i])) {
-				if (areasForType.get(Trade.values()[i]) >= conduitableAreas)
-					return Trade.values()[i];
-			}
-		resultMessages.add(ERROR100);
-		return null;
+		double conduitableAreas = getConduitablesArea() / (getMaxAllowedFillPercentage() * 0.01);
+		Trade result = ConduitProperties.getTradeSizeForArea(conduitableAreas
+				, type, minimumTrade);
+		if(result == null)
+			resultMessages.add(ERROR100);
+		return result;
 	}
 
 	@Override
@@ -267,14 +257,47 @@ public class Conduit implements ROConduit {
 
 	@Override
 	public Trade getTradeSizeForOneEGC() {
-		//Quedé aquí 4: implement this
-		return null;
+		if(isEmpty())
+			return null;
+		RoConductor EGC = getBiggestOneEGC();
+		if(EGC == null)
+			return null;
+		double EGCArea = ConductorProperties.getInsulatedAreaIn2(EGC.getSize(),
+				EGC.getInsulation());
+		double totalConduitableAreaWithoutEGC = 0;
+
+		for(Conduitable conduitable: conduitables){
+			if(conduitable instanceof Conductor) {
+				Conductor conductor = (Conductor) conduitable;
+				if (conductor.getRole() != Conductor.Role.GND)
+					totalConduitableAreaWithoutEGC += conductor.getInsulatedAreaIn2();
+			}
+		}
+		double requiredArea =
+				(EGCArea + totalConduitableAreaWithoutEGC) / (getMaxAllowedFillPercentage() * 0.01);
+
+		Trade result = ConduitProperties.getTradeSizeForArea(requiredArea
+				, type, minimumTrade);
+		if(result == null)
+			resultMessages.add(ERROR100);
+		return result;
 	}
 
 	@Override
-	public Size getOneEGCSize() {
-		//Quedé aquí 5: implement this
-		return null;
+	public RoConductor getBiggestOneEGC() {
+		Conductor biggestEGC = null;
+		Size biggestEGCSize = Size.AWG_14;
+		for(Conduitable conduitable: conduitables){
+			if(conduitable instanceof Conductor) {
+				Conductor conductor = (Conductor) conduitable;
+				if (conductor.getRole() == Conductor.Role.GND)
+					if (conductor.getSize().ordinal() > biggestEGCSize.ordinal()) {
+						biggestEGCSize = conductor.getSize();
+						biggestEGC = conductor;
+					}
+			}
+		}
+		return biggestEGC;
 	}
 
 	/**

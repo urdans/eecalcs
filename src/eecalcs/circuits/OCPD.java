@@ -93,7 +93,7 @@ public class OCPD implements Receiver {
 
 	/**Indicates if this OCPD is 100% rated or not. By default it is not. This
 	information is not used by this class in any of its behaviors. It is
-	intended to be used by the Circuit class and Load class to decide if the
+	intended to be used by the Circuit class and load class to decide if the
 	1.25 factor is applied or not.
 	*/
 	private boolean _100PercentRated = false; //it's 80% rated by default.

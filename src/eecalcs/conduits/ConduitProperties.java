@@ -378,4 +378,26 @@ public class ConduitProperties {
 			return Material.STEEL;
 		return Material.PVC;
 	}
+
+	/**
+	 @return The smaller trade size whose internal area is bigger than the
+	 given area and tha is equal or bigger than the given minimum trade size.
+	 Returns null if the given area is too big for the specified type.
+	 @param area The area for which a trade size is requested.
+	 @param type The type of the conduit.
+	 @param minimumTradeSize The minimum trade size desired. If this value is
+	 null, the minimum trade size is the smallest trade size (T3$8).
+	 */
+	public static Trade  getTradeSizeForArea(double area, Type type,
+	                                         Trade minimumTradeSize){
+		Map<Trade, Double> areasForType =
+				ConduitProperties.getAreasForType(type);
+		int bound = minimumTradeSize == null? 0: minimumTradeSize.ordinal();
+		for (int i = bound; i < Trade.values().length; i++)
+			if (ConduitProperties.hasArea(type, Trade.values()[i])) {
+				if (areasForType.get(Trade.values()[i]) >= area)
+					return Trade.values()[i];
+			}
+		return null;
+	}
 }

@@ -89,9 +89,9 @@ public interface ROConduitable {
 	 60°C is 110AMP.<br>
 	 <p>The general approach to determine the allowed ampacity is:
 	 <p>&emsp;&emsp;
-	 AllowedAmpacity*TCF*AF {@literal >}= Load Amps
+	 AllowedAmpacity*TCF*AF {@literal >}= load Amps
 	 <p>&emsp;&emsp;
-	 AllowedAmpacity {@literal >}= (Load Amps)/(TCF*AF)
+	 AllowedAmpacity {@literal >}= (load Amps)/(TCF*AF)
 	 <p>&emsp;&emsp;
 	 AllowedAmpacity {@literal >}= (105)/(0.91*0.8)
 	 <p>&emsp;&emsp;

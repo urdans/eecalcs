@@ -59,12 +59,7 @@ public class VoltDrop implements ROVoltDrop {
 	private static final ResultMessage ERROR31	= new ResultMessage("No building conductor can achieve that voltage drop under the given conditions.",
 			-31);
 	private static final ResultMessage WARNN21	= new ResultMessage(ERROR21.message,21);
-	//Quedé aquí 6: why am I using a warning message that is also an error?
-	// when is an error and when is a warning? This must be refactored to be
-	// consistent with the way the size per ampacity is performed. But also,
-	// how to tell the user that the actual size is under 1/0? shouldn't the
-	// calculated size be included in the message as part of the error
-	// message or as a warning message?
+
 	private double maxLengthAC;	//maximum length of a circuit for the given max AC voltage drop
 	private double maxLengthDC;	//maximum length of a circuit for the given max DC voltage drop
 	private double actualVoltageDropPercentageAC; //actual AC voltage drop percentage for the calculated conductor size.
@@ -100,8 +95,8 @@ public class VoltDrop implements ROVoltDrop {
 			if(conductor.getSize() == null)
 				resultMessages.add(ERROR03);
 			else {
-				if (ConductorProperties.compareSizes(conductor.getSize(), Size.AWG_1$0) < 0 && sets > 1)
-					resultMessages.add(ERROR21);
+				if ((conductor.getSize().ordinal() < Size.AWG_1$0.ordinal()) && sets > 1)
+					resultMessages.add(ERROR21.append("Actual size is " + conductor.getSize().getName() + "."));
 				if(loadCurrent > sets * conductor.getCorrectedAndAdjustedAmpacity())
 					resultMessages.add(ERROR20);
 			}
@@ -192,7 +187,7 @@ public class VoltDrop implements ROVoltDrop {
 	 <p><b>Source voltage</b>: defaults to 120 volts, single phase, 2 wires.
 	 <p><b>Conductor</b>: provided in the constructor.
 	 <p><b>Sets</b>: defaults to 1 set.
-	 <p><b>Load current</b>: defaults to 10 amps.
+	 <p><b>GeneralLoad current</b>: defaults to 10 amps.
 	 <p><b>Motor factor</b>: defaults to 1.0.
 	 <p><b>Conduit material</b>: defaults to PVC.
 	 <p><b>Maximum allowed voltage drop</b>: defaults to 3 percent.
@@ -215,7 +210,7 @@ public class VoltDrop implements ROVoltDrop {
 	 <p><b>Conductor</b>: null. It can later be assigned with {@link
 	 #setConductor(Conductor)}
 	 <p><b>Sets</b>: defaults to 1 set.
-	 <p><b>Load current</b>: defaults to 10 amps.
+	 <p><b>GeneralLoad current</b>: defaults to 10 amps.
 	 <p><b>Motor factor</b>: defaults to 1.0.
 	 <p><b>Conduit material</b>: defaults to PVC.
 	 <p><b>Maximum allowed voltage drop</b>: defaults to 3 percent.
@@ -431,8 +426,8 @@ public class VoltDrop implements ROVoltDrop {
 					resultMessages.add(ERROR30);
 					return null;
 				}
-				if(sets > 1 && ConductorProperties.compareSizes(size, Size.AWG_1$0) < 0)
-					resultMessages.add(WARNN21);
+				if(sets > 1 && (size.ordinal() < Size.AWG_1$0.ordinal()))
+					resultMessages.add(WARNN21.append("Actual size is " + size.getName() + "."));
 				return size;
 			}
 		}
@@ -554,8 +549,8 @@ public class VoltDrop implements ROVoltDrop {
 					resultMessages.add(ERROR30);
 					return null;
 				}
-				if(sets > 1 && ConductorProperties.compareSizes(size, Size.AWG_1$0) < 0)
-					resultMessages.add(WARNN21);
+				if(sets > 1 && (size.ordinal() < Size.AWG_1$0.ordinal()))
+					resultMessages.add(WARNN21.append("Actual size is " + size.getName() + "."));
 				return size;
 			}
 		}

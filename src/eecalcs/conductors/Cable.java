@@ -270,7 +270,8 @@ public class Cable implements Conduitable, ROCable {
 	}
 
 	/**
-	 Sets the outer diameter of this cable.
+	 Sets the outer diameter of this cable. If the provided value is less
+	 than 0.5 inch, a 0.5 inch value is assumed.
 
 	 @param outerDiameter The outer diameter in inches.
 	 */

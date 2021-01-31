@@ -720,26 +720,8 @@ public class ConductorProperties {
 		return result;
 	}
 
-	/**
-	 Compares two conductor sizes.
-	 @param sizeLeft The size of the left side conductor to be compared as
-	 defined by {@link Size}.
-	 @param sizeRight The size of the right side conductor to be compared  as
-	 defined by {@link Size}.
-	 @return -1 if sizeLeft is smaller than sizeRight, 0 if both are equals
-	 of 1
-	 if sizeLeft is bigger than sizeRight.
-	 */
-	public static int compareSizes(Size sizeLeft, Size sizeRight) {
-		return sizeLeft.ordinal() - sizeRight.ordinal();
-	}
-
 	public static Size getBiggestSize(Size size1, Size size2) {
-		if (ConductorProperties.compareSizes(size1, size2) < 0)//size2 is
-			// bigger
-			return size2;
-		else
-			return size1;
+		return size1.ordinal() < size2.ordinal() ? size2 : size1;
 	}
 
 	/**

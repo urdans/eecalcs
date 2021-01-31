@@ -14,7 +14,6 @@ import java.util.List;
  */
 public class ResultMessages implements ROResultMessages {
 	private final List<ResultMessage> resultMessages =  new ArrayList<>();
-	//private ResultMessage[] mensaje;
 
 	/**
 	 Adds a new message to this result message container; if the message number

@@ -18,7 +18,7 @@ import java.util.function.Function;
 
  <br><br><u>The goals of this circuit class are:</u>
  <ol>
- <li><b>To calculate the right conductor/cable size:</b> based on the load
+ <li><b>To calculate the right conductor/cable size:</b> based on the Load
  properties (amperes, continuousness, type, etc.), the installation conditions
  (in free air, bundled or in conduit, ambient temperature, rooftop condition,
  etc.), and considering both ampacity (corrected and adjusted) and the maximum
@@ -27,7 +27,7 @@ import java.util.function.Function;
  conduit material, the rating of the terminals/enclosures (if known), etc.</li>
 
  <li><b>Determine rating of the overcurrent protection device (OCPD):</b> based
- on both the properties of the served load and the chosen conductor size.</li>
+ on both the properties of the served Load and the chosen conductor size.</li>
 
  <li><b>Determine the correct size of the conduit:</b> If this circuit uses a
  conduit (or several conduits for more than one set of conductors), its size
@@ -42,7 +42,7 @@ import java.util.function.Function;
 
  <li>One overcurrent protection device (OCPD).</li>
 
- <li>One connected load which is provided by the user when calling this class's
+ <li>One connected Load which is provided by the user when calling this class's
  constructor.</li>
 
  <li>Optional conduits or bundles.</li>
@@ -63,14 +63,14 @@ import java.util.function.Function;
 
  <li>The circuit rating, which is the same as the rating of the OCPD.</li>
 
- <li>If the circuit serves one-end load (dedicated) or several sparse or
- distributed or daisy chained loads. This is defined by the load object
+ <li>If the circuit serves one-end Load (dedicated) or several sparse or
+ distributed or daisy chained loads. This is defined by the Load object
  itself.</li>
 
  <li>Conditions: rooftop, wet, damp, etc.</li>
 
  <li>The allowed voltage drop (based on if it's a feeder or a branch circuit and
- based of the load type, like fire pump running, fire pump starting, sensitive
+ based of the Load type, like fire pump running, fire pump starting, sensitive
  electronic equipment, etc.).</li>
 
  <li>If the OCPD is 100% or 80% rated.</li>
@@ -497,8 +497,8 @@ public class Circuit {
 			return false;
 		};
 		Function<Size, Boolean> checkError270 = size ->{
-			if(ConductorProperties.compareSizes(size, Size.AWG_1$0) < 0 && numberOfSets > 1) {
-				resultMessages.add(ERROR270);//paralleled conductors < 1/0
+			if((size.ordinal() < Size.AWG_1$0.ordinal()) && numberOfSets > 1) {//paralleled conductors < 1/0
+				resultMessages.add(ERROR270.append("Actual size is " + size.getName() + "."));
 				return true;
 			}
 			return false;
@@ -750,35 +750,33 @@ public class Circuit {
 		/*the neutral conductor can be null and hence cannot have a
 		permanent listener. The listener is assigned to the neutral when the
 		neutral is created later on prepareSetOfConductors()*/
-		neutralListener = speaker -> {
-			conduitables.forEach(conduitable -> {
-				/*If a neutral conductor is modified...*/
-				Conductor conductor = (Conductor) conduitable;
-				conductor.getNotifier().enable(false);
-				if(conductor.getRole() == Conductor.Role.NEUCC ||
-					conductor.getRole() == Conductor.Role.NEUNCC
+		neutralListener = speaker -> conduitables.forEach(conduitable -> {
+			/*If a neutral conductor is modified...*/
+			Conductor conductor = (Conductor) conduitable;
+			conductor.getNotifier().enable(false);
+			if(conductor.getRole() == Conductor.Role.NEUCC ||
+				conductor.getRole() == Conductor.Role.NEUNCC
+			)
+				/*the other neutral conductors are updated...*/
+				conductor.copyFrom(neutralConductor);
+			else {
+				/*...while the other conductors (phase and grounding)
+				update some properties
+				(length, insulation, ambient temperature and metal)*/
+				conductor.setLength(neutralConductor.getLength());
+				conductor.setInsulation(neutralConductor.getInsulation());
+				conductor.setAmbientTemperatureFSilently(neutralConductor.getAmbientTemperatureF());
+				conductor.setMetal(neutralConductor.getMetal());
+				/*the size property is updated for the phase conductors
+				when only hot and neutral are present.
+				Nothing else is updated for the grounding conductors*/
+				if (conductor.getRole() == Conductor.Role.HOT &&
+					load.getVoltageSystem().hasHotAndNeutralOnly()
 				)
-					/*the other neutral conductors are updated...*/
-					conductor.copyFrom(neutralConductor);
-				else {
-					/*...while the other conductors (phase and grounding)
-					update some properties
-					(length, insulation, ambient temperature and metal)*/
-					conductor.setLength(neutralConductor.getLength());
-					conductor.setInsulation(neutralConductor.getInsulation());
-					conductor.setAmbientTemperatureFSilently(neutralConductor.getAmbientTemperatureF());
-					conductor.setMetal(neutralConductor.getMetal());
-					/*the size property is updated for the phase conductors
-					when only hot and neutral are present.
-					Nothing else is updated for the grounding conductors*/
-					if (conductor.getRole() == Conductor.Role.HOT &&
-						load.getVoltageSystem().hasHotAndNeutralOnly()
-					)
-						conductor.setSize(neutralConductor.getSize());
-				}
-				conductor.getNotifier().enable(true);
-			});
-		};
+					conductor.setSize(neutralConductor.getSize());
+			}
+			conductor.getNotifier().enable(true);
+		});
 		//recalculation is required when the conduit or bundle length changes
 		sharedConduitListener = speaker ->
 				circuitChangedRecalculationNeeded = true;
@@ -1208,7 +1206,7 @@ public class Circuit {
 	 the Conduit class provides with methods to determine the only EGC to be
 	 used in that conduit (when so requested) and the size of said conduit.
 	 Refer to {@link ROConduit#getTradeSizeForOneEGC()} and
-	 {@link ROConduit#getOneEGCSize()}.
+	 {@link ROConduit#getBiggestOneEGC()}.
 	 */
 	private boolean calculateEGC(){
 		Metal metal = usingCable ? cable.getMetal(): groundingConductor.getMetal();
