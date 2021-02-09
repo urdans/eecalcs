@@ -10,6 +10,7 @@ import eecalcs.voltagedrop.VoltDrop;
 import tools.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
@@ -162,6 +163,13 @@ import java.util.function.Function;
  details.<br><br>
  */
 public class Circuit {
+	/**
+	 Defines the different types of circuits.<br>
+	 SERVICE, FEEDER, DEDICATED_BRANCH or MULTI_OUTLET_BRANCH.
+	 */
+	public static enum CircuitType {SERVICE, FEEDER, DEDICATED_BRANCH,
+		MULTI_OUTLET_BRANCH};
+	private CircuitType circuitType;
 	private CircuitMode circuitMode = CircuitMode.PRIVATE_CONDUIT;
 	/**List of all conduitables that this circuit needs as per its mode.*/
 	private final List<Conduitable> conduitables = new ArrayList<>();
@@ -181,7 +189,7 @@ public class Circuit {
 	private int setsPerPrivateConduit = 1;
 	private int numberOfPrivateConduits = 1;
 	/**meaningful only when using conductors*/
-	private int conductorsPerSet;
+//	private int conductorsPerSet;
 	private final Conductor phaseAConductor = new Conductor();
 	private Conductor phaseBConductor;
 	private Conductor phaseCConductor;
@@ -263,6 +271,13 @@ public class Circuit {
 	private boolean circuitChangedRecalculationNeeded = true;
 	private Size sizePerAmpacity;
 	private Size sizePerVoltageDrop;
+
+	/**
+	 @return The type of this circuit as defined in {@link Type}
+	 */
+	public CircuitType getCircuitType() {
+		return circuitType;
+	}
 
 	/**
 	 @return The {@link ROResultMessages} object containing all the error and
@@ -444,9 +459,9 @@ public class Circuit {
 					neutralConductor = null;
 			}
 			//phase A and ground always count, that's why the 2 in the sum
-			conductorsPerSet = 2 + (phaseBConductor == null ? 0 : 1)
+/*			conductorsPerSet = 2 + (phaseBConductor == null ? 0 : 1)
 					+ (phaseCConductor == null ? 0 : 1)
-					+ (neutralConductor == null ? 0 : 1);
+					+ (neutralConductor == null ? 0 : 1);*/
 		}
 	}
 
@@ -545,17 +560,17 @@ public class Circuit {
 			temperature rating. Applying rule 310.15(B)*/
 			//revised on Dec 2020
 			if (
-					ConductorProperties.getAmpacity(
-							size1,
-							conduitable.getMetal(),
-							conduitable.getTemperatureRating()
-					) * factor1
-					<=
-					ConductorProperties.getAmpacity(
-							size1,
-							conduitable.getMetal(),
-							terminationTempRating
-					)
+				ConductorProperties.getAmpacity(
+						size1,
+						conduitable.getMetal(),
+						conduitable.getTemperatureRating()
+				) * factor1
+				<=
+				ConductorProperties.getAmpacity(
+						size1,
+						conduitable.getMetal(),
+						terminationTempRating
+				)
 			) {
 				if (checkError270.apply(size1))
 					return null;
@@ -688,8 +703,10 @@ public class Circuit {
 			throw new IllegalArgumentException("Load parameter cannot be null.");
 
 		this.load = load;
+		circuitType = load.getRequiredCircuitType();
 		//if the load changes, the model of conductors needs to be set up
 		this.load.getNotifier().addListener( speaker -> {
+			circuitType = this.load.getRequiredCircuitType();
 			prepareSetOfConductors();
 			prepareConduitableList();
 			setupMode();
@@ -1012,11 +1029,14 @@ public class Circuit {
 			return false;
 		if(!calculateCircuitAmpacity())
 			return false;
+
 		if(!calculateNeutral())
 			return false;
 		/*The OCPD object is available by calling getOcpd(). It will provide
-		the proper ratings. No calculation is done for the OCPD at the
-		circuit level*/
+		the proper ratings. However, this circuit verifies that NEC 210.3 is
+		met and is not the size of conductor is increased to comply.*/
+		calculateOCPD();
+
 		if(!calculateEGC())
 			return false;
 		/*The conduit object is available by calling getPrivateConduit() or
@@ -1055,34 +1075,44 @@ public class Circuit {
 		return true;
 	}
 
-	/**calculate the ampacity of the selected conductor accounting for all the
-	conditions of use. It's for phases only, not for neutral. The calculated
-	valued is stored in the circuitAmpacity property.*/
+	/**
+	 Calculates the ampacity for this circuit size.
+	 @return True if the calculated ampacity is not zero.
+	 */
 	private boolean calculateCircuitAmpacity(){
-		circuitAmpacity = 0;
+		circuitAmpacity = calculateCircuitAmpacity(_getSize());
+		return circuitAmpacity != 0;
+	}
+
+	private Size _getSize() {
+		return usingCable ?
+				cable.getPhaseConductorSize()
+				: phaseAConductor.getSize();
+	}
+
+	/**
+	@return The ampacity of the given conductor size accounting for all the
+	conditions of use of this circuit (including the number of conductors in
+	parallel).
+	 */
+	public double calculateCircuitAmpacity(Size size){
 		Conduitable conduitable = _getConduitable();
-		Size size;
-		if(usingCable)
-			size = cable.getPhaseConductorSize();
-		else
-			size = phaseAConductor.getSize();
 		double factor1;
 		if(ocdp.is100PercentRated())
 			factor1 = conduitable.getCompoundFactor();
 		else
 			factor1 = Math.min(1 / load.getMCAMultiplier(), conduitable.getCompoundFactor());
 		if(factor1 == 0) //this should never happen
-			return false;
+			return 0;
 
 		if (terminationTempRating != null) {
 			//termination temperature rating is known
 			if(terminationTempRating.getValue() >= conduitable.getTemperatureRating().getValue()) {
-				circuitAmpacity = ConductorProperties.getAmpacity(
+				return ConductorProperties.getAmpacity(
 						size,
 						conduitable.getMetal(),
 						conduitable.getTemperatureRating()
 				) * factor1 * numberOfSets;
-				return true;
 			}
 			/*conductor temperature rating is higher than equipment
 			temperature rating. Applying rule 310.15(B)*/
@@ -1098,38 +1128,96 @@ public class Circuit {
 					terminationTempRating
 			);
 			if(corrected_amp1 <= ampacity2){
-				circuitAmpacity = ampacity2 * numberOfSets;
-				return true;
+				return ampacity2 * numberOfSets;
 			}
-			circuitAmpacity = ConductorProperties.getAmpacity(
+			return ConductorProperties.getAmpacity(
 					size,
 					conduitable.getMetal(),
 					terminationTempRating
 			) * numberOfSets;
 		}
+		/*termination temperature rating is unknown*/
+		//future: implement 110.14(C)(1)(4) motors design letter B, C or D..
+		TempRating t_rating;
+		double loadCurrentPerSet = load.getNominalCurrent() / numberOfSets;
+		if(loadCurrentPerSet <= 100)
+			t_rating = TempRating.T60;
 		else {
-			/*termination temperature rating is unknown*/
-			//future: implement 110.14(C)(1)(4) motors design letter B, C or D..
-			TempRating t_rating;
-			double loadCurrentPerSet = load.getNominalCurrent() / numberOfSets;
-			if(loadCurrentPerSet <= 100)
+			if(conduitable.getTemperatureRating().getValue() >= 75)
+				t_rating = TempRating.T75;
+			else
 				t_rating = TempRating.T60;
-			else {
-				if(conduitable.getTemperatureRating().getValue() >= 75)
-					t_rating = TempRating.T75;
-				else
-					t_rating = TempRating.T60;
-			}
-			factor1 = conduitable.getCompoundFactor(t_rating);
-			circuitAmpacity = ConductorProperties.getAmpacity(
-					size,
-					conduitable.getMetal(),
-					t_rating
-			) * factor1 * numberOfSets;
 		}
-		return true;
+		factor1 = conduitable.getCompoundFactor(t_rating);
+		return ConductorProperties.getAmpacity(
+				size,
+				conduitable.getMetal(),
+				t_rating
+		) * factor1 * numberOfSets;
 	}
 
+	/**
+	 Verifies that the rating of this circuit's OCPD complies with rule NEC-
+	 210.3 for MULTI_OUTLET_BRANCH circuit type. If it does not comply, the
+	 size of this circuit is increased so that the OCPD rating complies with
+	 this rule.
+	 @return True if the rating complies or could be adjusted, false otherwise.
+	 */
+	private void calculateOCPD(){
+		if(circuitType != CircuitType.MULTI_OUTLET_BRANCH)
+			return;
+		if(true) return;
+		/*
+
+		Quedé Aquí
+		This logic has a problem: the increased size can make the ocpd object
+		to calculate a rating that skips the next higher standard size.
+
+		For example, a conductor #8 having an ampacity of 22 amps (due to
+		installation conditions) requires an OCPD rated for 25 amp. Since the
+		load requires a multi outlet branch circuit type, the 25 amp rating
+		does not comply with NEC 210.3. This logic is increasing the
+		conductor to #6 which (under said conditions) has an ampacity of 31.5
+		amps which in turn requires an OCPD rated for 35 amps.
+
+		The logic should be like this:
+		if the circuit is multi outlet branch and the rating of the actual
+		ocpd is 25 or 35 or 45, proceed as follows:
+		1. Ask the ocpd object if the next lower OCPD rating is suitable for
+		the load (rating is still higher than the load's MCA (NEC-210.20),
+		accounting for if it's 100% rated or not).
+		  1.1. if yes, do nothing.
+		  1.2. if no, increase the size of this circuit's conductor.
+		Now, the ocdp rating should be increased to the next higher standard
+		size.
+
+		*************this code is very smelly************
+		specially because of the messages being passed between the ocpd and
+		the circuit class. This needs to be refactored:
+		OCPD class must have only static methods.
+		The circuit will hold the ocpd rating in a private field.
+		Circuit class will no longer have an OCPD object, instead, the
+		Circuit class will provide directly the rating of the OCPD (of
+		course, it will still use the static methods from the ocpd class)
+
+
+		After refactoring, continue making test with loads requiring other
+		types of circuits.
+		* */
+
+		List<Integer> multiOutletRatings = Arrays.asList(15, 20, 30, 40, 50);
+		int rating = getOcpdRating();
+		if(multiOutletRatings.contains(rating) || rating > 50)
+			return;
+
+		Size size = _getSize().getNextSizeUp();
+		circuitAmpacity = calculateCircuitAmpacity(size);
+		if(usingCable)
+			conduitables.forEach(conduitable ->
+					((Cable) conduitable).setPhaseConductorSize(size));
+		else
+			phaseAConductor.setSize(size);
+	}
 	/**Calculates the size of the neutral conductor if present. Sets all the
 	neutral wires to this size if the system has neutrals.
 	Calculation is based on:
@@ -1156,8 +1244,7 @@ public class Circuit {
 					sizePerVoltageDrop);
 		}
 		else
-			neutralSize = usingCable ? cable.getPhaseConductorSize():
-					phaseAConductor.getSize();
+			neutralSize = _getSize();
 
 		/*update the size of all neutral conductors*/
 		if(usingCable)
@@ -1166,6 +1253,19 @@ public class Circuit {
 		else
 			neutralConductor.setSize(neutralSize);
 		return true;
+	}
+
+	/**
+	 Requests this circuit's ocpd to provide the rating for circuitAmpacity
+	 via message.
+	 @return The ocpd rating of this circuit or zero if the ocdp object does
+	 not respond to the message sent (unlikely to happen).
+	 */
+	private int getOcpdRating(){
+		Message message = new Message(10132189,	circuitAmpacity);
+		if(!ocdp.messaging(this, message))
+			return 0;
+		return (int) message.container;
 	}
 
 	/**Calculates the size of the Equipment Grounding Conductor (EGC) for this
@@ -1211,10 +1311,10 @@ public class Circuit {
 	private boolean calculateEGC(){
 		Metal metal = usingCable ? cable.getMetal(): groundingConductor.getMetal();
 		//requesting ocpd to provide the rating for circuitAmpacity
-		Message message = new Message(10132189,	circuitAmpacity);
+/*		Message message = new Message(10132189,	circuitAmpacity);
 		if(!ocdp.messaging(this, message))
-			return false;
-		Size egcSize = OCPD.getEGCSize((int) message.container, metal);
+			return false;*/
+		Size egcSize = OCPD.getEGCSize(getOcpdRating()/*(int) message.container*/, metal);
 		if(egcSize == null)
 			return false;
 
@@ -1699,57 +1799,57 @@ Third line, circuit ratings:
 }
 
 /*
-* Circuit class should account for "class A" type circuits (study about this), since the type or class is also related to restriction for
-* combining with other classes.
-* */
+Todo: next step in development:
+Circuit:
+	1. Must have an internal marker (an enum Circuit.Type = SERVICE, FEEDER,
+	DEDICATED_BRANCH, MULTI_OUTLET_BRANCH).
+		1.1. There must be a getter for this state.
+		----------------------------------------------------------------------
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		it appears to me that it's better that the load decides the type of
+		circuit it requires. The load interface should have a method called
+		getRequiredCircuitType(). The circuit should not have any setter, only
+		the getter. The net is, the load should define the type of circuit it
+		requires:
+		-Panels -> feeder
+		-Service equipment -> service
+		-motor -> feeder or dedicated branch circuit, or multi outlet... it's
+		up to the motor load to decide it. The motor load will have a method to
+		change the way of connecting it to a circuit, like
+		setRequiredCircuitType() that will not be part of the Load interface
+		(because not all the loads require this method). Other loads will
+		have hard coded the circuit type they require and that is accessible
+		via the getter.
+		The thing is, the circuit type is decided by the load, based on the
+		load requirements. The circuit class will have a getter to its type,
+		like getCircuitType().
+		Remember: a circuit always accept a unique load object. That load
+		object could be a combination load or a single load, but all
+		load objects must implement the Load interface.
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		----------------------------------------------------------------------
 
-/*
-When designing a circuit, the goal is to determine:
-	1-The proper size of the conductors and eventually the number of them, based on the load characteristics, and other parameters.
-	2-The size of the conduit(s), to accommodate these conductors, also taking into consideration other parameters.
-	3-The type and size of the overcurrent protection device, to protect the conductor and the load against overcurrents, based on the
-	above parameter and others (continuous nature of the load, type, special requirements, etc.)
-
-The first things to know are the load characteristics:
-	1. Nominal voltage, phases, number of wires.
-	2. Its nominal current or apparent power (va)
-	3. Its power factor.
-	4. The type of load (motor, appliance, receptacle, light, A/C, heater, etc.)
-	5. If the load is continuous or not, which result from the combination of the following criteria: application scenario, load type, or
-		engineering criteria.
-This can be encapsulated in a class "Load".
-This object must be able to provide its MCA (minimum conductor ampacity) and MOCPD (maximum overcurrent protection device, to protect the
-load only).
-
-A load can take different behaviors and properties:
-	1. CableType: as group by the NEC.
-	2. Grouping: a load can be made out of one or more "atomic loads". For example, a group of 10 receptacles forms a 1800va load or one
-	dedicated receptacle for a specific 600va fridge. One could say also that a load can be "distributed" or "localized".
-
-As the concept of load is very broad, the best approach is to create a base class Load that will have all the common properties and
-behaviors of all the loads. By inheriting from that class, one can create more specialized cases.
-*/
-
-/*
-Class Feeder, Service, Branch and Tap:
---------------------------------------
--These classes are similar. They differ in the fact that the branch circuit directly feeds a load, while a feeder has a OCPD on each end.
-A special Feeder is the Service class.
-SOme of the properties of these classes are:
--Voltage
--Phases,
--Frequency
-
-The user must put the class CircuitConductor in the context of any of the classes Feeder, Service or Branch.
-
-For instance, the Branch class has a load object. The Feeder has a load intent. One or more branch circuits will always be connected to a
-feeder through an OCPD.
-
-Branch circuits can be multiwire, feeders as well.
-Loads can be continuous or non continuous.
-
-Other classes must be designed, like for fuses, breakers, loads, motors, appliances, whatever, lights, AC equipment, panel, switchboard,
-etc, etc.
-
-A panel is somehow a load. it should also be treated as a load.
+	2. So far, this class has been behaving as of type DEDICATED_BRANCH.
+	Modifications to this class to account for other types are as follow:
+		2.1. MULTI_OUTLET_BRANCH: this type applies for when a circuit serves
+		several outlets. In this case, the OCPD must be selected so as to be
+		15, 20, 30, 40, 50 or any higher Amps (NEC 210.3). Values like 25, 35,
+		40, 45 or any other exotic value under 50 Amps are not permitted for
+		this type of circuit.
+		Example:
+		The OCPD rating returned by the OCPD object is 25 Amps. Since the
+		circuit type is MULTI_OUTLET_BRANCH, it cannot accept this rating. So,
+		30 Amps must be used but the conductor must also be increased until its
+		ampacity reaches a value above 25 Amps.
+		2.2. Method calculatedCircuitAmpacity() calculates the ampacity for
+		the circuit size. However, it must be modified to calculate the
+		ampacity for any given size. Its role become to determine the
+		ampacity of the given size under the conditions known by the circuit,
+		which includes also the properties of the conduitable in use, like
+		metal, ambient temperature and insulation rating.
+		Its signature would change to:
+		public double calculatedCircuitAmpacity(Size size);
+		This method will be used when the size of the conduitable must be
+		increased to satisfy the requirement explained in the example, for a
+		MULTI_OUTLET_BRANCH circuit.
 */

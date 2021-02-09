@@ -1,9 +1,17 @@
 package eecalcs.loads;
 
+import eecalcs.circuits.Circuit;
 import eecalcs.systems.VoltageSystemAC;
 import tools.NotifierDelegate;
 
 public interface Load {
+
+	/**
+	 @return The type of circuit that this load requires. See
+	 {@link eecalcs.circuits.Circuit.CircuitType} for details.
+	 */
+	Circuit.CircuitType getRequiredCircuitType();
+
 	/**
 	 Sets the voltage system of this load.
 	 Registered listeners receive notification of this change.
@@ -225,3 +233,31 @@ public interface Load {
 	 */
 	void setNonlinear(boolean flag);
 }
+/*
+Next load classes to be developed:
+GeneralCombinationLoad: its a load that decomposes it nominal current into
+two component: a continuous current and a non-continuous current.
+	setContinuousCurrent(double current):
+		if bigger than nominal,
+			nominal = current
+			make the load completely continuous type
+		else if equal to nominal
+			make the load completely continuous type
+		else
+			continuousCurrent = current
+			nonContinuousCurrent = nominal - current
+			MCA = 1.25*continuousCurrent + nonContinuousCurrent
+			make the load mixed type
+The setNonContinuousCurrent(double current) is alike. There must be getters
+also.
+
+
+CombinationLoad: represents a combination of other different loads.
+	addLoad(Load load): add a load to the combination and perform calculations
+	similar to the one explained before which determine the load type (mixed,
+	 continuous, etc, and its MCA, continuousCurrent, nonContinuousCurrent
+	 and others.
+
+
+
+*/

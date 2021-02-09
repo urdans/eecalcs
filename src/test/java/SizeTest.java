@@ -17,5 +17,7 @@ class SizeTest {
         assertEquals(Size.KCMIL_250, Size.AWG_4$0.getNextSizeUp());
 
         assertEquals(Size.KCMIL_2000, Size.KCMIL_2000.getNextSizeUp());
+
+        assertEquals(Size.KCMIL_2000, Size.KCMIL_1750.getNextSizeUp());
     }
 }

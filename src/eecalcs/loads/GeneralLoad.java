@@ -1,5 +1,6 @@
 package eecalcs.loads;
 
+import eecalcs.circuits.Circuit;
 import eecalcs.systems.VoltageSystemAC;
 import tools.NotifierDelegate;
 
@@ -156,6 +157,11 @@ public class GeneralLoad implements Load {
 	 */
 	public GeneralLoad(){
 		this(VoltageSystemAC.v120_1ph_2w, 10);
+	}
+
+	@Override
+	public Circuit.CircuitType getRequiredCircuitType() {
+		return Circuit.CircuitType.MULTI_OUTLET_BRANCH; //DEDICATED_BRANCH;
 	}
 
 	@Override

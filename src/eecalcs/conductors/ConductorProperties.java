@@ -720,6 +720,11 @@ public class ConductorProperties {
 		return result;
 	}
 
+	/**
+	 @param size1 Size to be compared.
+	 @param size2 Size to be compared.
+	 @return The biggest of the two sizes.
+	 */
 	public static Size getBiggestSize(Size size1, Size size2) {
 		return size1.ordinal() < size2.ordinal() ? size2 : size1;
 	}

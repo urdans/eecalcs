@@ -26,12 +26,14 @@ class CircuitTest {
     }
     private void printState(){
         Tools.println("\n");
-        Tools.println("################################ OldLoad ################################");
+        Tools.println("################################ Load ################################");
         Tools.println("Voltage: " + circuit.getLoad().getVoltageSystem());
-        Tools.println("OldLoad current: " + circuit.getLoad().getNominalCurrent());
-        Tools.println("OldLoad MCA: " + circuit.getLoad().getMCA());
-        Tools.println("OldLoad type: " + circuit.getLoad().getLoadType());
-        Tools.println("OldLoad non-linear(harmonics): " + (circuit.getLoad()).isNonlinear());
+        Tools.println("Load current: " + circuit.getLoad().getNominalCurrent());
+        Tools.println("Load MCA: " + circuit.getLoad().getMCA());
+        Tools.println("Load type: " + circuit.getLoad().getLoadType());
+        Tools.println("Circuit type required: " + circuit.getLoad().getRequiredCircuitType());
+        Tools.println("Load non-linear(harmonics): " + (circuit.getLoad()).isNonlinear());
+
         Tools.println("################################ Voltage Drop ################################");
         Size s = circuit.getSizePerVoltageDrop(false);
         Tools.println("Max voltage drop: " + circuit.getVoltageDrop().getMaxVoltageDropPercent());
@@ -45,6 +47,7 @@ class CircuitTest {
         Tools.println("Size per ampacity: " + s);
         Tools.println("################################ Circuit Conductor " +
                 "Characteristics ################################");
+        Tools.println("Circuit type: " + circuit.getCircuitType());
         Tools.println("Number Of Sets: " + circuit.getNumberOfSets());
         Tools.println("Circuit size: " + circuit.getCircuitSize());
         Tools.println("Circuit ampacity: " + circuit.getCircuitAmpacity());
@@ -277,7 +280,7 @@ class CircuitTest {
     @Test
     void congruencyTest(){
         /*All the objects that belong to the Circuit class should be under
-        control of that class. If Circuit uses an object like OldLoad for
+        control of that class. If Circuit uses an object like Load for
         example, it should be able to provide proper state even when the
         state of the load object changes.
         These tests are meant to verify congruency.*/
@@ -387,7 +390,7 @@ The following are the getters that expose such objects:
 *       ->setInsulation(Insul insulation)                -->hide&move to Circuit
 *       ->setLength(double length)                       -->hide&move to Circuit
 *       ->setAmbientTemperatureF(int ambientTemperatureF)-->hide&move to Circuit
-*   -OldLoad getLoad()                                      -->to be fully observed
+*   -Load getLoad()                                      -->to be fully observed
 *       ->setDescription(String description)      ->make it notify all listeners
 *   -OCPD getOcdp()                               ->make it notify all listeners
 *   -RoConductor getNeutralConductor()                  -->same as before
@@ -690,7 +693,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
         circuit.getLoad().setNominalCurrent(20);
         circuit.setInsulation(Insul.TW);
-        assertEquals(Size.AWG_8, circuit.getCircuitSize());
+        assertEquals(Size.AWG_8, circuit.getCircuitSize(), getState());
 
         circuit.setInsulation(Insul.THW);
         assertEquals(Size.AWG_10, circuit.getCircuitSize());
@@ -2614,7 +2617,7 @@ class CircuitData{
     public Conduit sharedConduit;
     public Bundle privateBundle;
     public Bundle sharedBundle;
-    public OldLoad load;
+    public Load load;
     public int numberOfSets;
     public int setsPerConduit;
     public int numberOfConduits;
@@ -2731,7 +2734,7 @@ class CircuitData{
         sharedConduit = (Conduit) sharedConduitField.get(circuit);
         privateBundle = (Bundle) privateBundleField.get(circuit);
         sharedBundle = (Bundle) sharedBundleField.get(circuit);
-        load = (OldLoad) loadField.get(circuit);
+        load = (Load) loadField.get(circuit);
         numberOfSets = (int) numberOfSetsField.get(circuit);
         setsPerConduit = (int) setsPerConduitField.get(circuit);
         numberOfConduits = (int) numberOfConduitsField.get(circuit);

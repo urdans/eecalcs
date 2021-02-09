@@ -76,7 +76,7 @@ public class OCPD implements Receiver {
 	 corresponding to 60.
 	 @param ocpdRating the rating to search for.
 	 */
-	private static int indexOfOCPD(int ocpdRating){
+	private static int indexOfOCPDInTable250_122(int ocpdRating){
 		ocpdRating = Math.abs(ocpdRating);
 		if(ocpdRating <= 15)
 			return 0;
@@ -167,7 +167,7 @@ public class OCPD implements Receiver {
 			return null;
 		if(ocpdRating == 0)
 			return null;
-		int index = indexOfOCPD(ocpdRating);
+		int index = indexOfOCPDInTable250_122(ocpdRating);
 		if(index == -1)
 			return null;
 		if(metal == Metal.COPPER)
