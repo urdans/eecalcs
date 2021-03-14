@@ -65,4 +65,24 @@ class VoltageSystemACTest {
         assertEquals(Math.sqrt(3), v480_3ph_3w.getFactor());
         assertEquals(Math.sqrt(3), v480_3ph_4w.getFactor());
     }
+
+	@Test
+	void setCustom() {
+        VoltageSystemAC custom = VoltageSystemAC.v_other.setCustom(575,3,3);
+        assertEquals("575v 3Ø 3W",custom.getName());
+
+        VoltageSystemAC v120 = VoltageSystemAC.v120_1ph_2w.setCustom(140,5,-2);
+        assertEquals("120v 1Ø 2W", v120.getName());
+        //voltage system does not change because wrong parameters
+        assertEquals("575v 3Ø 3W", custom.setCustom(0,0,0).getName());
+        assertEquals("575v 3Ø 3W", custom.setCustom(120,1,1).getName());
+        assertEquals("575v 3Ø 3W", custom.setCustom(120,1,6).getName());
+        //voltage system changes, correct parameters
+        assertEquals("120v 1Ø 3W", custom.setCustom(120,1,3).getName());
+        //voltage system does not change because wrong parameters
+        assertEquals("120v 1Ø 3W", custom.setCustom(120,2,3).getName());
+        assertEquals("120v 1Ø 3W", custom.setCustom(120,4,3).getName());
+        //voltage system changes, correct parameters
+        assertEquals("600v 3Ø 3W", custom.setCustom(600,3,3).getName());
+    }
 }

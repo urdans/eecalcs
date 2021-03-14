@@ -49,9 +49,11 @@ public class VoltDrop implements ROVoltDrop {
 	private static final ResultMessage ERROR04	= new ResultMessage("Number of sets must be between 1 and 10.",-4);
 	private static final ResultMessage ERROR05	= new ResultMessage("One way conductor length must be greater than 0.",-5);
 	private static final ResultMessage ERROR06	= new ResultMessage("Load current must be greater than 0.",-6);
-	private static final ResultMessage ERROR07	= new ResultMessage("Motor factor must be between 0.7 and 1.",-7);
+	private static final ResultMessage ERROR07	= new ResultMessage("Power factor must be between 0.7 and 1.",-7);
 	private static final ResultMessage ERROR08	= new ResultMessage("Voltage drop for determining conductor sizing must be between 0.5% and 25%",-8);
 	private static final ResultMessage ERROR09	= new ResultMessage("Invalid conductor object.",-9);
+
+
 	private static final ResultMessage ERROR20	= new ResultMessage("Load current exceeds maximum allowed ampacity of the set.",-20);
 	private static final ResultMessage ERROR21	= new ResultMessage("Paralleled power conductors in sizes smaller than 1/0 AWG are not permitted. NEC-310" +
 			".10(H)(1)",-21);
@@ -82,7 +84,7 @@ public class VoltDrop implements ROVoltDrop {
 		return resultMessages;
 	}
 
-	/*
+	/**
 	Checks that all input values are valid for the calculation of AC voltage
 	drop. If a value is not valid, its corresponding error message is added
 	to the resultMessages field.
@@ -118,7 +120,7 @@ public class VoltDrop implements ROVoltDrop {
 		return !resultMessages.hasErrors();
 	}
 
-	/*
+	/**
 	Checks that all input values are valid for the calculation of DC voltage
 	drop. If a value is not valid, its corresponding error message is added
 	to the resultMessages field.
@@ -138,7 +140,7 @@ public class VoltDrop implements ROVoltDrop {
 		return !resultMessages.hasErrors();
 	}
 
-	/*
+	/**
 	Checks that all input values are valid for the calculation of the conductor
 	size for the maximum AC voltage drop. If a value is not valid, its
 	corresponding error message is added to the resultMessages field.
@@ -160,7 +162,7 @@ public class VoltDrop implements ROVoltDrop {
 		return !resultMessages.hasErrors();
 	}
 
-	/*
+	/**
 	Checks that all input values are valid for the calculation of the conductor
 	size for the maximum DC voltage drop. If a value is not valid, its
 	corresponding error message is added to the resultMessages field.
@@ -181,21 +183,21 @@ public class VoltDrop implements ROVoltDrop {
 	}
 
 	/**
-	 Constructs a VoltDrop object for the given conductor object.
+	 Constructs a VoltDrop object for a given conductor object.
 	 The property's values are:
 	 <br><br>
 	 <p><b>Source voltage</b>: defaults to 120 volts, single phase, 2 wires.
 	 <p><b>Conductor</b>: provided in the constructor.
 	 <p><b>Sets</b>: defaults to 1 set.
 	 <p><b>GeneralLoad current</b>: defaults to 10 amps.
-	 <p><b>Motor factor</b>: defaults to 1.0.
+	 <p><b>Power factor</b>: defaults to 1.0.
 	 <p><b>Conduit material</b>: defaults to PVC.
 	 <p><b>Maximum allowed voltage drop</b>: defaults to 3 percent.
 	 <br><br>
 	 All these values can be changed or obtained by its corresponding setter
 	 and getter.
 
-	 @param conductor The existing conductor object.
+	 @param conductor An existing conductor object.
 	 @see Conductor
 	 */
 	public VoltDrop(Conductor conductor){
@@ -211,7 +213,7 @@ public class VoltDrop implements ROVoltDrop {
 	 #setConductor(Conductor)}
 	 <p><b>Sets</b>: defaults to 1 set.
 	 <p><b>GeneralLoad current</b>: defaults to 10 amps.
-	 <p><b>Motor factor</b>: defaults to 1.0.
+	 <p><b>ACMotor factor</b>: defaults to 1.0.
 	 <p><b>Conduit material</b>: defaults to PVC.
 	 <p><b>Maximum allowed voltage drop</b>: defaults to 3 percent.
 	 <br><br>
@@ -225,8 +227,9 @@ public class VoltDrop implements ROVoltDrop {
 
 	 @param conductor The conductor for the voltage drop.
 	 */
-	public void setConductor(Conductor conductor) {
+	public VoltDrop setConductor(Conductor conductor) {
 		this.conductor = conductor;
+		return this;
 	}
 
 	/**
@@ -246,8 +249,9 @@ public class VoltDrop implements ROVoltDrop {
 	 a calculation result of zero or null.
 	 @see VoltageSystemAC
 	 */
-	public void setSourceVoltage(VoltageSystemAC sourceVoltage) {
+	public VoltDrop setSourceVoltage(VoltageSystemAC sourceVoltage) {
 		this.sourceVoltage = sourceVoltage;
+		return this;
 	}
 
 	/**
@@ -258,8 +262,9 @@ public class VoltDrop implements ROVoltDrop {
 	 must check for the presence of errors or warnings after obtaining a
 	 calculation result of zero.
 	 */
-	public void setSets(int sets) {
+	public VoltDrop setSets(int sets) {
 		this.sets = sets;
+		return this;
 	}
 
 	/**
@@ -270,8 +275,9 @@ public class VoltDrop implements ROVoltDrop {
 	 must check for the presence of errors or warnings after obtaining a
 	 calculation result of zero.
 	 */
-	public void setLoadCurrent(double loadCurrent) {
+	public VoltDrop setLoadCurrent(double loadCurrent) {
 		this.loadCurrent = loadCurrent;
+		return this;
 	}
 
 	/**
@@ -283,8 +289,9 @@ public class VoltDrop implements ROVoltDrop {
 	 must check for the presence of errors or warnings after obtaining a
 	 calculation result of zero.
 	 */
-	public void setPowerFactor(double powerFactor) {
+	public VoltDrop setPowerFactor(double powerFactor) {
 		this.powerFactor = powerFactor;
+		return this;
 	}
 
 	/**
@@ -297,8 +304,9 @@ public class VoltDrop implements ROVoltDrop {
 	 must check for the presence of errors or warnings after obtaining a
 	 calculation result of zero.
 	 */
-	public void setMaxVoltageDropPercent(double maxVoltageDropPercent) {
+	public VoltDrop setMaxVoltageDropPercent(double maxVoltageDropPercent) {
 		this.maxVoltageDropPercent = maxVoltageDropPercent;
+		return this;
 	}
 
 	/**
@@ -314,8 +322,9 @@ public class VoltDrop implements ROVoltDrop {
 	 must check for the presence of errors or warnings after obtaining a
 	 calculation result of zero.
 	 */
-	public void setConduitMaterial(Material conduitMaterial) {
+	public VoltDrop setConduitMaterial(Material conduitMaterial) {
 		this.conduitMaterial = conduitMaterial;
+		return this;
 	}
 
 	//----AC Calculations
@@ -375,7 +384,7 @@ public class VoltDrop implements ROVoltDrop {
 		return actualVoltageDropPercentageAC;
 	}
 
-	/*
+	/**
 	 Calculates and returns the AC voltage at the load terminals, fed by the
 	 preset conductor, but of the given size.
 	 */
@@ -402,7 +411,7 @@ public class VoltDrop implements ROVoltDrop {
 		return voltageAtLoadComplex.abs();
 	}
 
-	/*
+	/**
 	 Calculates and return the size of the preset conductor whose AC voltage
 	 drop percentage is less or equal to the given maximum voltage drop.
 	 Simultaneously, the max length and the actual voltage drop percentage is
@@ -412,7 +421,7 @@ public class VoltDrop implements ROVoltDrop {
 		for(Size size : Size.values()) {
 			if(loadCurrent >
 				sets *
-				ConductorProperties.getAmpacity(
+				ConductorProperties.getStandardAmpacity(
 					size,
 					conductor.getMetal(),
 					conductor.getTemperatureRating()
@@ -435,7 +444,7 @@ public class VoltDrop implements ROVoltDrop {
 		return null;
 	}
 
-	/*
+	/**
 	 Calculates and return the maximum length that the preset conductor of the
 	 calculated size can reach while maintaining a voltage drop percentage less
 	 or equal to the given maximum voltage drop percentage.
@@ -451,11 +460,12 @@ public class VoltDrop implements ROVoltDrop {
 		double C = Vs2 * (1 - Math.pow(1 - maxVoltageDropPercent/100, 2));
 		double Rad = 4 * Vs2 * A * A - 4 * (A * A + B * B) * C;
 		if(Rad<0)
-			//return Rad;
 			Rad = 0;
-		//double len2 = (2 * sourceVoltage.getVoltage() * A + Math.sqrt(Rad))/(2 * (A * A + B * B));
-		//len1 is always the smallest value between the two lengths and produces a voltage drop across the conductor that is less that the
-		//voltage source, that is len1 is always the correct value, unless it's a negative number.
+		/*double len2 = (2 * sourceVoltage.getVoltage() * A + Math.sqrt(Rad))/(2 * (A * A + B * B));
+		len1 is always the smallest value between the two lengths and produces
+		a voltage drop across the conductor that is less that the voltage
+		source, that is len1 is always the correct value, unless it's a
+		negative number.*/
 		double len1 = (2 * sourceVoltage.getVoltage() * A - Math.sqrt(Rad))/(2 * (A * A + B * B));
 		if(len1 > 0)
 			return len1;
@@ -519,7 +529,7 @@ public class VoltDrop implements ROVoltDrop {
 		return actualVoltageDropPercentageDC;
 	}
 
-	/*
+	/**
 	Calculates and returns the DC voltage at the load terminals, fed by the
 	preset conductor, of the given size.
  	*/
@@ -534,7 +544,7 @@ public class VoltDrop implements ROVoltDrop {
 		return sourceVoltage.getVoltage() - 2 * oneWayDCResistance * loadCurrent;
 	}
 
-	/*
+	/**
 	Calculates and return the size of the preset conductor whose DC voltage drop
 	percentage is less or equal to the given maximum voltage drop.
 	Simultaneously, the max length and the actual voltage drop percentage is
@@ -558,7 +568,7 @@ public class VoltDrop implements ROVoltDrop {
 		return null;
 	}
 
-	/*
+	/**
 	Calculates and return the maximum length that the preset conductor of the
 	calculated size can reach while maintaining a voltage drop percentage less
 	or equal to the given maximum voltage drop percentage.

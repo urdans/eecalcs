@@ -8,9 +8,9 @@ import java.util.List;
 /**
  This class represents a bundle. A bundle is a group of cables or
  a group of insulated conductors, or a group made of a mix of both, that are
- installed in free air (not in a conduit) next to each other (paralleled)
- without maintaining space (staked, bundled, supported on bridled rings or
- simply tied together), along a defined distance.<p><br>
+ installed in free air (not in a conduit) next to each other (paralleled, but
+ not connected) without maintaining space (staked, bundled, supported on
+ bridled rings or simply tied together), along a defined distance.<p><br>
 
  When cables or conductors are bundled, the heat produced by the current (joule
  effect) does not dissipate as easy as when they are separated. For this reason,
@@ -39,7 +39,8 @@ public class Bundle implements ROBundle {
 	 number of
 	 copies of the given cable. If the given cable is null or if the given
 	 distance is equal or less than zero, an empty bundle will be created. An
-	 empty bundle is the container for start bundling insulated conductors.
+	 empty bundle is the container for start bundling a bundle of insulated
+	 conductors.
 	 @param cable The cable to be copied to create the bundle.
 	 @param number The number of new cables in the bundle.
 	 @param distance The distance along which the cables are bundled, in
@@ -122,10 +123,6 @@ public class Bundle implements ROBundle {
 	 bundle will be empty.
 	 */
 	public void empty() {
-/*        Conduitable[] conduitableArray = new Conduitable[conduitables.size()];
-        conduitableArray = conduitables.toArray(conduitableArray);
-        for(Conduitable conduitable: conduitableArray)
-            conduitable.leaveBundle();*/
 		Object[] c = conduitables.toArray();
 		for (Object o : c) ((Conduitable) o).leaveBundle();
 		notifier.info.addFieldChange("conduitables", null, null);

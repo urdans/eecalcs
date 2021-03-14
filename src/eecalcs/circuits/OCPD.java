@@ -2,10 +2,10 @@ package eecalcs.circuits;
 
 import eecalcs.conductors.Metal;
 import eecalcs.conductors.Size;
-import eecalcs.loads.Load;
-import tools.Message;
-import tools.NotifierDelegate;
-import tools.Receiver;
+import tools.ArrayTools;
+
+import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  This class represents an OverCurrent Protection Device when providing
@@ -19,95 +19,21 @@ import tools.Receiver;
  and if the next higher standard rating rule can or cannot be applied.</li>
  <li>Providing a list of device types (fuse, circuit breaker...)</li>
  </ul></li>
- <li>Instance methods for:
- <ul>
- <li>Associating this OCPD object to a circuit, through Constructor.</li>
- <li>Setting and getting the actual device type.</li>
- <li>Setting and getting info about if the actual device is 100% rated or
- not.</li>
- </ul>
- <li>This class determines the ratings of a circuit OCPD ratings as follows:
- it always uses the load's OCPD rating as maximum rating unless its value is
- zero (which means no OCPD device is required), in which case it determines
- the OCPD rating to protect the conductors only.</li>
+
+ <li>The OCPD rating of a circuit must be determined as follows:
+ always uses the load's OCPD rating as maximum rating unless its value is
+ zero (which means no particular OCPD rating is required), in which case
+ the OCPD rating must be determined to protect the conductors only.</li>
  </ol>
  */
-public class OCPD implements Receiver {
+public class OCPD {
+	public enum Type {NON_TIME_DELAY_FUSE, DUAL_ELEMENT_TIME_DELAY_FUSE,
+		INSTANTANEOUS_TRIP_BREAKER,	INVERSE_TIME_BREAKER}
+
 	private static final int[] standardRatings = {15, 20, 25, 30, 35, 40, 45,
 			50, 60, 70, 80, 90, 100, 110, 125, 150, 175, 200, 225, 250, 300,
 			350, 400, 450, 500, 600, 700, 800, 1000, 1200, 1600, 2000, 2500,
 			3000, 4000, 5000, 6000};
-
-	/**Table 250.122, rating of OCPD for sizing EGC*/
-	private static final int[] ocpdEGC = {
-			15, 20, 60, 100, 200,
-			300, 400, 500, 600, 800,
-			1000, 1200, 1600, 2000,
-			2500, 3000, 4000, 5000,
-			6000
-	};
-
-	/**Table 250.122 sizing of the copper EGC. It omits 300, 600 and 750.*/
-	private static final Size[] copperEGC = {
-			Size.AWG_14, Size.AWG_12, Size.AWG_10, Size.AWG_8, Size.AWG_6,
-			Size.AWG_4, Size.AWG_3, Size.AWG_2, Size.AWG_1, Size.AWG_1$0,
-			Size.AWG_2$0, Size.AWG_3$0, Size.AWG_4$0, Size.KCMIL_250,
-			Size.KCMIL_350,	Size.KCMIL_400,	Size.KCMIL_500,	Size.KCMIL_700,
-			Size.KCMIL_800
-	};
-
-	/**Table 250.122 sizing of the aluminum EGC. It omits 14, 3, 300, 500,
-	800, 900, 1000; it repeats 600 and includes a non standard size (1200)
-	twice, which is replaced in this software with 1250 and 1500.*/
-	private static final Size[] aluminumEGC = {
-			Size.AWG_12, Size.AWG_10, Size.AWG_8, Size.AWG_6, Size.AWG_4,
-			Size.AWG_2, Size.AWG_1, Size.AWG_1$0, Size.AWG_2$0, Size.AWG_3$0,
-			Size.AWG_4$0, Size.KCMIL_250, Size.KCMIL_350, Size.KCMIL_400,
-			Size.KCMIL_600, Size.KCMIL_600, Size.KCMIL_750, Size.KCMIL_1250,
-			Size.KCMIL_1500
-	};
-
-	/**
-	 @return The index of the OCPD in table 250.122 that is equal or less
-	 than the rating passed in the parameter and that if bigger than the
-	 previous element in the table. Returns -1 if the rating passed exceeds
-	 6000A.
-	 For example, if the ocpd rating is 55, it returns the index of the ocpd
-	 corresponding to 60.
-	 @param ocpdRating the rating to search for.
-	 */
-	private static int indexOfOCPDInTable250_122(int ocpdRating){
-		ocpdRating = Math.abs(ocpdRating);
-		if(ocpdRating <= 15)
-			return 0;
-		for(int index = 0; index < ocpdEGC.length - 1; index++){
-			int prev = ocpdEGC[index];
-			int next = ocpdEGC[index + 1];
-			if(ocpdRating == prev)
-				return index;
-			if(ocpdRating > prev && ocpdRating <= next)
-				return index + 1;
-		}
-		return -1;
-	}
-
-	/**Indicates if this OCPD is 100% rated or not. By default it is not. This
-	information is not used by this class in any of its behaviors. It is
-	intended to be used by the Circuit class and load class to decide if the
-	1.25 factor is applied or not.
-	*/
-	private boolean _100PercentRated = false; //it's 80% rated by default.
-	private final Circuit circuit;
-//	private double circuitAmpacity;
-
-	/**
-	 @return The notifier delegate object for this object.
-	 */
-	public NotifierDelegate getNotifier() {
-		return notifier;
-	}
-
-	private final NotifierDelegate notifier = new NotifierDelegate(this);
 
 	/**
 	 @return The list of all standard ratings recognized by the NEC.
@@ -157,89 +83,67 @@ public class OCPD implements Receiver {
 	}
 
 	/**
-	 @return The size of the EGC per table NEC-250.122. If any of the
-	 parameters is invalid the return value is null.
-	 @param ocpdRating Rating of the OCPD.
-	 @param metal The metal of the conductor (Cu or Al)
+	 @return The closest OCPD rating to the given current.
+	 @param current The current for witch to get the closet OCPD rating.
 	 */
-	public static Size getEGCSize(int ocpdRating, Metal metal){
-		if(metal == null)
-			return null;
-		if(ocpdRating == 0)
-			return null;
-		int index = indexOfOCPDInTable250_122(ocpdRating);
-		if(index == -1)
-			return null;
-		if(metal == Metal.COPPER)
-			return copperEGC[index];
-		return aluminumEGC[index];
+	public static int getClosestMatch(double current){
+		int highRating = getHighRating(current);
+		int lowRating = getLowRating(current);
+		if(lowRating == 0)
+			return highRating;
+
+		if(highRating == 0)
+			return lowRating;
+
+		if(Math.abs(current - highRating) <= Math.abs(current - lowRating))
+			return highRating;
+
+		return lowRating;
 	}
 
 	/**
-	 Constructs an OCDP object that belongs to the specified circuit.
-	 @param circuit The circuit that owes this OCPD object.
+	 Returns the rating of an OCPD that is immediately lower than the given
+	 current. If the given current is less than 15 Amp, the returned value is
+	 zero.
 	 */
-	public OCPD(Circuit circuit) {
-		if (circuit == null)
-			throw new IllegalArgumentException("Circuit parameter cannot be " +
-				"null");
-		this.circuit = circuit;
+	private static int getLowRating(double current) {
+		for (int i = standardRatings.length - 1 ; i >= 0; i--)
+			if (standardRatings[i] <= current)
+				return standardRatings[i];
+		return 0;
 	}
 
 	/**
-	 @return The rating of this OCPD when owned by a circuit.
-	 The rating is decided as follows: if the circuit's load has OCPD
-	 requirements ({@link Load#getMaxOCPDRating(boolean)}
-	 returns a non zero value), it determines the OCPD rating per these load's
-	 requirements, otherwise it determines the OCPD rating to protect the
-	 circuit's conductors only, based on the ampacity of the circuit
-	 conductors under all the existing conditions of installations.
+	 Returns the rating of an OCPD that is immediately higher than the given
+	 current. If the given current is higher than 6000 Amp, the returned
+	 value is zero.
 	 */
-	public int getRating() {
-		return getRating(circuit.getCircuitAmpacity());
-	}
-
-	private int getRating(double circuitAmpacity){
-		double maxOCPD = circuit.getLoad().getMaxOCPDRating(_100PercentRated);
-		//if the circuit's load has an OCPD requirement, use it!.
-		if (maxOCPD != 0)
-			return getRatingFor(maxOCPD, circuit.getLoad().NHSRRuleApplies());
-
-		//No load OCPD requirement. So, select rating to protect conduitables.
-		return getRatingFor(circuitAmpacity, circuit.getLoad().NHSRRuleApplies());
+	private static int getHighRating(double current) {
+		for (int standardRating : standardRatings)
+			if (standardRating >= current)
+				return standardRating;
+		return 0;
 	}
 
 	/**
-	 @return True if this OCPD object is 100% rated.
+	 @return The next higher standard OCPD rating of the given rating.
+	 @param rating The rating for which the next higher rating is requested.
 	 */
-	public boolean is100PercentRated() {
-		return _100PercentRated;
+	public static int getNextHigherRating(int rating){
+		int index = ArrayTools.getIndexOf(standardRatings, rating);
+		if(index != -1 && index != standardRatings.length - 1)
+			return standardRatings[index + 1];
+		return 0;
 	}
 
 	/**
-	 Set this OCPD object rating percent.
-	 @param flag If True, the OCPD is set as 100% rated, otherwise the OCPD
-	 is set as 80% rated (the default)
+	 @return The next lower standard OCPD rating of the given rating.
+	 @param rating The rating for which the next lower rating is requested.
 	 */
-	public void set100PercentRated(boolean flag) {
-		if(_100PercentRated == flag)
-			return;
-		notifier.info.addFieldChange("_100PercentRated", _100PercentRated, flag );
-		_100PercentRated = flag;
-		notifier.notifyAllListeners();
-	}
-
-	@Override
-	public boolean messaging(Object sender, Message message) {
-		if(sender == circuit) {
-			if(message.id == 10132189) {
-				//owner circuit is requesting ocpd rating for the passed current
-				if(message.container instanceof Double){
-					message.container = getRating((Double) message.container);
-					return true;
-				}
-			}
-		}
-		return false;
+	public static int getNextLowerRating(int rating){
+		int index = ArrayTools.getIndexOf(standardRatings, rating);
+		if(index != -1 && index != 0)
+			return standardRatings[index - 1];
+		return 0;
 	}
 }

@@ -2,7 +2,6 @@ package eecalcs.conduits;
 
 import eecalcs.conductors.Conduitable;
 import eecalcs.conductors.RoConductor;
-import eecalcs.conductors.Size;
 
 /**
  This interface is intended to be used by the class {@link Conduit} in order
@@ -110,7 +109,7 @@ public interface ROConduit {
      filling this conduit. To get the size of this conduit by accounting for
      the biggest EGC use {@link #getTradeSizeForOneEGC()}. To obtain the size
      of an EGC that would replace all the existing EGC call
-     {@link #getBiggestOneEGC()}
+     {@link #getBiggestEGC()}
 
      @return The calculated trade size of this conduit.
      */
@@ -132,7 +131,7 @@ public interface ROConduit {
     /**
      @return The trade size of this conduit as if it was using only one EGC.
      The conduit must have at least one EGC. Returns null if there is no EGC.
-     Refer to {@link #getBiggestOneEGC()} for more information.
+     Refer to {@link #getBiggestEGC()} for more information.
      */
     Trade getTradeSizeForOneEGC();
 
@@ -146,5 +145,5 @@ public interface ROConduit {
      is nothing to replace, and that if there are cables in this conduit it
      is assumed their EGC are properly sized.
      */
-    RoConductor getBiggestOneEGC();
+    RoConductor getBiggestEGC();
 }

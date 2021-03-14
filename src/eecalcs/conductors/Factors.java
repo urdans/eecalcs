@@ -18,6 +18,10 @@ public class Factors {
 
 	private final static Factors[] tempCorrectionFactors;
 
+	/**
+	 Constructs a row for the table 310.15(B)(2)(a). It's called internally
+	 by the static section of this class.
+	 */
 	private Factors(int minTF, int maxTF, double correctionFactor60,
                     double correctionFactor75, double correctionFactor90) {
 		this.minTF = minTF;
@@ -27,6 +31,10 @@ public class Factors {
 		this.correctionFactor90 = correctionFactor90;
 	}
 
+	/**
+	 Returns the correction factor for the given temperature rating,
+	 corresponding to this class's temperature range.
+	 */
 	private double getCorrectionFactor(int tempRating) {
 		if (tempRating == 60) return correctionFactor60;
 		if (tempRating == 75) return correctionFactor75;
@@ -34,6 +42,10 @@ public class Factors {
 		return 0;
 	}
 
+	/**
+	 Returns true if the given ambient temperature is within the minimum and
+	 maximum values corresponding to this class's temperature range.
+	 */
 	private boolean inRangeF(int ambientTempF) {
 		return ambientTempF >= minTF & ambientTempF <= maxTF;
 	}
@@ -97,10 +109,8 @@ public class Factors {
 	}
 
 	/**
-	 This method is a variation of {@link #getAdjustmentFactor(int
-			currentCarrying, double distance)} but intended to be applied for
-	 conduits
-	 only.
+	 This method is a variation of {@link #getAdjustmentFactor(int, double)} but
+	 intended to be applied for conduits only.
 	 @param currentCarrying The number of current-carrying conductors in a
 	 conduit.
 	 @param nipple Indicates if the conduit is a nipple (length is &#60;= 24

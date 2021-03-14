@@ -13,25 +13,24 @@ class VoltDropTest {
     VoltDrop voltDrop = new VoltDrop(conductor);
 
     void change1(){
-        voltDrop.setSourceVoltage(VoltageSystemAC.v208_3ph_3w);
-        voltDrop.setConduitMaterial(Material.ALUMINUM);
-        voltDrop.setSets(2);
-        voltDrop.setLoadCurrent(130);
-        voltDrop.setPowerFactor(0.9);
-        voltDrop.setMaxVoltageDropPercent(3);
+        voltDrop.setSourceVoltage(VoltageSystemAC.v208_3ph_3w)
+                .setConduitMaterial(Material.ALUMINUM)
+                .setSets(2)
+                .setLoadCurrent(130)
+                .setPowerFactor(0.9)
+                .setMaxVoltageDropPercent(3);
         conductor.setCopperCoated(Coating.COATED);
         conductor.setSize(Size.AWG_1$0);
         conductor.setLength(350);
     }
 
     void change2(){
-        voltDrop.setSourceVoltage(VoltageSystemAC.v480_3ph_4w);
-        voltDrop.setConduitMaterial(Material.ALUMINUM);
-        voltDrop.setSets(2);
-        voltDrop.setLoadCurrent(460);
-        voltDrop.setMaxVoltageDropPercent(2);
-        voltDrop.setPowerFactor(0.85);
-
+        voltDrop.setSourceVoltage(VoltageSystemAC.v480_3ph_4w)
+                .setConduitMaterial(Material.ALUMINUM)
+                .setSets(2)
+                .setLoadCurrent(460)
+                .setMaxVoltageDropPercent(2)
+                .setPowerFactor(0.85);
         conductor.setLength(250);
         conductor.setCopperCoated(Coating.COATED);
         conductor.setSize(Size.AWG_4$0);
@@ -99,6 +98,7 @@ class VoltDropTest {
     @Test
     void getMaxLengthDC() {
         assertEquals(148.7603, voltDrop.getMaxLengthDCForCalculatedSize(), 0.0001);
+        assertEquals(3.8600, voltDrop.getDCVoltageDrop(), 0.0001);
 
         change1();
         assertEquals(377.9528, voltDrop.getMaxLengthDCForCalculatedSize(), 0.0001);

@@ -33,12 +33,14 @@ public enum VoltageSystemAC{									   //neutral is CCC
 	v480_1ph_2w("480v 1Ø 2W",480, 1, 2),//2w:no neutral
 	v480_1ph_3w("480v 1Ø 3W",480, 1, 3),//3w:yes
 	v480_3ph_3w("480v 3Ø 3W",480, 3, 3),//3w:no neutral
-	v480_3ph_4w("480v 3Ø 4W",480, 3, 4);//4w:no, but if load>50% harmonic:yes
+	v480_3ph_4w("480v 3Ø 4W",480, 3, 4),//4w:no, but if load>50% harmonic:yes
+	v575_3ph_3w("575v 3Ø 3W",575, 3, 3),//4w:no, but if load>50% harmonic:yes
+	v_other("", 120,1,2);
 
 	private String name;
 	private int voltage;
 	private int phases;
-	private static String[] names;
+	private static final String[] names;
 	private int wires;
 
 	static{
@@ -152,5 +154,21 @@ public enum VoltageSystemAC{									   //neutral is CCC
 		return this == v208_1ph_3w ||
 				this == v240_1ph_3w ||
 				this == v480_1ph_3w;
+	}
+
+	public VoltageSystemAC setCustom(int voltage, int phases, int wires){
+		if(this != v_other)
+			return this;
+		if(voltage == 0 || phases == 0 || wires ==0)
+			return this;
+		if(phases != 1 && phases != 3)
+			return this;
+		if(wires <2 || wires >4)
+			return this;
+		this.voltage = Math.abs(voltage);
+		this.phases = Math.abs(phases);
+		this.wires = Math.abs(wires);
+		this.name = String.format("%dv %dØ %dW", voltage, phases, wires);
+		return this;
 	}
 }

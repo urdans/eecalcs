@@ -25,11 +25,10 @@ import java.util.*;
  updated accordingly. */
 public class Conduit implements ROConduit {
 	private Trade minimumTrade = Trade.T1$2;
-	/*Indicates if a conduit is a nipple or not  (nipple: length < 24").
+	/**Indicates if a conduit is a nipple or not  (nipple: length < 24").
 	 The length of the conduit is not of interest at this stage.*/
 	private boolean isNipple = false;
 	private Type type;
-//	private int allowedFillPercentage;
 	private final List<Conduitable> conduitables = new ArrayList<>();
 	private double roofTopDistance = -1.0; //means no rooftop condition
 	private static final ResultMessage ERROR100 = new ResultMessage(
@@ -41,7 +40,7 @@ public class Conduit implements ROConduit {
 	"The type of this conduit is not valid.", -120);
 	protected final NotifierDelegate notifier = new NotifierDelegate(this);
 
-	/*Check that the input data is valid (minimum size, conduit type and nipple
+	/**Check that the input data is valid (minimum size, conduit type and nipple
 	condition.*/
 	private boolean checkInput() {
 		resultMessages.clearMessages();
@@ -215,8 +214,8 @@ public class Conduit implements ROConduit {
 		if (!checkInput())
 			return null;
 		double conduitableAreas = getConduitablesArea() / (getMaxAllowedFillPercentage() * 0.01);
-		Trade result = ConduitProperties.getTradeSizeForArea(conduitableAreas
-				, type, minimumTrade);
+		Trade result = ConduitProperties.getTradeSizeForArea(conduitableAreas,
+				type, minimumTrade);
 		if(result == null)
 			resultMessages.add(ERROR100);
 		return result;
@@ -227,14 +226,12 @@ public class Conduit implements ROConduit {
 		if (isNipple())
 			return 60;
 		int conductorsNumber = getFillingConductorCount();
-		int allowedFillPercentage;
 		if (conductorsNumber <= 1)
-			allowedFillPercentage = 53;
+			return 53;
 		else if (conductorsNumber == 2)
-			allowedFillPercentage = 31;
+			return 31;
 		else
-			allowedFillPercentage = 40;
-		return allowedFillPercentage;
+			return 40;
 	}
 
 	@Override
@@ -259,32 +256,50 @@ public class Conduit implements ROConduit {
 	public Trade getTradeSizeForOneEGC() {
 		if(isEmpty())
 			return null;
-		RoConductor EGC = getBiggestOneEGC();
-		if(EGC == null)
+		double EGCArea = getBiggestEGCArea();
+		if(EGCArea == 0)
 			return null;
-		double EGCArea = ConductorProperties.getInsulatedAreaIn2(EGC.getSize(),
-				EGC.getInsulation());
-		double totalConduitableAreaWithoutEGC = 0;
+		double totalConduitableAreaWithoutEGC = getTotalConduitableAreaWithoutEGC();
 
-		for(Conduitable conduitable: conduitables){
-			if(conduitable instanceof Conductor) {
-				Conductor conductor = (Conductor) conduitable;
-				if (conductor.getRole() != Conductor.Role.GND)
-					totalConduitableAreaWithoutEGC += conductor.getInsulatedAreaIn2();
-			}
-		}
-		double requiredArea =
-				(EGCArea + totalConduitableAreaWithoutEGC) / (getMaxAllowedFillPercentage() * 0.01);
+		double requiredArea = (EGCArea + totalConduitableAreaWithoutEGC) /
+				(getMaxAllowedFillPercentage() * 0.01);
 
-		Trade result = ConduitProperties.getTradeSizeForArea(requiredArea
-				, type, minimumTrade);
+		Trade result = ConduitProperties.getTradeSizeForArea(requiredArea,
+				type, minimumTrade);
 		if(result == null)
 			resultMessages.add(ERROR100);
 		return result;
 	}
 
+	/**
+	 Returns the total area of all the conduitables inside this conduit.
+	 */
+	private double getTotalConduitableAreaWithoutEGC(){
+		double totalConduitableAreaWithoutEGC = 0;
+		for(Conduitable conduitable: conduitables){
+			if(conduitable instanceof Conductor) {
+				if (((Conductor)conduitable).getRole() != Conductor.Role.GND)
+					totalConduitableAreaWithoutEGC += conduitable.getInsulatedAreaIn2();
+			}
+			if(conduitable instanceof Cable) {
+				totalConduitableAreaWithoutEGC += conduitable.getInsulatedAreaIn2();
+			}
+		}
+		return totalConduitableAreaWithoutEGC;
+	}
+	/**
+	 Returns the area of the biggest EGC in this conduit.
+	 */
+	private double getBiggestEGCArea(){
+		RoConductor EGC = getBiggestEGC();
+		if(EGC == null)
+			return 0;
+		return ConductorProperties.getInsulatedAreaIn2(EGC.getSize(),
+				EGC.getInsulation());
+	}
+
 	@Override
-	public RoConductor getBiggestOneEGC() {
+	public RoConductor getBiggestEGC() {
 		Conductor biggestEGC = null;
 		Size biggestEGCSize = Size.AWG_14;
 		for(Conduitable conduitable: conduitables){

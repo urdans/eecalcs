@@ -78,7 +78,7 @@ public interface Conduitable extends ROConduitable {
 
 	 @param ambientTemperatureF The ambient temperature in degrees Fahrenheits.
 	 */
-	void setAmbientTemperatureFSilently(int ambientTemperatureF);
+	void setAmbientTemperatureWithoutPropagation(int ambientTemperatureF);
 
 	/**
 	 Enables or disables the notification broadcast when the conduitable state

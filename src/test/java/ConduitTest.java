@@ -201,7 +201,7 @@ class ConduitTest {
         conduit.add(ground1);
         conduit.add(ground2);
         conduit.add(ground3);
-        assertEquals(Size.AWG_8, conduit.getBiggestOneEGC().getSize());
+        assertEquals(Size.AWG_8, conduit.getBiggestEGC().getSize());
         assertEquals(Trade.T1$2, conduit.getTradeSizeForOneEGC());
 
 
@@ -210,19 +210,19 @@ class ConduitTest {
         conduit.add(ground3);
         conduit.add(ground1);
         conduit.add(ground3.clone());
-        assertEquals(Size.AWG_8, conduit.getBiggestOneEGC().getSize());
+        assertEquals(Size.AWG_8, conduit.getBiggestEGC().getSize());
         assertEquals(Trade.T1$2, conduit.getTradeSizeForOneEGC());
 
-
-        Circuit circuit = new Circuit(new GeneralLoad());
+        GeneralLoad generalLoad = new GeneralLoad();
+        Circuit circuit = new Circuit(generalLoad);
         circuit.setConduitMode(conduit);
-        assertEquals(Size.AWG_8, conduit.getBiggestOneEGC().getSize());
+        assertEquals(Size.AWG_8, conduit.getBiggestEGC().getSize());
 
-        circuit.getLoad().setNominalCurrent(200);
+        generalLoad.setNominalCurrent(200);
 
         assertEquals(Size.AWG_3$0, circuit.getCircuitSize());
         assertEquals(Size.AWG_6, circuit.getGroundingConductor().getSize());
-        assertEquals(200, circuit.getOcdp().getRating());
+        assertEquals(200, circuit.getOCPDRating());
 
         /*the conduit contains 7 conductors: 1x12+1x10+2x8+2x3/0+1x6, out f
         which 5 are EGC, where the biggest one is the #6.
@@ -242,7 +242,7 @@ class ConduitTest {
         .696/0.4 = 1.74; For an EMT conduit, the trade size is 1-1/2" which
         is 2.036
         */
-        assertEquals(Size.AWG_6, conduit.getBiggestOneEGC().getSize());
+        assertEquals(Size.AWG_6, conduit.getBiggestEGC().getSize());
         assertEquals(Trade.T1_1$2, conduit.getTradeSizeForOneEGC());
 
     }

@@ -112,14 +112,15 @@ public class ResultMessages implements ROResultMessages {
 	}
 
 	/**
-	 Removes a message object from this result message container.
-
-	 @param msg The existing message object to be removed from this result
+	 Removes the message objects from this result message container.
+	 @param msg The existing message objects to be removed from this result
 	 message container.
 	 @see ResultMessage
 	 */
-	public void remove(ResultMessage msg){
-		resultMessages.remove(msg);
+	public void remove(ResultMessage...msg){
+		for (ResultMessage message : msg) {
+			resultMessages.remove(message);
+		}
 	}
 
 	@Override

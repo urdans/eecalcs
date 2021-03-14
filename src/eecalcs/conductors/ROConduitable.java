@@ -106,7 +106,7 @@ public interface ROConduitable {
 	 0.91 &#38; 0.8 value (from the example) that the {@link Circuit} class
 	 would need as reversed coefficient to multiply the load amperes (to get the
 	 144.23 AMPS from the example). Then the method
-	 {@link ConductorProperties#getSizeByAmperes(double,
+	 {@link ConductorProperties#getSizeFromStandardAmpacityTable(double,
 			 Metal, TempRating)} can provide the proper size of the conductor.
 	 */
 	double getCorrectedAndAdjustedAmpacity();

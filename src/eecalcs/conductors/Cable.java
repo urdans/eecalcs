@@ -29,7 +29,7 @@ import tools.NotifierDelegate;
  <p>NM - Non metallic jacket
  <p>NMC - Non metallic corrosion resistant jacket.
  <p>NMS - Non metallic jacket, insulated power or control with signaling data.
- <p>TC - Motor and Control Tray Cable (rounds, for power, lighting, controls and
+ <p>TC - ACMotor and Control Tray Cable (rounds, for power, lighting, controls and
  signaling circuits), <b>not covered by this software.</b>.
  <p>
  Each cable type may have a slightly different method of ampacity calculation, o
@@ -145,7 +145,8 @@ public class Cable implements Conduitable, ROCable {
 	/**
 	 @return Returns a deep copy of this Cable object. The new copy is
 	 exactly the same as this cable, except that it does not copy the conduit
-	 property, that is, the new clone is assumed in free air (not in a conduit).
+	 nor the bundle properties, that is, the new clone is assumed in free air
+	 (not in a conduit) and not bundled..
 	 */
 	@Override
 	public Cable clone() {
@@ -302,15 +303,6 @@ public class Cable implements Conduitable, ROCable {
 		if (voltageSystemAC.getPhases() == 3)
 			setSystem(voltageSystemAC);//this will fire notifications
 		else
-/*        if(neutralConductor != null){
-            if(flag)
-                neutralConductor.setRole(Conductor.Role.NEUCC);
-            else {
-                if(voltageSystemAC != VoltageSystemAC.v120_1ph_2w &&
-                        voltageSystemAC != VoltageSystemAC.v277_1ph_2w)
-                    neutralConductor.setRole(Conductor.Role.NEUNCC);
-            }
-        }*/
 			notifier.notifyAllListeners();
 	}
 
@@ -400,9 +392,7 @@ public class Cable implements Conduitable, ROCable {
 
 	@Override
 	public double getCorrectedAndAdjustedAmpacity() {
-		//int adjustedTemp = roofTopDistance <= 0 ? 0 : Factors
-        // .getRoofTopTempAdjustment(roofTopDistance);
-		return ConductorProperties.getAmpacity(phaseAConductor.getSize(),
+		return ConductorProperties.getStandardAmpacity(phaseAConductor.getSize(),
                 phaseAConductor.getMetal(),
                 phaseAConductor.getTemperatureRating())
 				* getCorrectionFactor() * getAdjustmentFactor();
@@ -420,9 +410,7 @@ public class Cable implements Conduitable, ROCable {
 
 	@Override
 	public void setConduit(Conduit conduit) {
-		if (conduit == null)
-			return;
-		if (conduit == this.conduit)
+		if (conduit == null || conduit == this.conduit)
 			return;
 		leaveBundle();
 		leaveConduit();
@@ -450,9 +438,7 @@ public class Cable implements Conduitable, ROCable {
 
 	@Override
 	public void setBundle(Bundle bundle) {
-		if (bundle == null)
-			return;
-		if (bundle == this.bundle)
+		if (bundle == null || bundle == this.bundle)
 			return;
 		leaveConduit();
 		leaveBundle();
@@ -593,29 +579,29 @@ public class Cable implements Conduitable, ROCable {
 		if (conduit != null)
 			conduit.getConduitables().forEach(conduitable -> {
 				conduitable.notifierEnabled(false);
-				conduitable.setAmbientTemperatureFSilently(ambientTemperatureF);
+				conduitable.setAmbientTemperatureWithoutPropagation(ambientTemperatureF);
 				conduitable.notifierEnabled(true);
 			});
 		else if (bundle != null)
 			bundle.getConduitables().forEach(conduitable -> {
 				conduitable.notifierEnabled(false);
-				conduitable.setAmbientTemperatureFSilently(ambientTemperatureF);
+				conduitable.setAmbientTemperatureWithoutPropagation(ambientTemperatureF);
 				conduitable.notifierEnabled(true);
 			});
 		else
-			setAmbientTemperatureFSilently(ambientTemperatureF);
+			setAmbientTemperatureWithoutPropagation(ambientTemperatureF);
 	}
 
 	@Override
-	public void setAmbientTemperatureFSilently(int ambientTemperatureF) {
-		phaseAConductor.setAmbientTemperatureFSilently(ambientTemperatureF);
+	public void setAmbientTemperatureWithoutPropagation(int ambientTemperatureF) {
+		phaseAConductor.setAmbientTemperatureWithoutPropagation(ambientTemperatureF);
 		if (phaseBConductor != null)
-			phaseBConductor.setAmbientTemperatureFSilently(ambientTemperatureF);
+			phaseBConductor.setAmbientTemperatureWithoutPropagation(ambientTemperatureF);
 		if (phaseCConductor != null)
-			phaseCConductor.setAmbientTemperatureFSilently(ambientTemperatureF);
+			phaseCConductor.setAmbientTemperatureWithoutPropagation(ambientTemperatureF);
 		if (neutralConductor != null)
-			neutralConductor.setAmbientTemperatureFSilently(ambientTemperatureF);
-		groundingConductor.setAmbientTemperatureFSilently(ambientTemperatureF);
+			neutralConductor.setAmbientTemperatureWithoutPropagation(ambientTemperatureF);
+		groundingConductor.setAmbientTemperatureWithoutPropagation(ambientTemperatureF);
 		notifier.notifyAllListeners();
 	}
 

@@ -189,6 +189,8 @@ public class Conductor implements Conduitable, RoConductor {
 	 @param size The size of the conductor as defined by {@link Size}
 	*/
 	public Conductor setSize(Size size) {
+		if(this.size == size)
+			return this;
 		this.size = size;
 		notifier.notifyAllListeners();
 		return this;
@@ -204,6 +206,8 @@ public class Conductor implements Conduitable, RoConductor {
 	 @param metal The conductor metal as defined by {@link Metal}
 	 */
 	public void setMetal(Metal metal) {
+		if(this.metal == metal)
+			return;
 		this.metal = metal;
 		notifier.notifyAllListeners();
 	}
@@ -215,6 +219,8 @@ public class Conductor implements Conduitable, RoConductor {
 
 	@Override
 	public void setInsulation(Insul insulation) {
+		if(this.insulation == insulation)
+			return;
 		this.insulation = insulation;
 		notifier.notifyAllListeners();
 	}
@@ -226,7 +232,10 @@ public class Conductor implements Conduitable, RoConductor {
 
 	@Override
 	public void setLength(double length) {
-		this.length = Math.abs(length);
+		length = Math.abs(length);
+		if(this.length == length)
+			return;
+		this.length = length;
 		notifier.notifyAllListeners();
 	}
 
@@ -237,11 +246,7 @@ public class Conductor implements Conduitable, RoConductor {
 
 	@Override
 	public double getCorrectedAndAdjustedAmpacity(){
-/*		double amp = ConductorProperties.getAmpacity(size, metal, ConductorProperties.getTempRating(insulation));
-		double cf = getCorrectionFactor();
-		double af = getAdjustmentFactor();
-		return amp * cf * af;*/
-		return ConductorProperties.getAmpacity(size, metal,
+		return ConductorProperties.getStandardAmpacity(size, metal,
 				ConductorProperties.getTempRating(insulation)) * getCompoundFactor();
 	}
 
@@ -306,21 +311,23 @@ public class Conductor implements Conduitable, RoConductor {
 		if(conduit != null)
 			conduit.getConduitables().forEach(conduitable -> {
 				conduitable.notifierEnabled(false);
-				conduitable.setAmbientTemperatureFSilently(ambientTemperatureF);
+				conduitable.setAmbientTemperatureWithoutPropagation(ambientTemperatureF);
 				conduitable.notifierEnabled(true);
 			});
 		else if(bundle != null)
 			bundle.getConduitables().forEach(conduitable -> {
 				conduitable.notifierEnabled(false);
-				conduitable.setAmbientTemperatureFSilently(ambientTemperatureF);
+				conduitable.setAmbientTemperatureWithoutPropagation(ambientTemperatureF);
 				conduitable.notifierEnabled(true);
 			});
 		else
-			setAmbientTemperatureFSilently(ambientTemperatureF);
+			setAmbientTemperatureWithoutPropagation(ambientTemperatureF);
 	}
 
 	@Override
-	public void setAmbientTemperatureFSilently(int ambientTemperatureF) {
+	public void setAmbientTemperatureWithoutPropagation(int ambientTemperatureF) {
+		if(this.ambientTemperatureF == ambientTemperatureF)
+			return;
 		this.ambientTemperatureF = ambientTemperatureF;
 		notifier.notifyAllListeners();
 	}
@@ -347,6 +354,8 @@ public class Conductor implements Conduitable, RoConductor {
 	 @return this Conductor object
 	 */
 	public Conductor setCopperCoated(Coating copperCoated) {
+		if(this.copperCoated == copperCoated)
+			return this;
 		this.copperCoated = copperCoated;
 		notifier.notifyAllListeners();
 		return this;
@@ -372,7 +381,6 @@ public class Conductor implements Conduitable, RoConductor {
 		leaveConduit();
 		conduit.add(this);
 		this.conduit = conduit;
-//		notifyAllListeners();
 	}
 
 	@Override
@@ -381,7 +389,6 @@ public class Conductor implements Conduitable, RoConductor {
 			return;
 		conduit.remove(this);
 		conduit = null;
-//		notifyAllListeners();
 	}
 
 	@Override
@@ -415,6 +422,8 @@ public class Conductor implements Conduitable, RoConductor {
 	 @return this Conductor object
 	 */
 	public Conductor setRole(Role role) {
+		if(this.role == role)
+			return this;
 		this.role = role;
 		notifier.notifyAllListeners();
 		return this;
@@ -435,7 +444,7 @@ public class Conductor implements Conduitable, RoConductor {
 
 	@Override
 	public void notifierEnabled(boolean flag) {
-		notifier.enable(flag/*, enablingKey*/);
+		notifier.enable(flag);
 	}
 
 	@Override
@@ -448,7 +457,6 @@ public class Conductor implements Conduitable, RoConductor {
 		leaveBundle();
 		bundle.add(this);
 		this.bundle = bundle;
-//		notifyAllListeners();
 	}
 
 	@Override
@@ -457,7 +465,6 @@ public class Conductor implements Conduitable, RoConductor {
 			return;
 		bundle.remove(this);
 		bundle = null;
-//		notifyAllListeners();
 	}
 
 	@Override

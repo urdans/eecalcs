@@ -17,7 +17,8 @@ import java.text.NumberFormat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CircuitTest {
-    private final Circuit circuit = new Circuit(new GeneralLoad());
+    private final GeneralLoad generalLoad = new GeneralLoad();
+    private final Circuit circuit = new Circuit(generalLoad);
     private final Conduit sharedConduit = new Conduit(Type.RMC, false);
     private String getState(){
         Tools.startRecording();
@@ -67,7 +68,7 @@ class CircuitTest {
             Tools.println("Adjustment Factor: " + circuit.getCable().getAdjustmentFactor());
             Tools.println("Compound Factor: " + circuit.getCable().getCompoundFactor());
             Tools.println("Corrected and adjusted ampacity: " + circuit.getCable().getCorrectedAndAdjustedAmpacity());
-            Tools.println("Nominal Ampacity: " + ConductorProperties.getAmpacity(
+            Tools.println("Nominal Ampacity: " + ConductorProperties.getStandardAmpacity(
                     circuit.getCircuitSize(),
                     circuit.getCable().getMetal(),
                     circuit.getCable().getTemperatureRating()));
@@ -86,14 +87,14 @@ class CircuitTest {
             Tools.println("Adjustment Factor: " + circuit.getPhaseConductor().getAdjustmentFactor());
             Tools.println("Compound Factor: " + circuit.getPhaseConductor().getCompoundFactor());
             Tools.println("Corrected and adjusted ampacity: " + circuit.getPhaseConductor().getCorrectedAndAdjustedAmpacity());
-            Tools.println("Nominal Ampacity: " + ConductorProperties.getAmpacity(
+            Tools.println("Nominal Ampacity: " + ConductorProperties.getStandardAmpacity(
                     circuit.getCircuitSize(),circuit.getPhaseConductor().getMetal(),
                     circuit.getPhaseConductor().getTemperatureRating()));
         }
         //PRIVATE_CONDUIT, FREE_AIR, SHARED_CONDUIT, PRIVATE_BUNDLE, SHARED_BUNDLE
         Tools.println("################################ Circuit OCPD ################################");
-        Tools.println("OCPD rating: "+ circuit.getOcdp().getRating());
-        Tools.println("OCPD is 100% rated: "+ circuit.getOcdp().is100PercentRated());
+        Tools.println("OCPD rating: "+ circuit.getOCPDRating());
+        Tools.println("OCPD is 100% rated: "+ circuit.is100PercentRated());
         Tools.println("################################ Circuit Conduit Characteristics ################################");
         if(circuit.getCircuitMode() == CircuitMode.PRIVATE_CONDUIT) {
             Tools.println("**** PRIVATE_CONDUIT ****");
@@ -292,13 +293,13 @@ class CircuitTest {
 
         /*if I change the load nominal current, the circuit object size state
         must correspond to the load state.*/
-        circuit.getLoad().setNominalCurrent(100);
+        generalLoad.setNominalCurrent(100);
         //the size of the phase conductor must correspond to that current
         assertEquals(Size.AWG_1, circuit.getPhaseConductor().getSize());
         //the same applies for the neutral conductor
         assertEquals(Size.AWG_1, circuit.getNeutralConductor().getSize());
         //if I change the voltage system in the load to 3φ...
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_3w);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_3w);
         /*there must not be a neutral conductor anymore.*/
         assertNull(circuit.getNeutralConductor());
         //the size of the phase must still be the same.
@@ -311,7 +312,7 @@ class CircuitTest {
         terminations and the continuous behavior of the load.*/
         /*My challenge now is to program a new method, or modify an existing, to
          determine the ampacity of a circuit conductors per conditions of use.
-         The candidate I have in mind in the ROConduitable.getAmpacity()
+         The candidate I have in mind in the ROConduitable.getStandardAmpacity()
          method which I should modify to account to the temp of the
          terminations. There is a parameter (I don't recall which one) that
          depends on the circuit and maybe I could not use this method, in
@@ -337,7 +338,7 @@ class CircuitTest {
          size of the conductor to be accounted for, the re-computation is not
          required and the oscillation disappeared.
          */
-        assertEquals(110, circuit.getOcdp().getRating());
+        assertEquals(110, circuit.getOCPDRating());
 
         //grounding
         assertEquals(Size.AWG_6, circuit.getGroundingConductor().getSize(),
@@ -484,7 +485,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void multipleEGCPerConduitWhenMoreThanOneConduit_PrivateMode(){
-        circuit.getLoad().setNominalCurrent(6*150);
+        generalLoad.setNominalCurrent(6*150);
         circuit.setNumberOfSets(6);
         //there are 6 EGC in the conduitable list.
         assertEquals(1, circuit.getNumberOfPrivateConduits());
@@ -521,7 +522,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
     @Test
     void lessAndMoreConduits(){
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         assertEquals(1, circuit.getNumberOfPrivateConduits());
         assertEquals(1, circuit.getNumberOfSets());
         assertEquals(1, circuit.getSetsPerPrivateConduit());
@@ -575,15 +576,15 @@ ALl the parameters of the circuit are obtained through the read only objects.
         assertEquals(Size.AWG_14, circuit.getCircuitSize());
 
         //ampacity decides
-        circuit.getLoad().setNominalCurrent(160);
+        generalLoad.setNominalCurrent(160);
         circuit.setMaxVoltageDropPercent(3);
         assertEquals(Size.AWG_2$0, circuit.getCircuitSize()); //using insulation for 75C
 
-        circuit.getLoad().setNominalCurrent(95);
+        generalLoad.setNominalCurrent(95);
         circuit.setMaxVoltageDropPercent(4.0);
         assertEquals(Size.AWG_2, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(101);
+        generalLoad.setNominalCurrent(101);
         circuit.setLength(130);
         circuit.setMetal(Metal.ALUMINUM);
         circuit.setMaxVoltageDropPercent(10.0);
@@ -597,9 +598,9 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setMaxVoltageDropPercent(25);
         circuit.setLength(1);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v480_3ph_4w);
-        circuit.getLoad().setNominalCurrent(105);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v480_3ph_4w);
+        generalLoad.setNominalCurrent(105);
+        generalLoad.setNonlinear(true);
         circuit.setAmbientTemperatureF(100);
         circuit.setInsulation(Insul.THHW);
         circuit.setMetal(Metal.COPPER);
@@ -613,21 +614,21 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
         //termination temperature rating is unknown
         circuit.setTerminationTempRating(null);
-        circuit.getLoad().setNominalCurrent(105);
+        generalLoad.setNominalCurrent(105);
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(100);
+        generalLoad.setNominalCurrent(100);
         assertEquals(Size.AWG_3$0, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(414);
+        generalLoad.setNominalCurrent(414);
         assertEquals(Size.KCMIL_1250, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(14);
+        generalLoad.setNominalCurrent(14);
         assertEquals(Size.AWG_10, circuit.getCircuitSize());
 
         //termination temperature rating is known, T60
         circuit.setTerminationTempRating(TempRating.T60);
-        circuit.getLoad().setNominalCurrent(83);
+        generalLoad.setNominalCurrent(83);
         assertEquals(Size.AWG_3, circuit.getCircuitSize());
 
         circuit.setInsulation(Insul.THW);
@@ -636,7 +637,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setInsulation(Insul.TW);
         assertEquals(Size.AWG_2$0, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(353);
+        generalLoad.setNominalCurrent(353);
         circuit.setInsulation(Insul.THHW);
         assertEquals(Size.KCMIL_700, circuit.getCircuitSize());
 
@@ -646,28 +647,28 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setInsulation(Insul.TW);
         assertEquals(Size.KCMIL_1750, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(364);
+        generalLoad.setNominalCurrent(364);
         assertEquals(Size.KCMIL_2000, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(365);
+        generalLoad.setNominalCurrent(365);
         assertNull(circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(468);
+        generalLoad.setNominalCurrent(468);
         circuit.setInsulation(Insul.THW);
         assertEquals(Size.KCMIL_2000, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(469);
+        generalLoad.setNominalCurrent(469);
         assertNull(circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(546);
+        generalLoad.setNominalCurrent(546);
         circuit.setInsulation(Insul.THHW);
         assertEquals(Size.KCMIL_2000, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(547);
+        generalLoad.setNominalCurrent(547);
         assertNull(circuit.getCircuitSize());
 
-        circuit.getLoad().setNonlinear(false);
-        circuit.getLoad().setNominalCurrent(506);
+        generalLoad.setNonlinear(false);
+        generalLoad.setNominalCurrent(506);
         assertNull(circuit.getCircuitSize());
 
         circuit.setNumberOfSets(2);
@@ -676,13 +677,13 @@ ALl the parameters of the circuit are obtained through the read only objects.
         //termination temperature rating is known, T75
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v240_3ph_4w);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v240_3ph_4w);
         circuit.setAmbientTemperatureF(110);
         circuit.setInsulation(Insul.TW);
-        circuit.getLoad().setNominalCurrent(100);
+        generalLoad.setNominalCurrent(100);
         circuit.setMaxVoltageDropPercent(25.0);
 
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setNonlinear(true);
         assertEquals(Size.AWG_4$0, circuit.getCircuitSize());
 
         circuit.setInsulation(Insul.THW);
@@ -691,7 +692,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setInsulation(Insul.THHW);
         assertEquals(Size.AWG_1, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(20);
+        generalLoad.setNominalCurrent(20);
         circuit.setInsulation(Insul.TW);
         assertEquals(Size.AWG_8, circuit.getCircuitSize(), getState());
 
@@ -706,7 +707,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         assertEquals(Size.AWG_10, circuit.getCircuitSize());
 
         circuit.setTerminationTempRating(TempRating.T75);
-        circuit.getLoad().setNominalCurrent(315);
+        generalLoad.setNominalCurrent(315);
         circuit.setInsulation(Insul.TW);
         assertEquals(Size.KCMIL_2000, circuit.getCircuitSize());
 
@@ -716,7 +717,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setInsulation(Insul.THHW);
         assertEquals(Size.KCMIL_600, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(316);
+        generalLoad.setNominalCurrent(316);
         circuit.setInsulation(Insul.TW);
         assertNull(circuit.getCircuitSize());
 
@@ -726,22 +727,22 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setInsulation(Insul.THHW);
         assertEquals(Size.KCMIL_600, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(437);
+        generalLoad.setNominalCurrent(437);
         circuit.setInsulation(Insul.THW);
         assertNull(circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(523);
+        generalLoad.setNominalCurrent(523);
         circuit.setInsulation(Insul.THHW);
         assertNull(circuit.getCircuitSize());
 
         //termination temperature rating is known, T90
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v240_3ph_4w);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v240_3ph_4w);
         circuit.setAmbientTemperatureF(102);
         circuit.setMaxVoltageDropPercent(25.0);
-        circuit.getLoad().setNonlinear(true);
-        circuit.getLoad().setNominalCurrent(90);
+        generalLoad.setNonlinear(true);
+        generalLoad.setNominalCurrent(90);
         circuit.setInsulation(Insul.TW);
         assertEquals(Size.AWG_2$0, circuit.getCircuitSize());
 
@@ -751,7 +752,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setInsulation(Insul.THHW);
         assertEquals(Size.AWG_2, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(420);
+        generalLoad.setNominalCurrent(420);
         circuit.setNumberOfSets(2);
         circuit.setInsulation(Insul.TW);
         assertEquals(Size.KCMIL_700, circuit.getCircuitSize());
@@ -764,10 +765,10 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.setAmbientTemperatureF(95);
         circuit.setMetal(Metal.ALUMINUM);
-        circuit.getLoad().setNominalCurrent(10);
+        generalLoad.setNominalCurrent(10);
         circuit.setInsulation(Insul.TW);
         assertEquals(Size.AWG_12, circuit.getCircuitSize());
 
@@ -783,7 +784,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         //circuit cannot be sized because the ambient temperature is above or near the
         //temperature rating of the conductor, so TABLE 310.15(B)(2)(a) gives a correction
         //factor of zero.
-        circuit.getLoad().setNominalCurrent(10);
+        generalLoad.setNominalCurrent(10);
         circuit.setInsulation(Insul.TW); //60°C
         circuit.setAmbientTemperatureF(TempRating.getFahrenheit(56));
         assertNull(circuit.getCircuitSize());
@@ -809,17 +810,17 @@ ALl the parameters of the circuit are obtained through the read only objects.
     void getCircuitSize_determined_by_MCA(){
         //size of circuit conductors is decided upon MCA
         circuit.setMaxVoltageDropPercent(5.0);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v480_3ph_4w);
-        circuit.getLoad().setNominalCurrent(100);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v480_3ph_4w);
+        generalLoad.setNominalCurrent(100);
         circuit.setLength(50);
         circuit.setMetal(Metal.COPPER);
         circuit.setInsulation(Insul.THW);
         circuit.setAmbientTemperatureF(86);
-        circuit.getLoad().setNonlinear(false);
+        generalLoad.setNonlinear(false);
         circuit.setNumberOfSets(1);
         circuit.setConduitMode();
         circuit.setTerminationTempRating(TempRating.T75);
-        circuit.getLoad().setNonContinuous();
+        generalLoad.setNonContinuous();
 
         //case 1 - standard (default) conditions
         //correction factor = 1
@@ -828,7 +829,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
         assertEquals(Size.AWG_3, circuit.getCircuitSize());
 
         //case 2 - load is continuous, no factors, MCA decides
-        /*((GeneralOldLoad)*/circuit.getLoad()/*)*/.setContinuous();
+        generalLoad.setContinuous();
         //correction factor = 1
         //adjustment factor = 1
         //load is continuous
@@ -836,7 +837,7 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
         //case 3 - load is continuous, factors decides.
         circuit.setAmbientTemperatureF(95); //CorrectionFactor: 0.94
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setNonlinear(true);
         //correction factor = 0.94
         //adjustment factor = 0.8
         //load is continuous
@@ -882,14 +883,14 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setMaxVoltageDropPercent(3);
         circuit.setLength(100);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v480_3ph_4w);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v480_3ph_4w);
+        generalLoad.setNonlinear(true);
         circuit.setAmbientTemperatureF(100);
         circuit.setInsulation(Insul.THHW);
         circuit.setMetal(Metal.COPPER);
         //termination temperature rating is unknown
         circuit.setTerminationTempRating(null);
-        circuit.getLoad().setNominalCurrent(100);
+        generalLoad.setNominalCurrent(100);
         assertEquals(Size.AWG_3$0, circuit.getCircuitSize());
         //check that the VDrop object provides calculations for the calculated size
         assertEquals(1.333, circuit.getVoltageDrop().getACVoltageDrop(), 0.001);
@@ -907,12 +908,12 @@ ALl the parameters of the circuit are obtained through the read only objects.
 
         circuit.setTerminationTempRating(null);
         circuit.setNumberOfSets(2);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v240_3ph_4w);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v240_3ph_4w);
         circuit.setAmbientTemperatureF(110);
         circuit.setInsulation(Insul.THWN);
-        circuit.getLoad().setNominalCurrent(350);
+        generalLoad.setNominalCurrent(350);
         circuit.setMaxVoltageDropPercent(5.0);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setNonlinear(true);
 
         assertEquals(Size.KCMIL_350, circuit.getCircuitSize());
         assertEquals(Size.KCMIL_350, circuit.getNeutralConductor().getSize());
@@ -956,9 +957,9 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.TW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(100);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(100);
+        generalLoad.setNonlinear(true);
         //even if there are 4 current-carrying conductor in free air, adjustment
         // factor is 1.
         circuit.setMaxVoltageDropPercent(15.0);
@@ -971,9 +972,9 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.TW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //there are 4 current-carrying conductor in free air, so adjustment
         // factor is 1.
         circuit.setMaxVoltageDropPercent(25.0);
@@ -986,9 +987,9 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.THW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //there are 4 current-carrying conductor in free air, so adjustment
         // factor is 1.
         circuit.setMaxVoltageDropPercent(25.0);
@@ -1001,9 +1002,9 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //there are 4 current-carrying conductor in free air, so adjustment
         // factor is 1.
         circuit.setMaxVoltageDropPercent(25.0);
@@ -1016,9 +1017,9 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.setInsulation(Insul.TW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //there are 4 current-carrying conductor in free air, so adjustment
         // factor is 1.
         circuit.setMaxVoltageDropPercent(25.0);
@@ -1031,9 +1032,9 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.setInsulation(Insul.THW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //there are 4 current-carrying conductor in free air, so adjustment  factor is 1.
         //This conductor is rated for 75°C but is permitted to be used for ampacity correction, adjustment, or both
         //(110.14(C), if the corrected and adjusted ampacity does not exceeds the ampacity for the temperature rating
@@ -1055,9 +1056,9 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //there are 4 current-carrying conductor in free air, so adjustment  factor is 1.
         //This conductor is rated for 90°C but is permitted to be used for ampacity correction, adjustment, or both
         //(110.14(C), if the corrected and adjusted ampacity does not exceeds the ampacity for the temperature rating
@@ -1079,9 +1080,9 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.TW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //The temp rating of the conductor does not exceeds the temp rating of the termination, in fact, its bellow
         //that value. The size of the conductor is selected per column T60 since the conductor temp rating is the least
         //temp rating of the two.
@@ -1095,9 +1096,9 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.THW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //The temp rating of the conductor equals the temp rating of the termination (T75). The size of the conductor
         //is selected per column T75.
         circuit.setMaxVoltageDropPercent(25.0);
@@ -1110,9 +1111,9 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //there are 4 current-carrying conductor in free air, so adjustment  factor is 1.
         //This conductor is rated for 90°C but is permitted to be used for ampacity correction, adjustment, or both
         //(110.14(C), if the corrected and adjusted ampacity does not exceeds the ampacity for the temperature rating
@@ -1134,9 +1135,9 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.setInsulation(Insul.THW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //The temp rating of the conductor does not exceeds the temp rating of the termination, in fact, its bellow
         //that value. The size of the conductor is selected per column T75 since the conductor temp rating is the
         //lesser temp rating of the two.
@@ -1150,9 +1151,9 @@ ALl the parameters of the circuit are obtained through the read only objects.
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //The temp rating of the conductor equals the temp rating of the termination (T90). The size of the conductor
         //is selected per column T90.
         circuit.setMaxVoltageDropPercent(25.0);
@@ -1179,15 +1180,15 @@ conduitables correspond with the circuit configuration */
         1 conductor = 3*/
         circuit.setNumberOfSets(2);
         //conduitable list has 2 cables now. sharedConduit has 3 cables + 1 conductor = 4
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         /*conduitable list has 2 cables. sharedConduit should have 3 cables
         + 1 conductor = 4, but now it has 7: 6 cables + 1 conductor!!!!!!!!!!!
         CORRECTED! sharedConduit has 4 conduitables now.*/
 
-        circuit.getLoad().setNominalCurrent(400);
+        generalLoad.setNominalCurrent(400);
         /*since there are 2 cables, each is carrying 200 amperes. Each sets
         has 3 ccc*/
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setNonlinear(true);
         /*now each set has 4 ccc now. In the shared conduit there should be 8
          ccc belonging to this circuit + 1 cable with 2 ccc + 1 conductor ccc =
          11, however there are 22!!!!!.
@@ -1215,9 +1216,9 @@ conduitables correspond with the circuit configuration */
         assertEquals(0, circuit.getSetsPerPrivateConduit(), getState());
 
         circuit.setUsingCable(false);
-        circuit.getLoad().setNonlinear(false);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v120_1ph_2w);
-        circuit.getLoad().setNominalCurrent(600);
+        generalLoad.setNonlinear(false);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v120_1ph_2w);
+        generalLoad.setNominalCurrent(600);
         circuit.setFreeAirMode();
         //there are 5 conduitables
         assertEquals(Size.KCMIL_1500, circuit.getCircuitSize(), getState());
@@ -1304,9 +1305,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(102);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(100);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(100);
+        generalLoad.setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
         assertEquals(Size.AWG_3$0, circuit.getCircuitSize());
     }
@@ -1319,9 +1320,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(102);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(101);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(101);
+        generalLoad.setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize());
     }
@@ -1334,9 +1335,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.TW);
         circuit.setAmbientTemperatureF(102);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
         assertEquals(Size.KCMIL_500, circuit.getCircuitSize());
     }
@@ -1349,9 +1350,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(102);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
         assertEquals(Size.KCMIL_250, circuit.getCircuitSize());
     }
@@ -1364,9 +1365,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.setInsulation(Insul.THW);
         circuit.setAmbientTemperatureF(102);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
         assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
     }
@@ -1379,9 +1380,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(102);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(false);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(false);
         circuit.setMaxVoltageDropPercent(25.0);
         assertEquals(Size.AWG_4$0, circuit.getCircuitSize());
     }
@@ -1399,9 +1400,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(102);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //the shared conduit has 8 CCC
         circuit.setMaxVoltageDropPercent(25.0);
         assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
@@ -1414,9 +1415,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.TW);
         circuit.setAmbientTemperatureF(87);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(18);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(18);
+        generalLoad.setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
         circuit.setLength(30);
         circuit.setPrivateBundleLength(24);
@@ -1431,7 +1432,7 @@ conduitables correspond with the circuit configuration */
 
         //case 3
         circuit.setInsulation(Insul.THHW);
-        circuit.getLoad().setNominalCurrent(180);
+        generalLoad.setNominalCurrent(180);
         assertEquals(Size.KCMIL_250, circuit.getCircuitSize());
 
         //case 3
@@ -1452,9 +1453,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.TW);
         circuit.setAmbientTemperatureF(87);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(18);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(18);
+        generalLoad.setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
         circuit.setLength(30);
         bundle.setBundlingLength(24);
@@ -1468,7 +1469,7 @@ conduitables correspond with the circuit configuration */
 
         //case 3
         circuit.setInsulation(Insul.THHW);
-        circuit.getLoad().setNominalCurrent(180);
+        generalLoad.setNominalCurrent(180);
         assertEquals(Size.KCMIL_250, circuit.getCircuitSize());
 
         //case 3
@@ -1492,12 +1493,12 @@ conduitables correspond with the circuit configuration */
         //#ccc=9+4=13
         assertEquals(13, bundle.getCurrentCarryingCount());
 
-        circuit.getLoad().setNonlinear(false);
+        generalLoad.setNonlinear(false);
         assertEquals(12, bundle.getCurrentCarryingCount());
 
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.THHW);
-        circuit.getLoad().setNominalCurrent(200);
+        generalLoad.setNominalCurrent(200);
         assertEquals(0.96, circuit.getPhaseConductor().getCorrectionFactor());
         assertEquals(0.50, circuit.getPhaseConductor().getAdjustmentFactor());
         assertEquals(Size.KCMIL_500, circuit.getCircuitSize());
@@ -1518,15 +1519,15 @@ conduitables correspond with the circuit configuration */
         assertEquals(Size.AWG_14, circuit.getCircuitSize());
 
         //ampacity decides
-        circuit.getLoad().setNominalCurrent(160);
+        generalLoad.setNominalCurrent(160);
         circuit.setMaxVoltageDropPercent(3);
         assertEquals(Size.AWG_2$0, circuit.getCircuitSize()); //using insulation for 75C
 
-        circuit.getLoad().setNominalCurrent(95);
+        generalLoad.setNominalCurrent(95);
         circuit.setMaxVoltageDropPercent(4.0);
         assertEquals(Size.AWG_2, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(101);
+        generalLoad.setNominalCurrent(101);
         circuit.setLength(130);
         circuit.setMetal(Metal.ALUMINUM);
         circuit.setMaxVoltageDropPercent(10.0);
@@ -1540,9 +1541,9 @@ conduitables correspond with the circuit configuration */
         circuit.setMaxVoltageDropPercent(25);
         circuit.setLength(1);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v480_3ph_4w);
-        circuit.getLoad().setNominalCurrent(105);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v480_3ph_4w);
+        generalLoad.setNominalCurrent(105);
+        generalLoad.setNonlinear(true);
         circuit.setAmbientTemperatureF(100);
         circuit.setInsulation(Insul.THHW);
         circuit.setMetal(Metal.COPPER);
@@ -1556,21 +1557,21 @@ conduitables correspond with the circuit configuration */
 
         //termination temperature rating is unknown
         circuit.setTerminationTempRating(null);
-        circuit.getLoad().setNominalCurrent(105);
+        generalLoad.setNominalCurrent(105);
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(100);
+        generalLoad.setNominalCurrent(100);
         assertEquals(Size.AWG_3$0, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(414);
+        generalLoad.setNominalCurrent(414);
         assertEquals(Size.KCMIL_1250, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(14);
+        generalLoad.setNominalCurrent(14);
         assertEquals(Size.AWG_10, circuit.getCircuitSize());
 
         //termination temperature rating is known, T60
         circuit.setTerminationTempRating(TempRating.T60);
-        circuit.getLoad().setNominalCurrent(83);
+        generalLoad.setNominalCurrent(83);
         assertEquals(Size.AWG_3, circuit.getCircuitSize());
 
         circuit.setInsulation(Insul.THW);
@@ -1579,7 +1580,7 @@ conduitables correspond with the circuit configuration */
         circuit.setInsulation(Insul.TW);
         assertEquals(Size.AWG_2$0, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(353);
+        generalLoad.setNominalCurrent(353);
         circuit.setInsulation(Insul.THHW);
         assertEquals(Size.KCMIL_700, circuit.getCircuitSize());
 
@@ -1589,28 +1590,28 @@ conduitables correspond with the circuit configuration */
         circuit.setInsulation(Insul.TW);
         assertEquals(Size.KCMIL_1750, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(364);
+        generalLoad.setNominalCurrent(364);
         assertEquals(Size.KCMIL_2000, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(365);
+        generalLoad.setNominalCurrent(365);
         assertNull(circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(468);
+        generalLoad.setNominalCurrent(468);
         circuit.setInsulation(Insul.THW);
         assertEquals(Size.KCMIL_2000, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(469);
+        generalLoad.setNominalCurrent(469);
         assertNull(circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(546);
+        generalLoad.setNominalCurrent(546);
         circuit.setInsulation(Insul.THHW);
         assertEquals(Size.KCMIL_2000, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(547);
+        generalLoad.setNominalCurrent(547);
         assertNull(circuit.getCircuitSize());
 
-        circuit.getLoad().setNonlinear(false);
-        circuit.getLoad().setNominalCurrent(506);
+        generalLoad.setNonlinear(false);
+        generalLoad.setNominalCurrent(506);
         assertNull(circuit.getCircuitSize());
 
         circuit.setNumberOfSets(2);
@@ -1619,13 +1620,13 @@ conduitables correspond with the circuit configuration */
         //termination temperature rating is known, T75
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v240_3ph_4w);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v240_3ph_4w);
         circuit.setAmbientTemperatureF(110);
         circuit.setInsulation(Insul.TW);
-        circuit.getLoad().setNominalCurrent(100);
+        generalLoad.setNominalCurrent(100);
         circuit.setMaxVoltageDropPercent(25.0);
 
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setNonlinear(true);
         assertEquals(Size.AWG_4$0, circuit.getCircuitSize());
 
         circuit.setInsulation(Insul.THW);
@@ -1634,7 +1635,7 @@ conduitables correspond with the circuit configuration */
         circuit.setInsulation(Insul.THHW);
         assertEquals(Size.AWG_1, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(20);
+        generalLoad.setNominalCurrent(20);
         circuit.setInsulation(Insul.TW);
         assertEquals(Size.AWG_8, circuit.getCircuitSize());
 
@@ -1649,7 +1650,7 @@ conduitables correspond with the circuit configuration */
         assertEquals(/*Size.AWG_8*/Size.AWG_10, circuit.getCircuitSize());
 
         circuit.setTerminationTempRating(TempRating.T75);
-        circuit.getLoad().setNominalCurrent(315);
+        generalLoad.setNominalCurrent(315);
         circuit.setInsulation(Insul.TW);
         assertEquals(Size.KCMIL_2000, circuit.getCircuitSize());
 
@@ -1659,7 +1660,7 @@ conduitables correspond with the circuit configuration */
         circuit.setInsulation(Insul.THHW);
         assertEquals(Size.KCMIL_600, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(316);
+        generalLoad.setNominalCurrent(316);
         circuit.setInsulation(Insul.TW);
         assertNull(circuit.getCircuitSize());
 
@@ -1669,24 +1670,24 @@ conduitables correspond with the circuit configuration */
         circuit.setInsulation(Insul.THHW);
         assertEquals(Size.KCMIL_600, circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(437);
+        generalLoad.setNominalCurrent(437);
         circuit.setInsulation(Insul.THW);
         assertNull(circuit.getCircuitSize());
 
-        circuit.getLoad().setNominalCurrent(523);
+        generalLoad.setNominalCurrent(523);
         circuit.setInsulation(Insul.THHW);
         assertNull(circuit.getCircuitSize());
 
         //termination temperature rating is known, T90
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v240_3ph_4w);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v240_3ph_4w);
         circuit.setAmbientTemperatureF(102);
         circuit.setMaxVoltageDropPercent(25.0);
 
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setNonlinear(true);
 
-        circuit.getLoad().setNominalCurrent(90);
+        generalLoad.setNominalCurrent(90);
         circuit.setInsulation(Insul.TW);
         assertEquals(Size.AWG_2$0, circuit.getCircuitSize());
 
@@ -1697,7 +1698,7 @@ conduitables correspond with the circuit configuration */
         assertEquals(Size.AWG_2, circuit.getCircuitSize());
 
 
-        circuit.getLoad().setNominalCurrent(420);
+        generalLoad.setNominalCurrent(420);
         circuit.setNumberOfSets(2);
         circuit.setInsulation(Insul.TW);
         assertEquals(Size.KCMIL_700, circuit.getCircuitSize());
@@ -1710,20 +1711,20 @@ conduitables correspond with the circuit configuration */
 
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.setAmbientTemperatureF(95);
         circuit.setMetal(Metal.ALUMINUM);
-        circuit.getLoad().setNominalCurrent(10);
+        generalLoad.setNominalCurrent(10);
         circuit.setInsulation(Insul.TW);
         assertEquals(Size.AWG_12, circuit.getCircuitSize());
 
         //using high leg
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.setNumberOfSets(1);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_1ph_2wN);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_1ph_2wN);
         circuit.setAmbientTemperatureF(95);
         circuit.setMetal(Metal.ALUMINUM);
-        circuit.getLoad().setNominalCurrent(10);
+        generalLoad.setNominalCurrent(10);
         circuit.setInsulation(Insul.TW);
         assertEquals(Size.AWG_12, circuit.getCircuitSize());
 
@@ -1737,10 +1738,10 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setAmbientTemperatureF(110);
         circuit.setInsulation(Insul.THHW);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         circuit.setMetal(Metal.COPPER);
-        circuit.getLoad().setNonlinear(false);
-        circuit.getLoad().setNominalCurrent(1957);
+        generalLoad.setNonlinear(false);
+        generalLoad.setNominalCurrent(1957);
         circuit.setNumberOfSets(6);
         assertEquals(1, circuit.getNumberOfPrivateConduits(), getState());
         assertEquals(6, circuit.getSetsPerPrivateConduit(), getState());
@@ -1782,9 +1783,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(102);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(100);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(100);
+        generalLoad.setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
         assertEquals(Size.AWG_3$0, circuit.getCircuitSize());
     }
@@ -1798,9 +1799,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(102);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(101);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(101);
+        generalLoad.setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
 
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize());
@@ -1815,9 +1816,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.TW);
         circuit.setAmbientTemperatureF(102);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
 
         assertEquals(Size.KCMIL_500, circuit.getCircuitSize());
@@ -1832,9 +1833,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(102);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
 
         assertEquals(Size.KCMIL_250, circuit.getCircuitSize());
@@ -1849,9 +1850,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.setInsulation(Insul.THW);
         circuit.setAmbientTemperatureF(102);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
 
         assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
@@ -1866,9 +1867,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(102);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(false);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(false);
         circuit.setMaxVoltageDropPercent(25.0);
 
         assertEquals(Size.AWG_4$0, circuit.getCircuitSize());
@@ -1888,9 +1889,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(102);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //circuit.setNeutralCurrentCarrying(false);
         //the shared conduit has 8 CCC
         circuit.setMaxVoltageDropPercent(25.0);
@@ -1906,9 +1907,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.TW);
         circuit.setAmbientTemperatureF(87);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(18);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(18);
+        generalLoad.setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
         circuit.setLength(30);
         circuit.setPrivateBundleLength(24);
@@ -1922,7 +1923,7 @@ conduitables correspond with the circuit configuration */
 
         //case 3
         circuit.setInsulation(Insul.THHW);
-        circuit.getLoad().setNominalCurrent(180);
+        generalLoad.setNominalCurrent(180);
         assertEquals(Size.KCMIL_250, circuit.getCircuitSize());
 
         //case 3
@@ -1944,9 +1945,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.TW);
         circuit.setAmbientTemperatureF(87);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(18);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(18);
+        generalLoad.setNonlinear(true);
         circuit.setMaxVoltageDropPercent(25.0);
 
         circuit.setLength(30);
@@ -1961,7 +1962,7 @@ conduitables correspond with the circuit configuration */
 
         //case 3
         circuit.setInsulation(Insul.THHW);
-        circuit.getLoad().setNominalCurrent(180);
+        generalLoad.setNominalCurrent(180);
         assertEquals(Size.KCMIL_250, circuit.getCircuitSize());
 
         //case 3
@@ -1986,12 +1987,12 @@ conduitables correspond with the circuit configuration */
         //#ccc=9+4=13
         assertEquals(13, bundle.getCurrentCarryingCount());
 
-        circuit.getLoad().setNonlinear(false);
+        generalLoad.setNonlinear(false);
         assertEquals(12, bundle.getCurrentCarryingCount());
 
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.THHW);
-        circuit.getLoad().setNominalCurrent(200);
+        generalLoad.setNominalCurrent(200);
         assertEquals(0.96, circuit.getCable().getCorrectionFactor());
         assertEquals(0.50, circuit.getCable().getAdjustmentFactor());
         assertEquals(Size.KCMIL_500, circuit.getCircuitSize());
@@ -2025,9 +2026,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.TW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(100);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(100);
+        generalLoad.setNonlinear(true);
         //even if there are 4 current-carrying conductor in free air, adjustment
         // factor is 1.
         circuit.setMaxVoltageDropPercent(15.0);
@@ -2042,9 +2043,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.TW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment
         // factor is 1.
@@ -2060,9 +2061,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(null);
         circuit.setInsulation(Insul.THW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //there are 4 current-carrying conductor in free air, so adjustment
         // factor is 1.
         circuit.setMaxVoltageDropPercent(25.0);
@@ -2077,9 +2078,9 @@ conduitables correspond with the circuit configuration */
         circuit.setUsingCable(true);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //circuit.setNeutralCurrentCarrying(true);
         //there are 4 current-carrying conductor in free air, so adjustment
         // factor is 1.
@@ -2095,9 +2096,9 @@ conduitables correspond with the circuit configuration */
         circuit.setUsingCable(true);
         circuit.setInsulation(Insul.TW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //there are 4 current-carrying conductor in free air, so adjustment
         // factor is 1.
         circuit.setMaxVoltageDropPercent(25.0);
@@ -2112,9 +2113,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.setInsulation(Insul.THW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //there are 4 current-carrying conductor in free air, so adjustment  factor is 1.
         //This conductor is rated for 75°C but is permitted to be used for ampacity correction, adjustment, or both
         //(110.14(C), if the corrected and adjusted ampacity does not exceeds the ampacity for the temperature rating
@@ -2139,9 +2140,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T60);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //there are 4 current-carrying conductor in free air, so adjustment  factor is 1.
         //This conductor is rated for 90°C but is permitted to be used for ampacity correction, adjustment, or both
         //(110.14(C), if the corrected and adjusted ampacity does not exceeds the ampacity for the temperature rating
@@ -2166,9 +2167,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.TW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //The temp rating of the conductor does not exceeds the temp rating of the termination, in fact, its bellow
         //that value. The size of the conductor is selected per column T60 since the conductor temp rating is the least
         //temp rating of the two.
@@ -2184,9 +2185,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.THW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //circuit.setNeutralCurrentCarrying(true);
         //The temp rating of the conductor equals the temp rating of the termination (T75). The size of the conductor
         //is selected per column T75.
@@ -2202,9 +2203,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T75);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //there are 4 current-carrying conductor in free air, so adjustment  factor is 1.
         //This conductor is rated for 90°C but is permitted to be used for ampacity correction, adjustment, or both
         //(110.14(C), if the corrected and adjusted ampacity does not exceeds the ampacity for the temperature rating
@@ -2229,9 +2230,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.setInsulation(Insul.THW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
         //The temp rating of the conductor does not exceeds the temp rating of the termination, in fact, its bellow
         //that value. The size of the conductor is selected per column T75 since the conductor temp rating is the
         //lesser temp rating of the two.
@@ -2247,9 +2248,9 @@ conduitables correspond with the circuit configuration */
         circuit.setTerminationTempRating(TempRating.T90);
         circuit.setInsulation(Insul.THHW);
         circuit.setAmbientTemperatureF(96);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(200);
-        circuit.getLoad().setNonlinear(true);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(200);
+        generalLoad.setNonlinear(true);
 
         //The temp rating of the conductor equals the temp rating of the termination (T90). The size of the conductor
         //is selected per column T90.
@@ -2261,8 +2262,8 @@ conduitables correspond with the circuit configuration */
     @Test
     void setCircuitMode(){
         //set up
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setNominalCurrent(240);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(240);
         circuit.setTerminationTempRating(TempRating.T60);
 
         Runnable case1 = () -> {
@@ -2328,22 +2329,22 @@ conduitables correspond with the circuit configuration */
     void sizing_conductors_with_continuous_load(){
         circuit.setLength(1);
         circuit.setTerminationTempRating(TempRating.T90);
-        circuit.getLoad().setNominalCurrent(100);
+        generalLoad.setNominalCurrent(100);
         //conductor sized per MCA
-        circuit.getLoad().setContinuous();
+        generalLoad.setContinuous();
         assertEquals(Size.AWG_1,circuit.getCircuitSize());
 
         //conductor sized per factors
-        circuit.getLoad().setNonContinuous();
+        generalLoad.setNonContinuous();
         assertEquals(Size.AWG_3, circuit.getCircuitSize());
 
         //conductor sized per factors
-        circuit.getLoad().setNominalCurrent(420);
+        generalLoad.setNominalCurrent(420);
         circuit.setNumberOfSets(2);
         assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
 
         //conductor sized per MCA
-        circuit.getLoad().setContinuous();
+        generalLoad.setContinuous();
         circuit.setAmbientTemperatureF(68);
         assertEquals(Size.KCMIL_300, circuit.getCircuitSize());
 
@@ -2358,7 +2359,7 @@ conduitables correspond with the circuit configuration */
         //conduitables contain 3 conductors: A-N-G
         assertFalse(circuit.isUsingOneEGC(), getState());
 
-        circuit.getLoad().setNominalCurrent(400);
+        generalLoad.setNominalCurrent(400);
         assertEquals(Size.KCMIL_600, circuit.getCircuitSize(), getState());
         assertEquals(3, circuit.getPrivateConduit().getFillingConductorCount(), getState());
 
@@ -2387,8 +2388,8 @@ conduitables correspond with the circuit configuration */
         assertEquals(Size.AWG_2$0, circuit.getCircuitSize(), getState());
         assertEquals(7, circuit.getPrivateConduit().getFillingConductorCount(), getState());
 
-        circuit.getLoad().setNominalCurrent(700);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(700);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         //conduitables contains 13 conductors: AAA-BBB-CCC-NNN-G
         assertEquals(1, circuit.getNumberOfPrivateConduits(), getState());
         assertEquals(3, circuit.getNumberOfSets(), getState());
@@ -2416,7 +2417,7 @@ conduitables correspond with the circuit configuration */
         //conduitables contain 3 conductors: A-N-G
         assertFalse(circuit.isUsingOneEGC(), getState());
 
-        circuit.getLoad().setNominalCurrent(400);
+        generalLoad.setNominalCurrent(400);
         assertEquals(Size.KCMIL_600, circuit.getCircuitSize(), getState());
         assertEquals(2, circuit.getPrivateBundle().getCurrentCarryingCount(), getState());
         assertEquals(3, circuit.getPrivateBundle().getConductorCount(), getState());
@@ -2426,6 +2427,8 @@ conduitables correspond with the circuit configuration */
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize(), getState());
         assertEquals(6, circuit.getPrivateBundle().getCurrentCarryingCount(), getState());
         assertEquals(9, circuit.getPrivateBundle().getConductorCount(), getState());
+        assertEquals(3, circuit.getNumberOfSets(), getState());
+
 
         circuit.setUsingOneEGC(true);
         //conduitables contains 7 conductors: AAA-NNN-G
@@ -2434,8 +2437,8 @@ conduitables correspond with the circuit configuration */
         assertEquals(6, circuit.getPrivateBundle().getCurrentCarryingCount(), getState());
         assertEquals(7, circuit.getPrivateBundle().getConductorCount(), getState());
 
-        circuit.getLoad().setNominalCurrent(700);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(700);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         //conduitables contains 13 conductors: AAA-BBB-CCC-NNN-G
         assertEquals(3, circuit.getNumberOfSets(), getState());
         assertEquals(Size.KCMIL_250, circuit.getCircuitSize(), getState());
@@ -2457,7 +2460,7 @@ conduitables correspond with the circuit configuration */
         //conduitables contain 3 conductors: A-N-G
         assertFalse(circuit.isUsingOneEGC(), getState());
 
-        circuit.getLoad().setNominalCurrent(400);
+        generalLoad.setNominalCurrent(400);
         assertEquals(Size.KCMIL_600, circuit.getCircuitSize(), getState());
         assertEquals(2, circuit.getSharedBundle().getCurrentCarryingCount(), getState());
         assertEquals(3, circuit.getSharedBundle().getConductorCount(), getState());
@@ -2467,6 +2470,7 @@ conduitables correspond with the circuit configuration */
         assertEquals(Size.AWG_1$0, circuit.getCircuitSize(), getState());
         assertEquals(6, circuit.getSharedBundle().getCurrentCarryingCount(), getState());
         assertEquals(9, circuit.getSharedBundle().getConductorCount(), getState());
+        assertEquals(3, circuit.getNumberOfSets(), getState());
 
         circuit.setUsingOneEGC(true);
         //conduitables contains 7 conductors: AAA-NNN-G
@@ -2475,8 +2479,8 @@ conduitables correspond with the circuit configuration */
         assertEquals(6, circuit.getSharedBundle().getCurrentCarryingCount(), getState());
         assertEquals(7, circuit.getSharedBundle().getConductorCount(), getState());
 
-        circuit.getLoad().setNominalCurrent(700);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(700);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         //conduitables contains 13 conductors: AAA-BBB-CCC-NNN-G
         assertEquals(3, circuit.getNumberOfSets(), getState());
         assertEquals(Size.KCMIL_250, circuit.getCircuitSize(), getState());
@@ -2503,7 +2507,7 @@ conduitables correspond with the circuit configuration */
         //conduitables contain 3 conductors: A-N-G
         assertFalse(circuit.isUsingOneEGC(), getState());
 
-        circuit.getLoad().setNominalCurrent(400);
+        generalLoad.setNominalCurrent(400);
         assertEquals(Size.KCMIL_600, circuit.getCircuitSize(), getState());
         assertEquals(2, circuit.getSharedConduit().getCurrentCarryingCount(), getState());
         assertEquals(3+2, circuit.getSharedConduit().getFillingConductorCount(), getState());
@@ -2514,6 +2518,7 @@ conduitables correspond with the circuit configuration */
         assertEquals(6, circuit.getSharedConduit().getCurrentCarryingCount(), getState());
         assertEquals(9+2, circuit.getSharedConduit().getFillingConductorCount(), getState());
 
+
         circuit.setUsingOneEGC(true);
         //conduitables contains 7 conductors: AAA-NNN-G
         assertTrue(circuit.isUsingOneEGC(), getState());
@@ -2521,8 +2526,8 @@ conduitables correspond with the circuit configuration */
         assertEquals(6, circuit.getSharedConduit().getCurrentCarryingCount(), getState());
         assertEquals(7+2, circuit.getSharedConduit().getFillingConductorCount(), getState());
 
-        circuit.getLoad().setNominalCurrent(700);
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setNominalCurrent(700);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
         //conduitables contains 13 conductors: AAA-BBB-CCC-NNN-G
         assertEquals(3, circuit.getNumberOfSets(), getState());
         assertEquals(Size.KCMIL_400, circuit.getCircuitSize(), getState());
@@ -2546,11 +2551,11 @@ conduitables correspond with the circuit configuration */
         Voltage drops decides the size, #4, rated for 70Amps at 60°C
         The ocpd is for protecting the conductor, 70 Amps
         */
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v120_1ph_2w);
-        circuit.getLoad().setNominalCurrent(50);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v120_1ph_2w);
+        generalLoad.setNominalCurrent(50);
         assertEquals(Size.AWG_6, circuit.getSizePerAmpacity(false), getState());
         assertEquals(Size.AWG_4, circuit.getSizePerVoltageDrop(false),  getState());
-        assertEquals(70,circuit.getOcdp().getRating(),getState());
+        assertEquals(70,circuit.getOCPDRating(),getState());
 
         /*case 2:
         Same conditions except the length is 50 ft.
@@ -2560,7 +2565,7 @@ conduitables correspond with the circuit configuration */
         circuit.setLength(50);
         assertEquals(Size.AWG_6, circuit.getSizePerAmpacity(false), getState());
         assertEquals(Size.AWG_6, circuit.getSizePerVoltageDrop(false), getState());
-        assertEquals(60,circuit.getOcdp().getRating(),getState());
+        assertEquals(60,circuit.getOCPDRating(),getState());
 
         /*case 3:
         Same as before but the generalLoad is continuous.
@@ -2568,32 +2573,32 @@ conduitables correspond with the circuit configuration */
         Ampacity decides the size, #4, rated for 70Amps at 60°C
         The ocpd is for protecting the conductor, 70 Amps.
         */
-        circuit.getLoad().setContinuous();
+        generalLoad.setContinuous();
         assertEquals(Size.AWG_4, circuit.getSizePerAmpacity(false), getState());
         assertEquals(Size.AWG_6, circuit.getSizePerVoltageDrop(false), getState());
-        assertEquals(70,circuit.getOcdp().getRating(),getState());
+        assertEquals(70,circuit.getOCPDRating(),getState());
 
         /*case 4:
         generalLoad: 208v 3φ 4w 400A, non-linear and continuous
         circuit Length = 100 ft, 2 sets in 2 conduits
         VD max = 3%
         */
-        circuit.getLoad().setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
-        circuit.getLoad().setContinuous();
-        circuit.getLoad().setNonlinear(true);
-        circuit.getLoad().setNominalCurrent(400);
+        generalLoad.setVoltageSystem(VoltageSystemAC.v208_3ph_4w);
+        generalLoad.setContinuous();
+        generalLoad.setNonlinear(true);
+        generalLoad.setNominalCurrent(400);
         circuit.setNumberOfSets(2);
         circuit.morePrivateConduits();
         assertEquals(Size.KCMIL_250, circuit.getSizePerAmpacity(false), getState());
         assertEquals(Size.AWG_3$0, circuit.getSizePerVoltageDrop(false), getState());
-        assertEquals(450,circuit.getOcdp().getRating(),getState());
+        assertEquals(500,circuit.getOCPDRating(),getState());
         assertEquals(Metal.COPPER, circuit.getGroundingConductor().getMetal(), getState());
         assertEquals(Size.AWG_2, circuit.getGroundingConductor().getSize(),getState());
 
         circuit.setMetal(Metal.ALUMINUM);
-        assertEquals(400,circuit.getOcdp().getRating(),getState());
+        assertEquals(500,circuit.getOCPDRating(),getState());
         assertEquals(Metal.ALUMINUM, circuit.getGroundingConductor().getMetal(), getState());
-        assertEquals(Size.AWG_1, circuit.getGroundingConductor().getSize(), getState());
+        assertEquals(Size.AWG_1$0, circuit.getGroundingConductor().getSize(), getState());
 
     }
 
@@ -2601,9 +2606,20 @@ conduitables correspond with the circuit configuration */
     void messaging(){
         Circuit c = new Circuit(new GeneralLoad());
         c.setLength(10);
-        assertEquals(15, c.getOcdp().getRating());
+        assertEquals(15, c.getOCPDRating());
         assertEquals(Size.AWG_14, c.getGroundingConductor().getSize(), getState());
 
+    }
+
+    @Test
+    void testNumber6(){
+        generalLoad.setNominalCurrent(60);
+        circuit.setLength(20);
+
+        assertEquals(Size.AWG_4, circuit.getCircuitSize(), getState());
+
+        circuit.setTerminationTempRating(TempRating.T75);
+        assertEquals(Size.AWG_6, circuit.getCircuitSize(), getState());
     }
 }
 /*

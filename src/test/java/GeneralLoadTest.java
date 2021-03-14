@@ -16,7 +16,7 @@ class GeneralLoadTest {
 		assertEquals(200, generalLoad.getNominalCurrent());
 		assertEquals(200, generalLoad.getMCA());
 		assertEquals(1.0, generalLoad.getMCAMultiplier());
-		assertEquals(LoadType.NONCONTINUOUS, generalLoad.getLoadType());
+		assertEquals(Load.Type.NONCONTINUOUS, generalLoad.getLoadType());
 	}
 
 	@Test
@@ -26,7 +26,7 @@ class GeneralLoadTest {
 		assertEquals(100, generalLoad.getNominalCurrent());
 		assertEquals(125, generalLoad.getMCA());
 		assertEquals(125/100.0, generalLoad.getMCAMultiplier());
-		assertEquals(LoadType.CONTINUOUS, generalLoad.getLoadType());
+		assertEquals(Load.Type.CONTINUOUS, generalLoad.getLoadType());
 	}
 
 	@Test
@@ -35,13 +35,13 @@ class GeneralLoadTest {
 		assertEquals(10, generalLoad.getNominalCurrent());
 		assertEquals(321, generalLoad.getMCA());
 		assertEquals(321/10.0, generalLoad.getMCAMultiplier());
-		assertEquals(LoadType.MIXED, generalLoad.getLoadType());
+		assertEquals(Load.Type.MIXED, generalLoad.getLoadType());
 	}
 
 	@Test
 	void setNominalCurrent() {
 		assertEquals(10, generalLoad.getNominalCurrent());
-		assertEquals(LoadType.NONCONTINUOUS, generalLoad.getLoadType());
+		assertEquals(Load.Type.NONCONTINUOUS, generalLoad.getLoadType());
 		assertEquals(0, generalLoad.getOverloadRating());
 		assertEquals(0, generalLoad.getDSRating());
 		assertEquals(10, generalLoad.getMCA());
@@ -62,7 +62,7 @@ class GeneralLoadTest {
 		assertEquals(1200.0, generalLoad.getWatts());
 		assertEquals(10, generalLoad.getMCA());
 		assertEquals(1, generalLoad.getMCAMultiplier());
-		assertEquals(0.0, generalLoad.getMaxOCPDRating(false));
+		assertEquals(0.0, generalLoad.getMaxOCPDRating());
 		assertEquals(0, generalLoad.getDSRating());
 		assertEquals(0.0, generalLoad.getOverloadRating());
 		assertNull(generalLoad.getDescription());
@@ -78,7 +78,7 @@ class GeneralLoadTest {
 		assertEquals(208*20*Math.sqrt(3)*0.8, generalLoad.getWatts());
 		assertEquals(20, generalLoad.getMCA());
 		assertEquals(1, generalLoad.getMCAMultiplier());
-		assertEquals(0.0, generalLoad.getMaxOCPDRating(false));
+		assertEquals(0.0, generalLoad.getMaxOCPDRating());
 		assertEquals(0.0, generalLoad.getDSRating());
 		assertEquals(0.0, generalLoad.getOverloadRating());
 		assertEquals("Induction heater", generalLoad.getDescription());
@@ -88,7 +88,7 @@ class GeneralLoadTest {
 		assertEquals(1.25, generalLoad.getMCAMultiplier());
 
 		GeneralLoad generalLoad2 = new GeneralLoad(VoltageSystemAC.v240_1ph_3w, 25);
-		assertEquals( LoadType.NONCONTINUOUS,
+		assertEquals( Load.Type.NONCONTINUOUS,
 				generalLoad2.getLoadType());
 		assertEquals(25.0, generalLoad2.getNominalCurrent());
 		assertEquals(25.0, generalLoad2.getNeutralCurrent());
@@ -97,7 +97,7 @@ class GeneralLoadTest {
 		assertEquals(240*25.0, generalLoad2.getWatts());
 		assertEquals(25.0, generalLoad2.getMCA());
 		assertEquals(1, generalLoad2.getMCAMultiplier());
-		assertEquals(0.0, generalLoad2.getMaxOCPDRating(false));
+		assertEquals(0.0, generalLoad2.getMaxOCPDRating());
 		assertEquals(0, generalLoad2.getDSRating());
 		assertEquals(0.0, generalLoad2.getOverloadRating());
 	}

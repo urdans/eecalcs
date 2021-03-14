@@ -3,7 +3,7 @@ package eecalcs.loads;
 import eecalcs.circuits.Circuit;
 import eecalcs.systems.VoltageSystemAC;
 import tools.NotifierDelegate;
-
+//quedé aquí: review this java doc and move it to the BaseLoad class.
 /**This is a generic and base class load for all type of loads.
  <p>An electric load object provides information about its basic requirements
  and has the following properties (RO: read only; R&W: read and write):
@@ -106,30 +106,9 @@ import tools.NotifierDelegate;
  modify the internals. Descendant classes can provided specialized methods
  and implement extra behaviors.
   */
-public class GeneralLoad implements Load {
-	private LoadType loadType = LoadType.NONCONTINUOUS;
-	protected VoltageSystemAC voltageSystem;
-	protected double powerFactor = 1.0;
-	protected final NotifierDelegate notifier = new NotifierDelegate(this);
-	protected String description;
-	/**Defines if this load is a linear or a nonlinear load.
-	 Todo To be removed once a descendant load NonLinear class is implemented.*/
+public final class GeneralLoad extends BaseLoad implements Load {
+	/**Defines artificially if this load is a linear or a nonlinear load.*/
 	private boolean _isNonlinear = false;
-	/**The nominal current of a load, in amperes. Along with the power factor
-	 and voltage it defines this load real and apparent power.*/
-	private double nominalCurrent;
-	/**The Minimum Circuit Ampacity that is required for the conductor
-	 feeding this load. For this class, it's a read-only property whose value
-	 is defines as follows:<br>
-	 for a noncontinuous load, MCA = nominal current<br>
-	 for a continuous load, MCA = 1.25 x nominal current.<br>
-	 Descendant classes add a setter to this property and override its getter
-	 to detach the relationship between these two values based on the
-	 continuousness behavior of the load but must keep it equal or bigger
-	 than the nominal current.<br>
-	 For example, a piece of refrigerant equipment could not be a continuous
-	 load and still have an MCA value above the nominal current.*/
-	private double MCA;
 
 	/**
 	 Construct a load object with the given parameters.
@@ -141,6 +120,9 @@ public class GeneralLoad implements Load {
 	 @see VoltageSystemAC
 	 */
 	public GeneralLoad(VoltageSystemAC voltageSystem, double nominalCurrent) {
+		type = Type.NONCONTINUOUS;
+		powerFactor = 1.0;
+		notifier = new NotifierDelegate(this);
 		if(voltageSystem == null)
 			this.voltageSystem = VoltageSystemAC.v120_1ph_2w;
 		if(nominalCurrent == 0)
@@ -161,111 +143,12 @@ public class GeneralLoad implements Load {
 
 	@Override
 	public Circuit.CircuitType getRequiredCircuitType() {
-		return Circuit.CircuitType.MULTI_OUTLET_BRANCH; //DEDICATED_BRANCH;
+		return Circuit.CircuitType.DEDICATED_BRANCH;
 	}
 
 	@Override
-	public void setVoltageSystem(VoltageSystemAC voltageSystem) {
-		if(this.voltageSystem == voltageSystem || voltageSystem == null)
-			return;
-		notifier.info.addFieldChange("voltageSystem", this.voltageSystem, voltageSystem );
-		this.voltageSystem = voltageSystem;
-		notifier.notifyAllListeners();
-	}
-
-	@Override
-	public VoltageSystemAC getVoltageSystem() {
-		return voltageSystem;
-	}
-
-	@Override
-	public void setNominalCurrent(double nominalCurrent){
-		if(this.nominalCurrent == nominalCurrent || nominalCurrent == 0)
-			return;
-		nominalCurrent = Math.abs(nominalCurrent);
-		double oldMCA = MCA;
-
-		if(loadType == LoadType.NONCONTINUOUS)
-			MCA = nominalCurrent;
-		else if (loadType == LoadType.CONTINUOUS)
-			MCA = 1.25 * nominalCurrent;
-		else {//MIXED
-			if(nominalCurrent >= MCA) {
-				loadType = LoadType.NONCONTINUOUS;
-				MCA = nominalCurrent;
-			}
-		}
-
-		notifier.info.addFieldChange("nominalCurrent", this.nominalCurrent,
-				nominalCurrent);
-		notifier.info.addFieldChange("MCA", oldMCA, MCA);
-		this.nominalCurrent = nominalCurrent;
-		notifier.notifyAllListeners();
-	}
-
-	@Override
-	public double getNominalCurrent() {
-		return nominalCurrent;
-	}
-
-	@Override
-	public double getNeutralCurrent() {
-		if (voltageSystem.hasNeutral())
-			return nominalCurrent;
-		//no neutral, no current.
+	public double getMaxOCPDRating(){
 		return 0;
-	}
-
-	@Override
-	public double getVoltAmperes() {
-		return voltageSystem.getVoltage() * nominalCurrent * voltageSystem.getFactor();
-	}
-
-	@Override
-	public double getWatts() {
-		return getVoltAmperes() * powerFactor;
-	}
-
-	@Override
-	public void setPowerFactor(double powerFactor) {
-		if(this.powerFactor == powerFactor)
-			return;
-		powerFactor = Math.abs(powerFactor);
-		if(powerFactor < 0.7)
-			powerFactor = 0.7;
-		else if(powerFactor > 1.0)
-			powerFactor = 1.0;
-		double oldWatts = getWatts();
-		notifier.info.addFieldChange("powerFactor", this.powerFactor, powerFactor);
-		this.powerFactor = powerFactor;
-		notifier.info.addFieldChange("watts", oldWatts, getWatts());
-		notifier.notifyAllListeners();
-	}
-
-	@Override
-	public double getPowerFactor() {
-		return powerFactor;
-	}
-
-	@Override
-	public double getMCA() {
-		return MCA;
-	}
-
-	@Override
-	public double getMCAMultiplier() {
-		return MCA / nominalCurrent;
-	}
-
-	@Override
-	public double getMaxOCPDRating(boolean is100PercentRated){
-		return 0;
-		/*When is100PercentRated is accounted for, use this:
-		 * if(is100PercentRated || !isContinuous)
-		 *   return Inom
-		 * else
-		 *   return 1.25*Inom
-		 * Few loads would use this approach!*/
 	}
 
 	@Override
@@ -284,95 +167,101 @@ public class GeneralLoad implements Load {
 	}
 
 	@Override
-	public void setDescription(String description){
-		if(this.description != null)
-			if(this.description.equals(description))
-				return;
-		notifier.info.addFieldChange("description", this.description, description);
-		this.description = description;
-		notifier.notifyAllListeners();
-	}
-
-	@Override
-	public String getDescription() {
-		return description;
-	}
-
-	@Override
-	public NotifierDelegate getNotifier() {
-		return notifier;
-	}
-
-	@Override
-	public boolean isNeutralCurrentCarrying(){
-		if(isNonlinear()) //the neutral carries the harmonics in all configurations
-			return voltageSystem.hasNeutral();
-		if(voltageSystem.hasNeutral()){ //almost all are CCC except the 4w
-			return voltageSystem.getWires() != 4;
-		}
-		return false;
-	}
-
-	@Override
 	public boolean isNonlinear(){
-		//todo: to be removed when NonLinearLoad is implemented.
-		return /*false*/ _isNonlinear;
+		return _isNonlinear;
 	}
 
-	@Override
-	public LoadType getLoadType() {
-		return loadType;
-	}
-
-	@Override
+	/**
+	 Makes this load a continuous load, implying that the MCA value changes to
+	 1.25*nominalCurrent. The load type changes to CONTINUOUS. Registered
+	 listeners are notified of this change.
+	 */
 	public void setContinuous() {
-		if(loadType == LoadType.CONTINUOUS)
+		if(type == Type.CONTINUOUS)
 			return;
-		_setContinuousness(LoadType.CONTINUOUS, -1);
+		_setContinuousness(Type.CONTINUOUS, -1);
 	}
 
-	@Override
+	/**
+	 Makes this load a non continuous load, implying that the MCA value changes
+	 to the same value of nominalCurrent. Registered listeners are notified
+	 of this change.
+	 */
 	public void setNonContinuous() {
-		if(loadType == LoadType.NONCONTINUOUS)
+		if(type == Type.NONCONTINUOUS)
 			return;
-		_setContinuousness(LoadType.NONCONTINUOUS, -1);
+		_setContinuousness(Type.NONCONTINUOUS, -1);
 	}
 
-	@Override
+	/**
+	 Sets explicitly the MCA for this load and mark this load as a mixed load.
+	 Notice that MCA should always be equal or greater than the load's nominal
+	 current. An attempt to set an MCA lesser than the load's nominal current
+	 will convert this load to a NONCONTINUOUS one, with an MCA equal to the
+	 load's nominal current. Also notice that there is no limitation on how big
+	 the MCA value can be, in regards to the load current. Registered
+	 listeners are notified of this change.
+	 @param MCA The new minimum circuit ampacity (MCA) for this load.
+	 */
 	public void setMixed(double MCA) {
-		if(this.MCA == MCA && loadType == LoadType.MIXED)
+		if(this.MCA == MCA && type == Type.MIXED)
 			return;
 		if(MCA <= nominalCurrent) {
 			setNonContinuous();
 			return;
 		}
-		_setContinuousness(LoadType.MIXED, MCA);
+		_setContinuousness(Type.MIXED, MCA);
 	}
 
 	/**Sets the new behavior of the load and notifies its listeners about it.
 	 If the parameter is null nothing is set.*/
-	private void _setContinuousness(LoadType loadType, double mca){
-		LoadType oldLoadType = this.loadType;
+	private void _setContinuousness(Type type, double mca){
+		Type oldType = this.type;
 		double oldMCA = MCA;
-		this.loadType = loadType;
-		if(loadType == LoadType.CONTINUOUS)
+		this.type = type;
+		if(type == Type.CONTINUOUS)
 			MCA = 1.25 * nominalCurrent;
-		else if(loadType == LoadType.NONCONTINUOUS)
+		else if(type == Type.NONCONTINUOUS)
 			MCA = nominalCurrent;
 		else //MIXED
 			MCA = mca;
-		notifier.info.addFieldChange("loadType", oldLoadType,
-				this.loadType);
+		notifier.info.addFieldChange("type", oldType,
+				this.type);
 		notifier.info.addFieldChange("MCA", oldMCA, MCA);
 		notifier.notifyAllListeners();
 	}
 
-	@Override
+	/**
+	 Sets the nonlinear behavior of this load.
+	 @param flag If true, the load is set to nonlinear (load with harmonics).
+	 If false, the load is set as a linear one (the default).<br>
+	 "*************************"<br>
+	 Future: This is a temporary method.
+	 A nonlinear load must be a descendant class that returns true for
+	 its isNonLinear() method. A load is just linear like this load or
+	 nonlinear as a descendant specialized load.<br>
+	 "*************************"
+	 */
 	public void setNonlinear(boolean flag){
 		if(_isNonlinear == flag)
 			return;
 		notifier.info.addFieldChange("_isNonlinear", _isNonlinear, flag);
 		_isNonlinear = flag;
 		notifier.notifyAllListeners();
+	}
+
+	@Override
+	public void setNominalCurrent(double nominalCurrent){
+		super.setNominalCurrent(nominalCurrent);
+	}
+
+	@Override
+	public void setVoltageSystem(VoltageSystemAC voltageSystem){
+		super.setVoltageSystem(voltageSystem);
+	}
+
+	@Override
+	public void setPowerFactor(double powerFactor) {
+		super.setPowerFactor(powerFactor);
 	}
 }

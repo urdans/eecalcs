@@ -7,19 +7,18 @@ import tools.NotifierDelegate;
 public interface Load {
 
 	/**
+	 Defines the type of loads based on continuousness: CONTINUOUS,
+	 NONCONTINUOUS, and MIXED */
+	enum Type {
+		CONTINUOUS,
+		NONCONTINUOUS,
+		MIXED
+	}
+	/**
 	 @return The type of circuit that this load requires. See
 	 {@link eecalcs.circuits.Circuit.CircuitType} for details.
 	 */
 	Circuit.CircuitType getRequiredCircuitType();
-
-	/**
-	 Sets the voltage system of this load.
-	 Registered listeners receive notification of this change.
-	 @param voltageSystem The new voltage system for this load. If this
-	 parameter is null, nothing is set.
-	 @see VoltageSystemAC
-	 */
-	void setVoltageSystem(VoltageSystemAC voltageSystem);
 
 	/**
 	 @return The voltage system of this load.
@@ -51,19 +50,6 @@ public interface Load {
 	double getNeutralCurrent();
 
 	/**
-	 Sets a non-zero positive value for this load nominal current. If this
-	 load is non-continuous, MCA is updated to this value; if this load is
-	 continuous, MCA is updated to 1.25 times this value. If the load is
-	 mixed and this value is bigger than MCA, this load changes to
-	 non-continuous and MCA is updated to this value, otherwise, MCA does not
-	 change.
-	 Registered listeners receive notification of these changes.
-	 @param nominalCurrent The new current of the load, in amperes. If this
-	 value is zero, nothing is set.
-	 */
-	void setNominalCurrent(double nominalCurrent);
-
-	/**
 	 @return The apparent power of this load, in volt-amperes.
 	 */
 	double getVoltAmperes();
@@ -72,16 +58,6 @@ public interface Load {
 	 @return The real power of this load, in watts.
 	 */
 	double getWatts();
-
-	/**
-	 Sets the power factor of this load. This will change indirectly the
-	 value of the real power of this load.
-	 <p>Registered listeners receive notification of these changes (pf & P).
-	 @param powerFactor A value >= 0.7  and <=1.0 representing the new power
-	 factor of the load. Any value above or below the acceptable limits will be
-	 trimmed to the limit values, without notice.
-	 */
-	void setPowerFactor(double powerFactor);
 
 	/**
 	 @return The power factor of this load. A positive number between 0.7 and
@@ -102,23 +78,17 @@ public interface Load {
 
 	/**
 	 @return The maximum overcurrent protection device (OCPD) rating
-	 (protection for short-circuit, ground-fault and overload), in amperes.
+	 (protection for short-circuit, ground-fault and overload) permitted to
+	 protect this load, in amperes.
 	 If the returned value is 0, it means that a specific OCDP rating is not
 	 required for this load and thus, the rating of the OCPD must be
 	 determined at the circuit level to protect the conductors feeding this
-	 load.
-	 <p>The is100PercentRated parameter may look trivial. It is up to the
-	 load object to decide to use it or not. For some load types, the NEC
-	 allows to skip the 1.25*Inom increase in OCDP size if the OCDP and its
-	 enclosure are 100% rated. As this exception does not apply to all loads,
-	 each load object must decide to account for it or ignore it.
+	 load (NEC 210.20 & 215.3).
 	 <p>For this base class the returned value is zero. Descendant load classes
 	 having particular requirements for an OCPD rating, must override this
 	 method to return the proper value.
-	 @param is100PercentRated Indicates if the requested value is for an
-	 OCPD (and enclosure) that is 100% rated.
 	 */
-	double getMaxOCPDRating(boolean is100PercentRated);
+	double getMaxOCPDRating();
 
 	/**
 	 @return The minimum rating in amperes of the disconnect switch (DS) for
@@ -136,7 +106,7 @@ public interface Load {
 	 @return True if the Next Higher Standard Rating rule can be applied to
 	 this load's OCPD, false otherwise.
 	 <p>The returned value is meaningful only if
-	 {@link #getMaxOCPDRating(boolean)} return a non zero value.
+	 {@link #getMaxOCPDRating()} return a non zero value.
 
 	 <p>For this base class the returned value is true. Descendant load classes
 	 that do not allow the application of this rule must override this method
@@ -184,9 +154,9 @@ public interface Load {
 
 	/**
 	 @return The type of the load in regards to its continuousness.
-	 @see LoadType
+	 @see Type
 	 */
-	LoadType getLoadType();
+	Type getLoadType();
 
 	/**
 	 @return The {@link NotifierDelegate notifier delegate} object for this
@@ -194,44 +164,6 @@ public interface Load {
 	 */
 	NotifierDelegate getNotifier();
 
-	/**
-	 Makes this load a continuous load, implying that the MCA value changes to
-	 1.25*nominalCurrent. The load type changes to CONTINUOUS. Registered
-	 listeners are notified of this change.
-	 */
-	void setContinuous();
-
-	/**
-	 Makes this load a non continuous load, implying that the MCA value changes
-	 to the same value of nominalCurrent. Registered listeners are notified
-	 of this change.
-	 */
-	void setNonContinuous();
-
-	/**
-	 Sets explicitly the MCA for this load and mark this load as a mixed load.
-	 Notice that MCA should always be equal or greater than the load's nominal
-	 current. An attempt to set an MCA lesser than the load's nominal current
-	 will convert this load to a NONCONTINUOUS one, with an MCA equal to the
-	 load's nominal current. Also notice that there is no limitation on how big
-	 the MCA value can be, in regards to the load current. Registered
-	 listeners are notified of this change.
-	 @param MCA The new minimum circuit ampacity (MCA) for this load.
-	 */
-	void setMixed(double MCA);
-
-	/**
-	 Sets the nonlinear behavior of this load.
-	 @param flag If true, the load is set to nonlinear (load with harmonics).
-	 If false, the load is set as a linear one (the default).<br>
-	 "*************************"<br>
-	 Future: This is a temporary method.
-	  A nonlinear load must be a descendant class that returns true for
-	  its isNonLinear() method. A load is just linear like this load or
-	  nonlinear as a descendant specialized load.<br>
-	 "*************************"
-	 */
-	void setNonlinear(boolean flag);
 }
 /*
 Next load classes to be developed:

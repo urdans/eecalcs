@@ -5,7 +5,6 @@ import eecalcs.conduits.ConduitProperties;
 import eecalcs.conduits.Material;
 import eecalcs.systems.TempRating;
 import org.junit.jupiter.api.Test;
-import test.Tools;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -13,9 +12,9 @@ class ConductorPropertiesTest {
 
     @Test
     void getSizeByAmperes() {
-        assertEquals(Size.AWG_1, ConductorProperties.getSizeByAmperes(144.23, Metal.COPPER, TempRating.T90));
-        assertEquals(Size.AWG_1$0, ConductorProperties.getSizeByAmperes(144.23, Metal.COPPER, TempRating.T75));
-        assertEquals(Size.AWG_3$0, ConductorProperties.getSizeByAmperes(144.23, Metal.ALUMINUM, TempRating.T75));
+        assertEquals(Size.AWG_1, ConductorProperties.getSizeFromStandardAmpacityTable(144.23, Metal.COPPER, TempRating.T90));
+        assertEquals(Size.AWG_1$0, ConductorProperties.getSizeFromStandardAmpacityTable(144.23, Metal.COPPER, TempRating.T75));
+        assertEquals(Size.AWG_3$0, ConductorProperties.getSizeFromStandardAmpacityTable(144.23, Metal.ALUMINUM, TempRating.T75));
     }
 
     @Test
@@ -100,9 +99,9 @@ class ConductorPropertiesTest {
 
     @Test
     void getAmpacity() {
-        assertEquals(15, ConductorProperties.getAmpacity(Size.AWG_14, Metal.COPPER, TempRating.T60));
-        assertEquals(630, ConductorProperties.getAmpacity(Size.KCMIL_2000, Metal.ALUMINUM, TempRating.T90));
-        assertEquals(0, ConductorProperties.getAmpacity(null, null, null));
+        assertEquals(15, ConductorProperties.getStandardAmpacity(Size.AWG_14, Metal.COPPER, TempRating.T60));
+        assertEquals(630, ConductorProperties.getStandardAmpacity(Size.KCMIL_2000, Metal.ALUMINUM, TempRating.T90));
+        assertEquals(0, ConductorProperties.getStandardAmpacity(null, null, null));
     }
 
     @Test

@@ -597,8 +597,8 @@ public class ConductorProperties {
 		//endregion
 	}
 
-	private ConductorProperties() {
-	}
+	//private ConductorProperties() {
+	//}
 
 	/**
 	 Returns a Properties object for the given conductor size.
@@ -888,8 +888,8 @@ public class ConductorProperties {
 	 TempRating}
 	 @return The ampacity of this conductor size in amperes.
 	 */
-	public static double getAmpacity(Size conductorSize, Metal metal,
-	                                 TempRating temperatureRating) {
+	public static double getStandardAmpacity(Size conductorSize, Metal metal,
+	                                         TempRating temperatureRating) {
 		if(conductorSize != null) {
 			if (metal == Metal.COPPER) {
 				if (temperatureRating == TempRating.T60)
@@ -929,8 +929,8 @@ public class ConductorProperties {
 	 temperature rating or null if a conductor for that allowed ampacity could
 	 not be found.
 	 */
-	public static Size getSizeByAmperes(double allowedAmpacity, Metal metal,
-	                                    TempRating tempRating) {
+	public static Size getSizeFromStandardAmpacityTable(double allowedAmpacity, Metal metal,
+	                                                    TempRating tempRating) {
 		if (allowedAmpacity <= 0 || metal == null || tempRating == null)
 			return null;
 		if (metal == Metal.COPPER) {
